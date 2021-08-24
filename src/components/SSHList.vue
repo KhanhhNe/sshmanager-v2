@@ -26,6 +26,7 @@
       </tr>
       </tbody>
     </table>
+    <!--suppress HtmlUnknownAttribute -->
     <textarea :value="sshText"
               @change="sshText = $event.target.value"
               :readonly="readOnly"

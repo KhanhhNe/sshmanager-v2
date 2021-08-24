@@ -1,19 +1,29 @@
 <template>
   <div id="app">
     <SSHList :sshList="sshList" listName="Danh sách SSH" @update-ssh-list="sshList = $event"></SSHList>
-    <SSHList :sshList="liveList" listName="Live" :readOnly="true"></SSHList>
-    <SSHList :sshList="dieList" listName="Die" :readOnly="true"></SSHList>
+    <Tabs>
+      <Tab title="Live">
+        <SSHList :sshList="liveList" listName="Live" :readOnly="true"></SSHList>
+      </Tab>
+      <Tab title="Die">
+        <SSHList :sshList="dieList" listName="Die" :readOnly="true"></SSHList>
+      </Tab>
+    </Tabs>
   </div>
 </template>
 
 <script>
 import SSHList from './components/SSHList.vue'
+import Tabs from './components/Tabs.vue'
+import Tab from './components/Tab.vue'
 import '@picocss/pico'
 
 export default {
   name: 'App',
   components: {
-    SSHList
+    SSHList,
+    Tabs,
+    Tab
   },
   data() {
     return {
