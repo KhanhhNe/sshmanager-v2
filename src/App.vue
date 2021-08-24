@@ -1,28 +1,56 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <SSHList :sshList="sshList" listName="Danh sách SSH" @update-ssh-list="sshList = $event"></SSHList>
+    <SSHList :sshList="liveList" listName="Live" :readOnly="true"></SSHList>
+    <SSHList :sshList="dieList" listName="Die" :readOnly="true"></SSHList>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import SSHList from './components/SSHList.vue'
+import '@picocss/pico'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    SSHList
+  },
+  data() {
+    return {
+      sshList: [
+        {
+          status: 'live', ip: '255.255.255.1',
+          username: 'username',
+          password: 'password'
+        },
+        {
+          status: 'live', ip: '255.255.255.2',
+          username: 'username',
+          password: 'password'
+        },
+        {
+          status: 'live', ip: '255.255.255.3',
+          username: 'username',
+          password: 'password'
+        },
+        {
+          status: 'die', ip: '255.255.255.4',
+          username: 'username',
+          password: 'password'
+        }
+      ]
+    }
+  },
+  computed: {
+    liveList() {
+      return this.sshList.filter(ssh => ssh.status === 'live')
+    },
+    dieList() {
+      return this.sshList.filter(ssh => ssh.status === 'die')
+    }
   }
 }
 </script>
 
 <style lang="scss">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
 </style>
