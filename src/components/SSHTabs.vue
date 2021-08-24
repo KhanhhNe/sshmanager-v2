@@ -1,8 +1,8 @@
 <template>
   <div class="tabs-wrapper">
     <ul>
-      <li v-for="tab in tabs" :key="tab.title">
-        <button @click="selectTab(tab)">{{ tab.title }}</button>
+      <li v-for="tab in tabs" :key="tab.listName">
+        <button @click="selectTab(tab)">{{ tab.listName }}</button>
       </li>
     </ul>
     <slot></slot>
@@ -20,12 +20,10 @@ export default {
   },
   methods: {
     selectTab(tab) {
-      if (this.currentTab) {
-        this.currentTab.isActive = false
-      }
+      this.tabs.map(tab => tab.hidden = true)
       this.currentTab = tab || this.currentTab
       if (this.currentTab) {
-        this.currentTab.isActive = true
+        this.currentTab.hidden = false
       }
     }
   },
@@ -38,14 +36,23 @@ export default {
 
 <style lang="scss">
 .tabs-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
   ul {
     display: flex;
     gap: 1rem;
     padding: 0;
+    margin: 0;
 
     li {
       flex-grow: 1;
       list-style-type: none;
+
+      button {
+        margin: 0;
+      }
     }
   }
 }

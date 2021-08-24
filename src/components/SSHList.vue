@@ -1,5 +1,5 @@
 <template>
-  <article>
+  <article v-show="!hidden">
     <div class="title">
       <h2>{{ listName }}</h2>
       <button @click="toggleDisplayMode">
@@ -8,30 +8,32 @@
         <span v-show="displayMode === 'text'">Chữ</span>
       </button>
     </div>
-    <table v-show="displayMode === 'table'">
-      <thead>
-      <tr>
-        <td>Trạng thái</td>
-        <td>IP</td>
-        <td>Username</td>
-        <td>Password</td>
-      </tr>
-      </thead>
-      <tbody>
-      <tr v-for="ssh in sshList" :key="getSshText(ssh)" :class="[ssh.status]" class="ssh">
-        <td>{{ ssh.status }}</td>
-        <td>{{ ssh.ip }}</td>
-        <td>{{ ssh.username }}</td>
-        <td>{{ ssh.password }}</td>
-      </tr>
-      </tbody>
-    </table>
-    <!--suppress HtmlUnknownAttribute -->
-    <textarea :value="sshText"
-              @change="sshText = $event.target.value"
-              :readonly="readOnly"
-              v-show="displayMode === 'text'"
-    ></textarea>
+    <div class="list-content">
+      <table v-show="displayMode === 'table'">
+        <thead>
+        <tr>
+          <td>Trạng thái</td>
+          <td>IP</td>
+          <td>Username</td>
+          <td>Password</td>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="ssh in sshList" :key="getSshText(ssh)" :class="[ssh.status]" class="ssh">
+          <td>{{ ssh.status }}</td>
+          <td>{{ ssh.ip }}</td>
+          <td>{{ ssh.username }}</td>
+          <td>{{ ssh.password }}</td>
+        </tr>
+        </tbody>
+      </table>
+      <!--suppress HtmlUnknownAttribute -->
+      <textarea :value="sshText"
+                @change="sshText = $event.target.value"
+                :readonly="readOnly"
+                v-show="displayMode === 'text'"
+      ></textarea>
+    </div>
   </article>
 </template>
 
@@ -41,7 +43,8 @@ export default {
   name: 'SSHList',
   data() {
     return {
-      displayMode: 'table'
+      displayMode: 'table',
+      hidden: false
     }
   },
   props: {
@@ -113,31 +116,49 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style lang="scss" scoped>
-.title {
+article {
+  margin: 0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
 
-  h2 {
-    margin-bottom: 1rem;
+  .list-content {
+    overflow: auto;
+    flex-grow: 1;
   }
 
-  button {
-    width: auto;
-  }
-}
+  .title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
-.ssh {
-  td:first-child {
-    text-transform: capitalize;
+    h2 {
+      margin-bottom: 1rem;
+    }
+
+    button {
+      width: auto;
+    }
   }
 
-  &.live td:first-child {
-    color: green
+  .ssh {
+    td:first-child {
+      text-transform: capitalize;
+    }
+
+    &.live td:first-child {
+      color: green
+    }
+
+    &.die td:first-child {
+      color: red
+    }
   }
 
-  &.die td:first-child {
-    color: red
+  textarea {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    resize: none;
   }
 }
 </style>

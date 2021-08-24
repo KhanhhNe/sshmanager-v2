@@ -1,29 +1,23 @@
 <template>
   <div id="app">
-    <SSHList :sshList="sshList" listName="Danh sách SSH" @update-ssh-list="sshList = $event"></SSHList>
-    <Tabs>
-      <Tab title="Live">
-        <SSHList :sshList="liveList" listName="Live" :readOnly="true"></SSHList>
-      </Tab>
-      <Tab title="Die">
-        <SSHList :sshList="dieList" listName="Die" :readOnly="true"></SSHList>
-      </Tab>
-    </Tabs>
+    <SSHList :sshList="sshList" listName="Danh sách SSH" @update-ssh-list="sshList = $event" class="all-ssh"></SSHList>
+    <SSHTabs class="live-die">
+      <SSHList :sshList="liveList" listName="Live" :readOnly="true"></SSHList>
+      <SSHList :sshList="dieList" listName="Die" :readOnly="true"></SSHList>
+    </SSHTabs>
   </div>
 </template>
 
 <script>
 import SSHList from './components/SSHList.vue'
-import Tabs from './components/Tabs.vue'
-import Tab from './components/Tab.vue'
+import SSHTabs from './components/SSHTabs.vue'
 import '@picocss/pico'
 
 export default {
   name: 'App',
   components: {
     SSHList,
-    Tabs,
-    Tab
+    SSHTabs
   },
   data() {
     return {
@@ -63,4 +57,25 @@ export default {
 </script>
 
 <style lang="scss">
+#app {
+  $padding: 1rem;
+  height: 100vh;
+  padding: $padding;
+  display: grid;
+  grid-template-areas:
+      "live-die all"
+      "ports all";
+  grid-auto-columns: calc(50% - #{$padding}) calc(50% - #{$padding});
+  grid-auto-rows: calc(50% - #{$padding}) calc(50% - #{$padding});
+  gap: 2rem;
+  overflow: hidden;
+
+  .all-ssh {
+    grid-area: all;
+  }
+
+  .live-die {
+    grid-area: live-die;
+  }
+}
 </style>
