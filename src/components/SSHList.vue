@@ -120,6 +120,7 @@ article {
   margin: 0;
   display: flex;
   flex-direction: column;
+  flex-grow: 1;
 
   .list-content {
     overflow: auto;
@@ -159,6 +160,7 @@ article {
     width: 100%;
     margin: 0;
     resize: none;
+    flex-grow: 1;
   }
 }
 </style>

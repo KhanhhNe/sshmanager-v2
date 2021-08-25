@@ -1,23 +1,26 @@
 <template>
   <div id="app">
-    <SSHList :sshList="sshList" listName="Danh sách SSH" @update-ssh-list="sshList = $event" class="all-ssh"></SSHList>
+    <SSHList :sshList="sshList" :listName="`SSH (${sshList.length})`" @update-ssh-list="sshList = $event" class="all-ssh"></SSHList>
     <SSHTabs class="live-die">
-      <SSHList :sshList="liveList" listName="Live" :readOnly="true"></SSHList>
-      <SSHList :sshList="dieList" listName="Die" :readOnly="true"></SSHList>
+      <SSHList :sshList="liveList" :listName="`Live (${liveList.length})`" :readOnly="true"></SSHList>
+      <SSHList :sshList="dieList" :listName="`Die (${dieList.length})`" :readOnly="true"></SSHList>
     </SSHTabs>
+    <Ports :ports="ports"></Ports>
   </div>
 </template>
 
 <script>
 import SSHList from './components/SSHList.vue'
 import SSHTabs from './components/SSHTabs.vue'
+import Ports from './components/Ports.vue'
 import '@picocss/pico'
 
 export default {
   name: 'App',
   components: {
     SSHList,
-    SSHTabs
+    SSHTabs,
+    Ports
   },
   data() {
     return {
@@ -42,6 +45,16 @@ export default {
           username: 'username',
           password: 'password'
         }
+      ],
+      ports: [
+        {
+          port: 80,
+          ip: '255.255.255.1'
+        },
+        {
+          port: 8013,
+          ip: '255.255.255.2'
+        }
       ]
     }
   },
@@ -59,15 +72,17 @@ export default {
 <style lang="scss">
 #app {
   $padding: 1rem;
+  $gap: 1rem;
+  $used_space: $padding - $gap / 2;
   height: 100vh;
   padding: $padding;
   display: grid;
   grid-template-areas:
       "live-die all"
       "ports all";
-  grid-auto-columns: calc(50% - #{$padding}) calc(50% - #{$padding});
-  grid-auto-rows: calc(50% - #{$padding}) calc(50% - #{$padding});
-  gap: 2rem;
+  grid-auto-columns: calc(50% - #{$used_space}) calc(50% - #{$used_space});
+  grid-auto-rows: calc(50% - #{$used_space}) calc(50% - #{$used_space});
+  gap: $gap;
   overflow: hidden;
 
   .all-ssh {
@@ -76,6 +91,14 @@ export default {
 
   .live-die {
     grid-area: live-die;
+  }
+
+  article {
+    padding: 1rem;
+  }
+
+  table td, table th {
+    padding: 0.25rem;
   }
 }
 </style>
