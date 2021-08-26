@@ -1,11 +1,13 @@
 <template>
   <div id="app">
-    <SSHList :sshList="sshList" :listName="`SSH (${sshList.length})`" @update-ssh-list="sshList = $event" class="all-ssh"></SSHList>
+    <SSHList :sshList="sshList" :listName="`SSH (${sshList.length})`" @update-ssh-list="sshList = $event"
+             class="all-ssh"></SSHList>
     <SSHTabs class="live-die">
       <SSHList :sshList="liveList" :listName="`Live (${liveList.length})`" :readOnly="true"></SSHList>
       <SSHList :sshList="dieList" :listName="`Die (${dieList.length})`" :readOnly="true"></SSHList>
     </SSHTabs>
-    <Ports :ports="ports"></Ports>
+    <Ports :ports="ports" @add-ports="addPorts($event)" class="ports"></Ports>
+    <Settings :settings="settings" @update-settings="this.settings = $event" class="settings"></Settings>
   </div>
 </template>
 
@@ -13,6 +15,7 @@
 import SSHList from './components/SSHList.vue'
 import SSHTabs from './components/SSHTabs.vue'
 import Ports from './components/Ports.vue'
+import Settings from "@/components/Settings";
 import '@picocss/pico'
 
 export default {
@@ -20,7 +23,8 @@ export default {
   components: {
     SSHList,
     SSHTabs,
-    Ports
+    Ports,
+    Settings
   },
   data() {
     return {
@@ -55,6 +59,13 @@ export default {
           port: 8013,
           ip: '255.255.255.2'
         }
+      ],
+      settings: [
+        {
+          name: 'remove_died',
+          readable_name: "Xoá SSH die",
+          value: false
+        }
       ]
     }
   },
@@ -65,6 +76,16 @@ export default {
     dieList() {
       return this.sshList.filter(ssh => ssh.status === 'die')
     }
+  },
+  methods: {
+    addPorts(ports) {
+      this.ports = this.ports.concat(ports.map(port => {
+        return {
+          port,
+          ip: ''
+        }
+      }))
+    }
   }
 }
 </script>
@@ -73,15 +94,16 @@ export default {
 #app {
   $padding: 1rem;
   $gap: 1rem;
-  $used_space: $padding - $gap / 2;
+  $used_space_vertical: $padding - $gap / 2;
+  $used_space_horizontal: $padding - $gap / 2;
   height: 100vh;
   padding: $padding;
   display: grid;
   grid-template-areas:
       "live-die all"
-      "ports all";
-  grid-auto-columns: calc(50% - #{$used_space}) calc(50% - #{$used_space});
-  grid-auto-rows: calc(50% - #{$used_space}) calc(50% - #{$used_space});
+      "ports settings";
+  grid-auto-columns: calc(50% - #{$used_space_vertical}) calc(50% - #{$used_space_vertical});
+  grid-auto-rows: calc(50% - #{$used_space_vertical}) calc(50% - #{$used_space_horizontal});
   gap: $gap;
   overflow: hidden;
 
@@ -93,12 +115,32 @@ export default {
     grid-area: live-die;
   }
 
-  article {
-    padding: 1rem;
+  .ports {
+    grid-area: ports;
   }
 
-  table td, table th {
-    padding: 0.25rem;
+  .settings {
+    grid-area: settings;
+  }
+
+  article {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin: 0;
+    padding: 1rem;
+
+    & > *:last-child {
+      flex-grow: 1;
+    }
+
+    table {
+      margin-bottom: auto;
+
+      td, th {
+        padding: 0.25rem;
+      }
+    }
   }
 }
 </style>

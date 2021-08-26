@@ -1,12 +1,12 @@
 <template>
   <article>
-    <div class="title">
-      <h2>Ports ({{ ports.length }})</h2>
+    <ArticleTitle>
+      <template v-slot:title>Ports ({{ ports.length }})</template>
       <button @click="showPortsInput = !showPortsInput">Thêm Port</button>
-    </div>
+    </ArticleTitle>
     <div class="ports-input" v-show="showPortsInput">
-      <input type="text" id="ports" placeholder="8080,8000-8005,...">
-      <a role="button">Thêm</a>
+      <input type="text" v-model="portsText" placeholder="8080,8000-8005,...">
+      <a role="button" @click="addPorts">Thêm</a>
     </div>
     <div class="ports">
       <table>
@@ -15,7 +15,7 @@
           <th>Port</th>
           <th>IP</th>
           <th><a role="button" @click="changeIP('all')">Đổi</a></th>
-          <th><a role="button" @click="changeIP('all')" class="secondary">Xoá</a></th>
+          <th><a role="button" @click="removePort('all')" class="secondary">Xoá</a></th>
         </tr>
         </thead>
         <tbody>
@@ -32,14 +32,20 @@
 </template>
 
 <script>
+import ArticleTitle from "@/components/ArticleTitle";
+
 export default {
   name: "Ports",
+  components: {
+    ArticleTitle
+  },
   props: {
     ports: Array
   },
   data() {
     return {
-      showPortsInput: false
+      showPortsInput: false,
+      portsText: ''
     }
   },
   methods: {
@@ -48,14 +54,33 @@ export default {
         this.ports.map(pInfo => this.changeIP(pInfo))
         return
       }
-      alert('change ' + portInfo.port)
+      alert('change ' + portInfo.port) // TODO add backend code
     },
     removePort(portInfo) {
       if (portInfo === 'all') {
         this.ports.map(pInfo => this.removePort(pInfo))
         return
       }
-      alert('remove ' + portInfo.port)
+      alert('remove ' + portInfo.port) // TODO add backend code
+    },
+    addPorts() {
+      for (const portText of this.portsText.split(',')) {
+        try {
+          let ports
+          if (portText.includes('-')) {
+            const [start, stop] = portText.split('-').map(p => parseInt(p))
+            ports = new Array(stop - start + 1).map((val, ind) => start + ind)
+          } else {
+            ports = [parseInt(portText)]
+          }
+
+          // Filter out already added ports
+          ports = ports.filter(port => this.ports.filter(p => p.port === port).length === 0)
+          this.$emit('add-ports', ports)
+        } catch (e) {
+          // Do nothing
+        }
+      }
     }
   }
 }
@@ -63,24 +88,6 @@ export default {
 
 <style lang="scss" scoped>
 article {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-
-  .title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    h2 {
-      margin-bottom: 1rem;
-    }
-
-    button {
-      width: auto;
-    }
-  }
-
   .ports-input {
     display: flex;
     flex-direction: row;
@@ -95,7 +102,6 @@ article {
   }
 
   .ports {
-    flex-shrink: 1;
     overflow: auto;
 
     a[role=button] {

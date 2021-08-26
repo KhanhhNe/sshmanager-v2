@@ -1,13 +1,13 @@
 <template>
   <article v-show="!hidden">
-    <div class="title">
-      <h2>{{ listName }}</h2>
+    <ArticleTitle>
+      <template v-slot:title>{{ listName }}</template>
       <button @click="toggleDisplayMode">
         <span>Chế độ </span>
         <span v-show="displayMode === 'table'">Bảng</span>
         <span v-show="displayMode === 'text'">Chữ</span>
       </button>
-    </div>
+    </ArticleTitle>
     <div class="list-content">
       <table v-show="displayMode === 'table'">
         <thead>
@@ -39,8 +39,13 @@
 
 <!--suppress JSUnusedGlobalSymbols -->
 <script>
+import ArticleTitle from "@/components/ArticleTitle";
+
 export default {
   name: 'SSHList',
+  components: {
+    ArticleTitle
+  },
   data() {
     return {
       displayMode: 'table',
@@ -117,27 +122,14 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style lang="scss" scoped>
 article {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-
   .list-content {
-    overflow: auto;
-    flex-grow: 1;
-  }
-
-  .title {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    overflow: auto;
 
-    h2 {
-      margin-bottom: 1rem;
-    }
-
-    button {
-      width: auto;
+    textarea {
+      flex-grow: 1;
+      margin: 0;
+      resize: none;
     }
   }
 
@@ -153,14 +145,6 @@ article {
     &.die td:first-child {
       color: red
     }
-  }
-
-  textarea {
-    height: 100%;
-    width: 100%;
-    margin: 0;
-    resize: none;
-    flex-grow: 1;
   }
 }
 </style>
