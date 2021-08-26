@@ -91,11 +91,13 @@ export default {
 </script>
 
 <style lang="scss">
+@use "sass:math";
+
 #app {
   $padding: 1rem;
   $gap: 1rem;
-  $used_space_vertical: $padding - $gap / 2;
-  $used_space_horizontal: $padding - $gap / 2;
+  $used_space_vertical: $padding - math.div($gap, 2);
+  $used_space_horizontal: $padding - math.div($gap, 2);
   height: 100vh;
   padding: $padding;
   display: grid;
