@@ -49,6 +49,10 @@ export default {
     }
   },
   methods: {
+    /**
+     * Change a port's proxy (or IP)
+     * @param portInfo
+     */
     changeIP(portInfo) {
       if (portInfo === 'all') {
         this.ports.map(pInfo => this.changeIP(pInfo))
@@ -56,6 +60,11 @@ export default {
       }
       alert('change ' + portInfo.port) // TODO add backend code
     },
+
+    /**
+     * Remove a port and disconnect it from the proxy
+     * @param portInfo
+     */
     removePort(portInfo) {
       if (portInfo === 'all') {
         this.ports.map(pInfo => this.removePort(pInfo))
@@ -63,6 +72,10 @@ export default {
       }
       alert('remove ' + portInfo.port) // TODO add backend code
     },
+
+    /**
+     * Add ports to list by parsing from user's input
+     */
     addPorts() {
       for (const portText of this.portsText.split(',')) {
         try {

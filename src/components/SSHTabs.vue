@@ -19,8 +19,12 @@ export default {
     }
   },
   methods: {
+    /**
+     * Deselect the current active tab and select a new one
+     * @param tab
+     */
     selectTab(tab) {
-      this.tabs.map(tab => tab.hidden = true)
+      this.tabs.forEach(tab => tab.hidden = true)
       this.currentTab = tab || this.currentTab
       if (this.currentTab) {
         this.currentTab.hidden = false
@@ -28,6 +32,7 @@ export default {
     }
   },
   mounted() {
+    // Get tabs from children and select the first one
     this.tabs = this.$children
     this.selectTab(this.tabs[0])
   }

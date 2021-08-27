@@ -28,6 +28,7 @@ export default {
   },
   data() {
     return {
+      // TODO add backend data update to replace this mockup
       sshList: [
         {
           status: 'live', ip: '255.255.255.1',
@@ -78,12 +79,13 @@ export default {
     }
   },
   methods: {
+    /**
+     * Add new port to ports list
+     * @param ports
+     */
     addPorts(ports) {
       this.ports = this.ports.concat(ports.map(port => {
-        return {
-          port,
-          ip: ''
-        }
+        return {port, ip: ''}
       }))
     }
   }
