@@ -9,6 +9,7 @@ aiohttp = "*"
 aiosocks = "*"
 fastapi = "*"
 uvicorn = "*"
+pydantic = "*"
 
 [dev-packages]
 

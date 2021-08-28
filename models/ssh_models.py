@@ -1,8 +1,10 @@
 from datetime import datetime
+from typing import List
 
 from pony.orm import *
 
 from .database import db
+from .io_models import SSHInfo
 
 
 class SSH(db.Entity):
@@ -21,7 +23,6 @@ class SSH(db.Entity):
     @db_session
     def __enter__(self):
         self.is_checking = True
-        commit()
         return self
 
     @db_session
@@ -29,9 +30,7 @@ class SSH(db.Entity):
         # SSH is get for checking -> update last_checked
         if self.is_checking:
             self.last_checked = datetime.now()
-
-        self.is_checking = False
-        commit()
+            self.is_checking = False
 
 
 @db_session
@@ -47,3 +46,10 @@ def get_ssh_to_check():
         .first()
     next_ssh.is_checking = True
     return next_ssh
+
+
+@db_session
+def add_ssh(ssh_list: List[SSHInfo]):
+    for ssh in ssh_list:
+        if not SSH.get(**ssh.dict()):
+            SSH(**ssh.dict())  # Add new SSH if it isn't added yet
