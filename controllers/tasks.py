@@ -16,8 +16,9 @@ async def _ssh_check_runner():
         next_ssh = ssh_models.get_ssh_to_check()
         if not next_ssh:
             continue
-        is_live = await bitvise_controllers.verify_ssh(next_ssh.ip, next_ssh.username, next_ssh.password)
-        ssh_models.update_ssh_status(next_ssh, is_live)
+        with next_ssh:
+            is_live = await bitvise_controllers.verify_ssh(next_ssh.ip, next_ssh.username, next_ssh.password)
+            next_ssh.is_live = is_live
 
 
 async def ssh_check_task():
