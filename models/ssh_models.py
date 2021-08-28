@@ -45,5 +45,4 @@ def get_ssh_to_check():
         .order_by(lambda ssh: ssh.last_checked) \
         .first()
     next_ssh.is_checking = True
-    commit()
     return next_ssh

@@ -24,7 +24,6 @@ class Port(db.Entity):
     @db_session
     def __enter__(self):
         self.is_checking = True
-        commit()
         return self
 
     @db_session
@@ -32,8 +31,6 @@ class Port(db.Entity):
         if self.is_checking:
             self.last_checked = datetime.now()
             self.is_checking = False
-
-        commit()
 
 
 @db_session
@@ -48,5 +45,4 @@ def get_port_to_check():
         .order_by(lambda port: port.last_checked) \
         .first()
     next_port.is_checking = True
-    commit()
     return next_port
