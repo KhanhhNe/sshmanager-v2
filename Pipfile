@@ -7,6 +7,8 @@ name = "pypi"
 pony = "*"
 aiohttp = "*"
 aiosocks = "*"
+fastapi = "*"
+uvicorn = "*"
 
 [dev-packages]
 

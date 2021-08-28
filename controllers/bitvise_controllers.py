@@ -9,7 +9,7 @@ from typing import cast
 import aiohttp
 from aiosocks.connector import ProxyClientRequest, ProxyConnector
 
-from backend_src import models
+from models import bitvise
 
 
 @dataclass
@@ -68,14 +68,14 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
                                                    '-proxyFwding=y', '-noRegistry',
                                                    f'-proxyListPort={str(port or _get_free_port())}',
                                                    stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
-    models.add_proxy_process(process.pid)
+    bitvise.add_proxy_process(process.pid)
     process.stdin.write(b'a\na\na')
 
     while not process.returncode:
         done, pending = await asyncio.wait({asyncio.create_task(process.stdout.readline())}, timeout=30)
         # Kill process if timed out
         if pending:
-            models.kill_proxy_process(process.pid)
+            bitvise.kill_proxy_process(process.pid)
             raise ProxyConnectionError
 
         output = done.pop().result().decode(errors='ignore').strip()
@@ -85,7 +85,7 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
             if await get_proxy_ip(proxy_info.address):
                 return proxy_info
             else:
-                models.kill_proxy_process(process.pid)
+                bitvise.kill_proxy_process(process.pid)
                 raise ProxyConnectionError
     raise ProxyConnectionError
 
@@ -100,7 +100,7 @@ async def verify_ssh(host: str, username: str, password: str) -> bool:
     """
     try:
         proxy_info = await connect_ssh(host, username, password)
-        models.kill_proxy_process(proxy_info.pid)
+        bitvise.kill_proxy_process(proxy_info.pid)
         return True
     except ProxyConnectionError:
         return False
