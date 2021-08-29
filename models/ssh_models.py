@@ -16,7 +16,6 @@ class SSH(db.Entity):
     password = Required(str)
     is_live = Required(bool, default=False)
     port = Optional('Port')
-    is_using = Required(bool, default=False)
     is_checking = Required(bool, default=False)
     last_checked = Required(datetime, default=datetime(1000, 1, 1))
 
