@@ -4,7 +4,7 @@ from typing import List
 from pony.orm import *
 
 from .database import db
-from .io_models import SSHInfo
+from .io_models import SSHIn
 
 
 class SSH(db.Entity):
@@ -35,7 +35,7 @@ class SSH(db.Entity):
 @db_session
 def get_ssh_to_check():
     """
-    Get a SSH to check for status. This function will set SSH is_checking to True
+    Get a SSH to check for status. Will set SSH is_checking to True
     :return:
     """
     next_ssh: SSH = SSH \
@@ -48,7 +48,32 @@ def get_ssh_to_check():
 
 
 @db_session
-def add_ssh(ssh_list: List[SSHInfo]):
+def add_ssh(ssh_list: List[SSHIn]):
+    """
+    Add a list of SSH to database
+    :param ssh_list:
+    """
     for ssh in ssh_list:
         if not SSH.get(**ssh.dict()):
-            SSH(**ssh.dict())  # Add new SSH if it isn't added yet
+            SSH(**ssh.dict())  # Add new SSH
+
+
+@db_session
+def remove_ssh(ssh_list: List[SSHIn]):
+    """
+    Remove SSH in list from database
+    :param ssh_list:
+    """
+    for ssh in ssh_list:
+        ssh_obj = SSH.get(**ssh.dict())
+        if ssh_obj:
+            ssh_obj.delete()
+
+
+@db_session
+def get_all_ssh() -> List[SSH]:
+    """
+    Get all SSH in database
+    :return:
+    """
+    return SSH.select()[:].to_list()
