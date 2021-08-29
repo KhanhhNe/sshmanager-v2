@@ -3,9 +3,12 @@ import asyncio
 from fastapi import FastAPI
 
 from controllers import tasks
+from models.database import db
 from views import ssh_api
 
 app = FastAPI()
+db.bind('sqlite', 'db.sqlite', create_db=True)
+db.generate_mapping(create_tables=True)
 
 
 @app.on_event('startup')

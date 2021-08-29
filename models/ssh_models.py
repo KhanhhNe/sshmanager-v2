@@ -43,8 +43,11 @@ def get_ssh_to_check():
         .filter(lambda ssh: ssh.is_checking is False) \
         .order_by(lambda ssh: ssh.last_checked) \
         .first()
-    next_ssh.is_checking = True
-    return next_ssh
+    if next_ssh:
+        next_ssh.is_checking = True
+        return next_ssh
+    else:
+        return None
 
 
 @db_session

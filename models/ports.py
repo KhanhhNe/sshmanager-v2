@@ -44,5 +44,8 @@ def get_port_to_check():
         .filter(lambda port: port.is_checking is False) \
         .order_by(lambda port: port.last_checked) \
         .first()
-    next_port.is_checking = True
-    return next_port
+    if next_port:
+        next_port.is_checking = True
+        return next_port
+    else:
+        return None
