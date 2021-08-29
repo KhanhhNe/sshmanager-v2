@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "5471fc94b72365a2bd56fa800ee4186fc90b6bda3b61ada3aa540cfaecd8b8bc"
+            "sha256": "f6c9b836e664554dd7730bea08fe26a2d1f079a4232d7feb911d72fe450f20c7"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -17,6 +17,9 @@
     },
     "default": {
         "aiohttp": {
+            "extras": [
+                "asyncio"
+            ],
             "hashes": [
                 "sha256:02f46fc0e3c5ac58b80d4d56eb0a7c7d97fcef69ace9326289fb9f1955e65cfe",
                 "sha256:0563c1b3826945eecd62186f3f5c7d31abb7391fedc893b7e2b26303b5a9f3fe",
@@ -59,12 +62,13 @@
             "index": "pypi",
             "version": "==3.7.4.post0"
         },
-        "aiosocks": {
+        "aiohttp-socks": {
             "hashes": [
-                "sha256:94dfb2c3ff2fc646c88629e29872599cc93d9137c2eace68dc89079e6a221277"
+                "sha256:b95dcfba3740c8499f4ff633846d72108459d25650ebc1ae8b299cb817088013",
+                "sha256:db7aa48c0758ee45d7dbc1fde499912ec6fb77eab77a6e2808825d1f41d4e300"
             ],
             "index": "pypi",
-            "version": "==0.2.6"
+            "version": "==0.6.0"
         },
         "asgiref": {
             "hashes": [
@@ -215,6 +219,16 @@
             ],
             "index": "pypi",
             "version": "==1.8.2"
+        },
+        "python-socks": {
+            "extras": [
+                "asyncio"
+            ],
+            "hashes": [
+                "sha256:7d0ef2578cead9f762b71317d25a6c118fabaf79535555e75b3e102f5158ddd8",
+                "sha256:9f12e8fe78629b87543fad0e4ea0ccf103a4fad6a7872c5d0ecb36d9903fa548"
+            ],
+            "version": "==1.2.4"
         },
         "starlette": {
             "hashes": [

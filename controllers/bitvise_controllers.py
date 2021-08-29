@@ -7,7 +7,7 @@ from functools import wraps
 from typing import cast
 
 import aiohttp
-from aiosocks.connector import ProxyClientRequest, ProxyConnector
+from aiohttp_socks import ProxyConnector
 
 from models import bitvise
 
@@ -47,32 +47,38 @@ def logging_wrapper(func):
             logger.info('|'.join(map(str, args)).ljust(50) + str(result.port))
             return result
         except BaseException as e:
-            logger.info('|'.join(map(str, args)).ljust(50) + e.__class__.__name__)
+            logger.info(
+                '|'.join(map(str, args)).ljust(50) + e.__class__.__name__)
             raise
 
     return cast(func, wrapped)
 
 
 @logging_wrapper
-async def connect_ssh(host: str, username: str, password: str, port: int = None) -> ProxyInfo:
+async def connect_ssh(host: str, username: str, password: str,
+                      port: int = None) -> ProxyInfo:
     """
     Connect an SSH to specified port
     :param host:
     :param username:
     :param password:
     :param port: Local port to connect to
-    :return: Proxy information if succeed. Will raise an error if something went wrong
+    :return: Proxy information if succeed. Will raise an error if failed
     """
-    process = await asyncio.create_subprocess_exec('executables/stnlc.exe', host,
-                                                   f'-user={username}', f'-pw={password}',
-                                                   '-proxyFwding=y', '-noRegistry',
-                                                   f'-proxyListPort={str(port or _get_free_port())}',
-                                                   stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
+    if not port:
+        port = _get_free_port()
+    process = await asyncio.create_subprocess_exec(
+        'executables/stnlc.exe', host,
+        f'-user={username}', f'-pw={password}',
+        '-proxyFwding=y', '-noRegistry', f'-proxyListPort={port}',
+        stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
+    )
     bitvise.add_proxy_process(process.pid)
     process.stdin.write(b'a\na\na')
 
     while not process.returncode:
-        done, pending = await asyncio.wait({asyncio.create_task(process.stdout.readline())}, timeout=30)
+        done, pending = await asyncio.wait(
+            {asyncio.create_task(process.stdout.readline())}, timeout=30)
         # Kill process if timed out
         if pending:
             bitvise.kill_proxy_process(process.pid)
@@ -80,7 +86,9 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
 
         output = done.pop().result().decode(errors='ignore').strip()
         if 'Enabled SOCKS/HTTP proxy forwarding on ' in output:
-            port = re.search(r'Enabled SOCKS/HTTP proxy forwarding on .*?:(\d+)', output).group(1)
+            port = re.search(
+                r'Enabled SOCKS/HTTP proxy forwarding on .*?:(\d+)',
+                output).group(1)
             proxy_info = ProxyInfo(port=int(port), pid=process.pid)
             if await get_proxy_ip(proxy_info.address):
                 return proxy_info
@@ -108,14 +116,14 @@ async def verify_ssh(host: str, username: str, password: str) -> bool:
 
 async def get_proxy_ip(proxy_address) -> str:
     """
-    Retrieves proxy's real IP address. Returns empty string on connection failure
-    :param proxy_address: Proxy connection address, in format <protocol>://<ip>:<port>
+    Retrieves proxy's real IP address. Returns empty string if failed
+    :param proxy_address: Proxy connection address in <protocol>://<ip>:<port>
     :return: Proxy real IP address on success connection, empty string otherwise
     """
     try:
-        async with aiohttp.ClientSession(connector=ProxyConnector(remote_resolve=False),
-                                         request_class=ProxyClientRequest) as client:
-            async with client.get('https://api.ipify.org?format=text', proxy=proxy_address) as resp:
+        connector = ProxyConnector.from_url(proxy_address)
+        async with aiohttp.ClientSession(connector=connector) as client:
+            async with client.get('https://api.ipify.org?format=text') as resp:
                 return await resp.text()
     except aiohttp.ClientError:
         return ''

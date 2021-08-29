@@ -5,11 +5,11 @@ name = "pypi"
 
 [packages]
 pony = "*"
-aiohttp = "*"
-aiosocks = "*"
+aiohttp = {extras = ["asyncio"], version = "*"}
 fastapi = "*"
 uvicorn = "*"
 pydantic = "*"
+aiohttp-socks = "*"
 
 [dev-packages]
 
