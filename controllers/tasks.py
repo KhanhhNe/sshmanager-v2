@@ -21,6 +21,13 @@ async def _ssh_check_runner():
                                                            next_ssh.username,
                                                            next_ssh.password)
             next_ssh.is_live = is_live
+            # Delete this SSH if it is deleted from database while checking.
+            # This will prevent the SSH being added again after being deleted by
+            # the user.
+            if not ssh_models.SSH.get(ip=next_ssh.ip,
+                                      username=next_ssh.username,
+                                      password=next_ssh.password):
+                next_ssh.delete()
 
 
 async def ssh_check_task():
@@ -49,6 +56,12 @@ async def _port_check_runner():
                 # Remove association with linked SSH so the SSH is also be
                 # marked as not used (connected by any port)
                 next_port.ssh = None
+
+            # Delete this port if it is deleted from database while checking.
+            # This will prevent the port being added again after being deleted
+            # by the user.
+            if not ports.Port.get(port=next_port.port):
+                next_port.delete()
 
 
 async def port_check_task():
