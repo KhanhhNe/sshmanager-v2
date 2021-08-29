@@ -17,7 +17,9 @@ async def _ssh_check_runner():
         if not next_ssh:
             continue
         with next_ssh:
-            is_live = await bitvise_controllers.verify_ssh(next_ssh.ip, next_ssh.username, next_ssh.password)
+            is_live = await bitvise_controllers.verify_ssh(next_ssh.ip,
+                                                           next_ssh.username,
+                                                           next_ssh.password)
             next_ssh.is_live = is_live
 
 
@@ -40,8 +42,13 @@ async def _port_check_runner():
         if not next_port:
             continue
         with next_port:
-            is_live = bool(await bitvise_controllers.get_proxy_ip(next_port.proxy_address))
-            next_port.is_live = is_live
+            ip = await bitvise_controllers.get_proxy_ip(next_port.proxy_address)
+            is_usable = ip != ''
+            next_port.is_usable = is_usable
+            if not is_usable:
+                # Remove association with linked SSH so the SSH is also be
+                # marked as not used (connected by any port)
+                next_port.ssh = None
 
 
 async def port_check_task():
