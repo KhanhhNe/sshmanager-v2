@@ -2,6 +2,7 @@ import asyncio
 import logging
 import re
 import socket
+import subprocess
 from dataclasses import dataclass
 from functools import wraps
 from typing import cast
@@ -37,13 +38,13 @@ class ProxyConnectionError(BitviseError):
 
 
 def logging_wrapper(func):
-    logger = logging.getLogger('Bivise')
+    logger = logging.getLogger('Bitvise')
     logger.setLevel(logging.INFO)
 
     @wraps(func)
-    async def wrapped(*args, **kwargs):
+    def wrapped(*args, **kwargs):
         try:
-            result: ProxyInfo = await func(*args, **kwargs)
+            result: ProxyInfo = func(*args, **kwargs)
             logger.info('|'.join(map(str, args)).ljust(50) + str(result.port))
             return result
         except BaseException as e:
@@ -55,8 +56,8 @@ def logging_wrapper(func):
 
 
 @logging_wrapper
-async def connect_ssh(host: str, username: str, password: str,
-                      port: int = None) -> ProxyInfo:
+def connect_ssh_sync(host: str, username: str, password: str,
+                     port: int = None) -> ProxyInfo:
     """
     Connect an SSH to specified port
     :param host:
@@ -67,35 +68,48 @@ async def connect_ssh(host: str, username: str, password: str,
     """
     if not port:
         port = _get_free_port()
-    process = await asyncio.create_subprocess_exec(
+    process = subprocess.Popen([
         'executables/stnlc.exe', host,
         f'-user={username}', f'-pw={password}',
-        '-proxyFwding=y', '-noRegistry', f'-proxyListPort={port}',
-        stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE
-    )
+        '-proxyFwding=y', '-noRegistry', f'-proxyListPort={port}'
+    ], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     bitvise.add_proxy_process(process.pid)
     process.stdin.write(b'a\na\na')
 
     while not process.returncode:
-        done, pending = await asyncio.wait(
-            {asyncio.create_task(process.stdout.readline())}, timeout=30)
-        # Kill process if timed out
-        if pending:
+        try:
+            stdout, stderr = process.communicate(timeout=30)
+        except TimeoutError:
             bitvise.kill_proxy_process(process.pid)
             raise ProxyConnectionError
 
-        output = done.pop().result().decode(errors='ignore').strip()
+        output = stdout.decode(errors='ignore').strip()
         if 'Enabled SOCKS/HTTP proxy forwarding on ' in output:
             port = re.search(
                 r'Enabled SOCKS/HTTP proxy forwarding on .*?:(\d+)',
                 output).group(1)
             proxy_info = ProxyInfo(port=int(port), pid=process.pid)
-            if await get_proxy_ip(proxy_info.address):
+            if asyncio.run(get_proxy_ip(proxy_info.address)):
                 return proxy_info
             else:
                 bitvise.kill_proxy_process(process.pid)
                 raise ProxyConnectionError
     raise ProxyConnectionError
+
+
+async def connect_ssh(host: str, username: str, password: str,
+                      port: int = None) -> ProxyInfo:
+    """
+    Connect an SSH to specified port
+    :param host:
+    :param username:
+    :param password:
+    :param port: Local port to connect to
+    :return: Proxy information if succeed. Will raise an error if failed
+    """
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, connect_ssh_sync,
+                                      host, username, password, port)
 
 
 async def verify_ssh(host: str, username: str, password: str) -> bool:
