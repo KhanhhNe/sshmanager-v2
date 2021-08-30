@@ -24,6 +24,7 @@ def add_ssh(ssh_list: List[SSHIn]):
     when a runner got to it.
     """
     ssh_models.add_ssh(ssh_list)
+    return {}
 
 
 @router.delete('/')
@@ -32,3 +33,4 @@ def delete_ssh(ssh_list: List[SSHIn]):
     Remove a list of SSH from the database.
     """
     ssh_models.remove_ssh(ssh_list)
+    return {}

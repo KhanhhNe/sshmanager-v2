@@ -14,6 +14,7 @@ class SSHOut(BaseModel):
     username: str
     password: str
     is_live: bool
+    is_checking: bool
     last_checked: datetime
 
     class Config:
