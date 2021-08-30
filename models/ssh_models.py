@@ -19,18 +19,6 @@ class SSH(db.Entity):
     is_checking = Required(bool, default=False)
     last_checked = Required(datetime, default=datetime(1000, 1, 1))
 
-    @db_session
-    def __enter__(self):
-        self.is_checking = True
-        return self
-
-    @db_session
-    def __exit__(self, *_):
-        # SSH is get for checking -> update last_checked
-        if self.is_checking:
-            self.last_checked = datetime.now()
-            self.is_checking = False
-
 
 @db_session
 def get_ssh_to_check():
@@ -48,6 +36,22 @@ def get_ssh_to_check():
         return next_ssh
     else:
         return None
+
+
+@db_session
+def update_ssh_status(updated_ssh: SSH, *, is_live=None):
+    """
+    Update SSH status. Will update SSH.last_checked if is_live is specified
+    :param updated_ssh:
+    :param is_live:
+    """
+    ssh: SSH = SSH[updated_ssh.id]
+    if not ssh:
+        return
+
+    if is_live is not None:
+        ssh.last_checked = datetime.now()
+    ssh.is_live = is_live
 
 
 @db_session

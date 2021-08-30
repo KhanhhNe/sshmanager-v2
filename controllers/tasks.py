@@ -17,18 +17,11 @@ async def _ssh_check_runner():
         next_ssh = ssh_models.get_ssh_to_check()
         if not next_ssh:
             continue
-        with next_ssh:
-            is_live = await bitvise_controllers.verify_ssh(next_ssh.ip,
-                                                           next_ssh.username,
-                                                           next_ssh.password)
-            next_ssh.is_live = is_live
-            # Delete this SSH if it is deleted from database while checking.
-            # This will prevent the SSH being added again after being deleted by
-            # the user.
-            if not ssh_models.SSH.get(ip=next_ssh.ip,
-                                      username=next_ssh.username,
-                                      password=next_ssh.password):
-                next_ssh.delete()
+
+        is_live = await bitvise_controllers.verify_ssh(next_ssh.ip,
+                                                       next_ssh.username,
+                                                       next_ssh.password)
+        ssh_models.update_ssh_status(next_ssh, is_live=is_live)
 
 
 async def ssh_check_task():
@@ -49,20 +42,10 @@ async def _port_check_runner():
         next_port = ports.get_port_to_check()
         if not next_port:
             continue
-        with next_port:
-            ip = await bitvise_controllers.get_proxy_ip(next_port.proxy_address)
-            is_usable = ip != ''
-            next_port.is_usable = is_usable
-            if not is_usable:
-                # Remove association with linked SSH so the SSH is also be
-                # marked as not used (connected by any port)
-                next_port.ssh = None
 
-            # Delete this port if it is deleted from database while checking.
-            # This will prevent the port being added again after being deleted
-            # by the user.
-            if not ports.Port.get(port=next_port.port):
-                next_port.delete()
+        ip = await bitvise_controllers.get_proxy_ip(next_port.proxy_address)
+        is_usable = ip != ''
+        ports.update_port_status(next_port, is_usable=is_usable)
 
 
 async def port_check_task():

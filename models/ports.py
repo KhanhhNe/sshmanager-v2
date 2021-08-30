@@ -21,17 +21,6 @@ class Port(db.Entity):
     def proxy_address(self):
         return f"socks5://{utils.get_ipv4_address()}:{self.port}"
 
-    @db_session
-    def __enter__(self):
-        self.is_checking = True
-        return self
-
-    @db_session
-    def __exit__(self, *_):
-        if self.is_checking:
-            self.last_checked = datetime.now()
-            self.is_checking = False
-
 
 @db_session
 def get_port_to_check():
@@ -49,3 +38,22 @@ def get_port_to_check():
         return next_port
     else:
         return None
+
+
+@db_session
+def update_port_status(updated_port: Port, *, is_usable=None):
+    """
+    Update port status. Will update port.last_checked if is_usable is specified
+    and will remove associated SSH if is_usable is False.
+    :param updated_port:
+    :param is_usable:
+    """
+    port: Port = Port[updated_port.id]
+    if not port:
+        return
+
+    if is_usable is not None:
+        port.last_checked = datetime.now()
+    port.is_usable = is_usable
+    if not port.is_usable:
+        port.ssh = None
