@@ -1,3 +1,7 @@
+from multiprocessing import freeze_support
+
 import uvicorn
 
-uvicorn.run('app:app')
+if __name__ == '__main__':
+    freeze_support()
+    uvicorn.run('app:app', reload=True)
