@@ -1,7 +1,8 @@
 import asyncio
 
-from controllers import bitvise_controllers
+from pony.orm import db_session
 
+from controllers import bitvise_controllers
 from models import ports, ssh_models
 
 
@@ -69,3 +70,14 @@ async def port_check_task():
     Wrapper for concurrent run of _port_check_runner()
     """
     await asyncio.gather(*[_port_check_runner() for _ in range(20)])
+
+
+def reset_ssh_and_port_status():
+    """
+    Reset attribute is_checking of Port and SSH to False on startup
+    """
+    with db_session:
+        for ssh in ssh_models.SSH.select():
+            ssh.is_checking = False
+        for port in ports.Port.select():
+            port.is_checking = False

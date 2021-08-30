@@ -17,4 +17,9 @@ async def run_background_tasks():
     asyncio.ensure_future(tasks.port_check_task())
 
 
+@app.on_event('startup')
+def prepare_application_state():
+    tasks.reset_ssh_and_port_status()
+
+
 app.include_router(ssh_api.router, prefix='/api/ssh')
