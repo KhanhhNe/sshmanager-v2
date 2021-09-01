@@ -2,7 +2,7 @@ import asyncio
 
 from fastapi import FastAPI
 
-from controllers import tasks
+import tasks
 from models.database import db
 from views import ssh_api
 
