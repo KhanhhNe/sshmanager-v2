@@ -5,12 +5,14 @@ name = "pypi"
 
 [packages]
 pony = "*"
-aiohttp = {extras = ["asyncio"], version = "*"}
+aiohttp = { extras = ["asyncio"], version = "*" }
 fastapi = "*"
 uvicorn = "*"
 pydantic = "*"
 aiohttp-socks = "*"
 psutil = "*"
+aiofiles = "*"
+jinja2 = "*"
 
 [dev-packages]
 

@@ -2,11 +2,12 @@ import asyncio
 import logging
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 import tasks
 from models.database import db
 from views import ports_api, ssh_api
-
 
 logging.basicConfig(level=logging.INFO,
                     format="[%(asctime)s] %(name)s - %(message)s")
@@ -15,6 +16,7 @@ app = FastAPI(title="SSHManager by KhanhhNe",
               version="2.0.0")
 db.bind('sqlite', 'db.sqlite', create_db=True)
 db.generate_mapping(create_tables=True)
+templates = Jinja2Templates(directory='dist')
 
 
 @app.on_event('startup')
@@ -32,3 +34,4 @@ def shutdown_tasks():
 
 app.include_router(ssh_api.router, prefix='/api/ssh')
 app.include_router(ports_api.router, prefix='/api/ports')
+app.mount('/', StaticFiles(directory='dist', html=True))
