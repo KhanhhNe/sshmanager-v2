@@ -3,13 +3,14 @@ import logging
 import re
 import subprocess
 from dataclasses import dataclass
-from functools import wraps
-from typing import cast
 
 import aiohttp
+import python_socks
 from aiohttp_socks import ProxyConnector
 
 import utils
+
+logger = logging.getLogger('Bitvise')
 
 
 @dataclass
@@ -17,7 +18,7 @@ class ProxyInfo:
     port: int
     pid: int
     host: str = 'localhost'
-    proxy_type: str = 'socks4'
+    proxy_type: str = 'socks5'
 
     @property
     def address(self):
@@ -36,59 +37,38 @@ class ProxyConnectionError(BitviseError):
     """
 
 
-def logging_wrapper(func):
-    logger = logging.getLogger('Bitvise')
-    logger.setLevel(logging.INFO)
-
-    @wraps(func)
-    def wrapped(*args, **kwargs):
-        try:
-            result: ProxyInfo = func(*args, **kwargs)
-            logger.info('|'.join(map(str, args)).ljust(50) + str(result.port))
-            return result
-        except BaseException as e:
-            logger.info(
-                '|'.join(map(str, args)).ljust(50) + e.__class__.__name__)
-            raise
-
-    return cast(func, wrapped)
-
-
-@logging_wrapper
 def connect_ssh_sync(host: str, username: str, password: str,
                      port: int = None, kill_after=False) -> ProxyInfo:
     if not port:
         port = utils.get_free_port()
+    log_message = f"{host}|{username}|{password}|{port}"
+
     process = subprocess.Popen([
         'executables/stnlc.exe', host,
         f'-user={username}', f'-pw={password}',
         '-proxyFwding=y', '-noRegistry', f'-proxyListPort={port}'
     ], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     process.stdin.write(b'a\na\na')
+    process.stdin.flush()
 
-    while not process.returncode:
-        try:
-            stdout, stderr = process.communicate(timeout=30)
-        except TimeoutError:
-            process.kill()
-            process.communicate()
-            raise ProxyConnectionError
-
-        output = stdout.decode(errors='ignore').strip()
+    logging.info(f"{log_message} - SSH connection started.")
+    while process.returncode is None:
+        output = process.stdout.readline().decode(errors='ignore').strip()
         if 'Enabled SOCKS/HTTP proxy forwarding on ' in output:
-            port = re.search(
-                r'Enabled SOCKS/HTTP proxy forwarding on .*?:(\d+)',
-                output).group(1)
-            proxy_info = ProxyInfo(port=int(port), pid=process.pid)
+            proxy_info = ProxyInfo(port=port, pid=process.pid)
             if asyncio.run(get_proxy_ip(proxy_info.address)):
                 if kill_after:
                     process.kill()
                     process.communicate()
+                logger.info(f"{log_message} - Connected successfully.")
                 return proxy_info
             else:
                 process.kill()
                 process.communicate()
+                logger.info(f"{log_message} - Cannot connect to proxy.")
                 raise ProxyConnectionError
+
+    logger.info(f"{log_message} - Bitvise quit with code {process.returncode}.")
     raise ProxyConnectionError
 
 
@@ -135,5 +115,6 @@ async def get_proxy_ip(proxy_address) -> str:
         async with aiohttp.ClientSession(connector=connector) as client:
             async with client.get('https://api.ipify.org?format=text') as resp:
                 return await resp.text()
-    except aiohttp.ClientError:
+    except (aiohttp.ClientError, python_socks.ProxyConnectionError,
+            python_socks.ProxyError, python_socks.ProxyTimeoutError):
         return ''
