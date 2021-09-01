@@ -10,7 +10,6 @@ import aiohttp
 from aiohttp_socks import ProxyConnector
 
 import utils
-from models import proxy_process
 
 
 @dataclass
@@ -57,15 +56,7 @@ def logging_wrapper(func):
 
 @logging_wrapper
 def connect_ssh_sync(host: str, username: str, password: str,
-                     port: int = None) -> ProxyInfo:
-    """
-    Connect an SSH to specified port
-    :param host:
-    :param username:
-    :param password:
-    :param port: Local port to connect to
-    :return: Proxy information if succeed. Will raise an error if failed
-    """
+                     port: int = None, kill_after=False) -> ProxyInfo:
     if not port:
         port = utils.get_free_port()
     process = subprocess.Popen([
@@ -90,6 +81,9 @@ def connect_ssh_sync(host: str, username: str, password: str,
                 output).group(1)
             proxy_info = ProxyInfo(port=int(port), pid=process.pid)
             if asyncio.run(get_proxy_ip(proxy_info.address)):
+                if kill_after:
+                    process.kill()
+                    process.communicate()
                 return proxy_info
             else:
                 process.kill()
@@ -99,18 +93,20 @@ def connect_ssh_sync(host: str, username: str, password: str,
 
 
 async def connect_ssh(host: str, username: str, password: str,
-                      port: int = None) -> ProxyInfo:
+                      port: int = None, kill_after=False) -> ProxyInfo:
     """
     Connect an SSH to specified port
-    :param host:
-    :param username:
-    :param password:
+    :param host: SSH IP
+    :param username: SSH username
+    :param password: SSH password
     :param port: Local port to connect to
+    :param kill_after: Set to True to kill the proxy process after verifying
     :return: Proxy information if succeed. Will raise an error if failed
     """
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, connect_ssh_sync,
-                                      host, username, password, port)
+                                      host, username, password,
+                                      port, kill_after)
 
 
 async def verify_ssh(host: str, username: str, password: str) -> bool:
@@ -122,8 +118,7 @@ async def verify_ssh(host: str, username: str, password: str) -> bool:
     :return: True if SSH is connected successfully, returns False otherwise
     """
     try:
-        proxy_info = await connect_ssh(host, username, password)
-        proxy_process.kill_proxy_process(proxy_info.pid)
+        await connect_ssh(host, username, password, kill_after=True)
         return True
     except ProxyConnectionError:
         return False
