@@ -79,6 +79,13 @@ async def port_check_task():
                 port.last_checked = datetime.now()
                 port.ip = ip
 
+                # Remove SSH assignment if the port is not usable anymore after
+                # connecting to the SSH so that other SSH could be assigned to
+                # this port
+                if not port.ip and port.is_connected_to_ssh:
+                    port.ssh = None
+                    port.is_connected_to_ssh = False
+
 
 @runners
 async def port_connect_task():
