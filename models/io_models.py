@@ -27,8 +27,8 @@ class PortIn(BaseModel):
 
 class PortOut(BaseModel):
     port: int
-    ssh: SSHOut
-    ip: str
+    ssh: SSHOut = None
+    ip: str = ''
     is_checking: bool
     is_connected_to_ssh: bool
     last_checked: datetime
