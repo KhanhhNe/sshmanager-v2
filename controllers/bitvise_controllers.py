@@ -119,5 +119,6 @@ async def get_proxy_ip(proxy_address) -> str:
             async with client.get('https://api.ipify.org?format=text') as resp:
                 return await resp.text()
     except (aiohttp.ClientError, python_socks.ProxyConnectionError,
-            python_socks.ProxyError, python_socks.ProxyTimeoutError):
+            python_socks.ProxyError, python_socks.ProxyTimeoutError,
+            ConnectionError):
         return ''
