@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 import tasks
 from models.database import db
-from views import ssh_api
+from views import ports_api, ssh_api
 
 app = FastAPI()
 db.bind('sqlite', 'db.sqlite', create_db=True)
@@ -25,3 +25,4 @@ def shutdown_tasks():
 
 
 app.include_router(ssh_api.router, prefix='/api/ssh')
+app.include_router(ports_api.router, prefix='/api/ports')
