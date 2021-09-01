@@ -44,8 +44,7 @@ async def _port_check_runner():
             continue
 
         ip = await bitvise_controllers.get_proxy_ip(next_port.proxy_address)
-        is_usable = ip != ''
-        ports.update_port_status(next_port, is_usable=is_usable)
+        ports.update_port_ip(next_port, ip=ip)
 
 
 async def port_check_task():

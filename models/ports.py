@@ -13,7 +13,7 @@ class Port(db.Entity):
     """
     port = Required(int)
     ssh = Optional(SSH)
-    is_usable = Required(bool, default=False)
+    ip = Required(str, default='')  # External IP after proxying through port
     is_checking = Required(bool, default=False)
     last_checked = Required(datetime, default=datetime(1000, 1, 1))
 
@@ -41,19 +41,16 @@ def get_port_to_check():
 
 
 @db_session
-def update_port_status(updated_port: Port, *, is_usable=None):
+def update_port_ip(updated_port: Port, *, ip=None):
     """
-    Update port status. Will update port.last_checked if is_usable is specified
-    and will remove associated SSH if is_usable is False.
+    Update port IP. Will update port.last_checked if ip is specified.
     :param updated_port:
-    :param is_usable:
+    :param ip: Port's external IP
     """
     port: Port = Port[updated_port.id]
     if not port:
         return
 
-    if is_usable is not None:
+    if ip is not None:
         port.last_checked = datetime.now()
-    port.is_usable = is_usable
-    if not port.is_usable:
-        port.ssh = None
+    port.ip = ip
