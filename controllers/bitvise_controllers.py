@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import subprocess
+import time
 from dataclasses import dataclass
 
 import aiohttp
@@ -41,6 +42,10 @@ def connect_ssh_sync(host: str, username: str, password: str,
     if not port:
         port = utils.get_free_port()
     log_message = f"{host}|{username}|{password}|{port}"
+    start_time = time.perf_counter()
+
+    def run_time():
+        return round(time.perf_counter() - start_time, 1)
 
     process = subprocess.Popen([
         'executables/stnlc.exe', host,
@@ -50,7 +55,6 @@ def connect_ssh_sync(host: str, username: str, password: str,
     process.stdin.write(b'a\na\na')
     process.stdin.flush()
 
-    logger.info(f"{log_message} - SSH connection started.")
     while process.returncode is None:
         output = process.stdout.readline().decode(errors='ignore').strip()
         if 'Enabled SOCKS/HTTP proxy forwarding on ' in output:
@@ -58,15 +62,15 @@ def connect_ssh_sync(host: str, username: str, password: str,
             if asyncio.run(get_proxy_ip(proxy_info.address)):
                 if kill_after:
                     process.kill()
-                    process.communicate()
-                logger.info(f"{log_message} - Connected successfully.")
+                logger.info(
+                    f"{log_message} ({run_time()}s) - Connected successfully.")
                 return proxy_info
             else:
-                process.kill()
-                process.communicate()
-                logger.info(f"{log_message} - Cannot connect to proxy.")
+                logger.info(
+                    f"{log_message} ({run_time()}s) - Cannot connect to proxy.")
                 raise ProxyConnectionError
 
+    process.kill()
     logger.info(f"{log_message} - Bitvise quit with code {process.returncode}.")
     raise ProxyConnectionError
 
