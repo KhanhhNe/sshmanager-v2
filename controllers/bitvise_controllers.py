@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import re
-import socket
 import subprocess
 from dataclasses import dataclass
 from functools import wraps
@@ -10,6 +9,7 @@ from typing import cast
 import aiohttp
 from aiohttp_socks import ProxyConnector
 
+import utils
 from models import proxy_process
 
 
@@ -25,7 +25,7 @@ class ProxyInfo:
         return f"{self.proxy_type}://{self.host}:{self.port}"
 
 
-class BitviseError(BaseException):
+class BitviseError(Exception):
     """
     Base exception for all Bitvise and Proxy related errors.
     """
@@ -67,20 +67,20 @@ def connect_ssh_sync(host: str, username: str, password: str,
     :return: Proxy information if succeed. Will raise an error if failed
     """
     if not port:
-        port = _get_free_port()
+        port = utils.get_free_port()
     process = subprocess.Popen([
         'executables/stnlc.exe', host,
         f'-user={username}', f'-pw={password}',
         '-proxyFwding=y', '-noRegistry', f'-proxyListPort={port}'
     ], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    proxy_process.add_proxy_process(process.pid, port)
     process.stdin.write(b'a\na\na')
 
     while not process.returncode:
         try:
             stdout, stderr = process.communicate(timeout=30)
         except TimeoutError:
-            proxy_process.kill_proxy_process(process.pid)
+            process.kill()
+            process.communicate()
             raise ProxyConnectionError
 
         output = stdout.decode(errors='ignore').strip()
@@ -92,7 +92,8 @@ def connect_ssh_sync(host: str, username: str, password: str,
             if asyncio.run(get_proxy_ip(proxy_info.address)):
                 return proxy_info
             else:
-                proxy_process.kill_proxy_process(process.pid)
+                process.kill()
+                process.communicate()
                 raise ProxyConnectionError
     raise ProxyConnectionError
 
@@ -141,9 +142,3 @@ async def get_proxy_ip(proxy_address) -> str:
                 return await resp.text()
     except aiohttp.ClientError:
         return ''
-
-
-def _get_free_port():
-    sock = socket.socket()
-    sock.bind(('', 0))
-    return sock.getsockname()[1]
