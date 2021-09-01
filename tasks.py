@@ -80,6 +80,51 @@ async def port_check_task():
                 port.ip = ip
 
 
+@runners
+async def port_connect_task():
+    """
+    Assign and connect live SSH to unconnected ports
+    """
+    while True:
+        await asyncio.sleep(5)
+
+        with db_session:
+            # Get unassigned ports
+            port: Port = port_models.Port.select(lambda p: not p.ssh)
+            if not port:
+                continue
+
+            # Get free live SSH (not assigned to any port)
+            ssh: SSH = ssh_models.SSH.select(lambda s: s.live and not s.port)
+            if not ssh:
+                continue
+
+            # Assign SSH to port so other tasks won't try to assign another SSH
+            # to this port again
+            port.ssh = ssh
+
+        try:
+            await bitvise_controllers.connect_ssh(ssh.ip,
+                                                  ssh.username,
+                                                  ssh.password,
+                                                  port=port.port)
+            is_connected = True
+        except bitvise_controllers.BitviseError:
+            is_connected = False
+
+        with db_session:
+            port = Port[port.id]
+            if not port:
+                continue
+
+            # Mark port as connected if connection succeed. Otherwise remove
+            # the SSH assignment
+            if is_connected:
+                port.is_connected_to_ssh = True
+            else:
+                port.ssh = None
+
+
 def reset_ssh_and_port_status():
     """
     Reset attribute is_checking of Port and SSH to False on startup
