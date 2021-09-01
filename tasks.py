@@ -59,6 +59,7 @@ async def ssh_check_task():
             if ssh:
                 ssh.last_checked = datetime.now()
                 ssh.is_live = is_live
+            ssh.is_checking = False
 
 
 @runners
@@ -87,6 +88,7 @@ async def port_check_task():
                 if not port.ip and port.is_connected_to_ssh:
                     port.ssh = None
                     port.is_connected_to_ssh = False
+            port.is_checking = False
 
 
 @runners
