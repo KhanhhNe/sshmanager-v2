@@ -11,18 +11,20 @@ class ProxyProcess(db.Entity):
     Store SSH connecting processes for conveniently managing and killing them
     """
     pid = Required(int, unique=True)
+    port = Required(int, unique=True)
 
     def kill_process(self):
         os.kill(self.pid, signal.SIGTERM)
 
 
 @db_session
-def add_proxy_process(pid: int):
+def add_proxy_process(pid: int, port: int):
     """
     Add a proxy process to database
     :param pid:
+    :param port:
     """
-    ProxyProcess(pid=pid)
+    ProxyProcess(pid=pid, port=port)
     commit()
 
 

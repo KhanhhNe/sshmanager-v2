@@ -73,7 +73,7 @@ def connect_ssh_sync(host: str, username: str, password: str,
         f'-user={username}', f'-pw={password}',
         '-proxyFwding=y', '-noRegistry', f'-proxyListPort={port}'
     ], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    bitvise.add_proxy_process(process.pid)
+    bitvise.add_proxy_process(process.pid, port)
     process.stdin.write(b'a\na\na')
 
     while not process.returncode:
