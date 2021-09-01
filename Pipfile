@@ -10,6 +10,7 @@ fastapi = "*"
 uvicorn = "*"
 pydantic = "*"
 aiohttp-socks = "*"
+psutil = "*"
 
 [dev-packages]
 

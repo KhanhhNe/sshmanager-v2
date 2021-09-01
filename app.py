@@ -18,4 +18,9 @@ def startup_tasks():
     tasks.reset_ssh_and_port_status()
 
 
+@app.on_event('shutdown')
+def shutdown_tasks():
+    tasks.kill_child_processes()
+
+
 app.include_router(ssh_api.router, prefix='/api/ssh')

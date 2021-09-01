@@ -1,5 +1,6 @@
 import asyncio
 
+import psutil
 from pony.orm import db_session
 
 from controllers import bitvise_controllers
@@ -63,3 +64,14 @@ def reset_ssh_and_port_status():
             ssh.is_checking = False
         for port in ports.Port.select():
             port.is_checking = False
+
+
+def kill_child_processes():
+    """
+    Kill all child processes started by the application
+    """
+    process = psutil.Process()
+    children: List[psutil.Process] = process.children(recursive=True)
+    for child in children:
+        child.kill()
+    psutil.wait_procs(children)
