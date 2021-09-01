@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import re
 import subprocess
 from dataclasses import dataclass
 
@@ -51,7 +50,7 @@ def connect_ssh_sync(host: str, username: str, password: str,
     process.stdin.write(b'a\na\na')
     process.stdin.flush()
 
-    logging.info(f"{log_message} - SSH connection started.")
+    logger.info(f"{log_message} - SSH connection started.")
     while process.returncode is None:
         output = process.stdout.readline().decode(errors='ignore').strip()
         if 'Enabled SOCKS/HTTP proxy forwarding on ' in output:
