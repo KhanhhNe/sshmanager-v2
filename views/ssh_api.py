@@ -16,7 +16,7 @@ def get_all_ssh():
     """
     with db_session:
         ssh_list = SSH.select()[:].to_list()
-    return [SSHOut.from_orm(ssh) for ssh in ssh_list]
+        return [SSHOut.from_orm(ssh) for ssh in ssh_list]
 
 
 @router.post('/')

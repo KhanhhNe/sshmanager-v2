@@ -101,12 +101,12 @@ async def port_connect_task():
 
         with db_session:
             # Get unassigned ports
-            port: Port = Port.select(lambda p: not p.ssh)
+            port: Port = Port.select(lambda p: not p.ssh).first()
             if not port:
                 continue
 
             # Get free live SSH (not assigned to any port)
-            ssh: SSH = SSH.select(lambda s: s.live and not s.port)
+            ssh: SSH = SSH.select(lambda s: s.is_live and not s.port).first()
             if not ssh:
                 continue
 

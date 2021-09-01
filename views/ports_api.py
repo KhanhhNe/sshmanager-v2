@@ -16,7 +16,7 @@ def get_all_ports():
     """
     with db_session:
         ports = Port.select()[:].to_list()
-    return [PortOut.from_orm(port) for port in ports]
+        return [PortOut.from_orm(port) for port in ports]
 
 
 @router.post('/')
