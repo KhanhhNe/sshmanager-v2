@@ -15,8 +15,7 @@ def get_all_ssh():
     Get all SSH from database.
     """
     with db_session:
-        pass
-    ssh_list = ssh_models.SSH.select()[:].to_list()
+        ssh_list = ssh_models.SSH.select()[:].to_list()
     return [SSHOut.from_orm(ssh) for ssh in ssh_list]
 
 
