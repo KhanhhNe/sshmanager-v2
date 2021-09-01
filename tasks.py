@@ -10,7 +10,7 @@ from models import port_models, ssh_models
 
 
 def runners(func):
-    @wraps
+    @wraps(func)
     async def wrapped(*args, **kwargs):
         await asyncio.gather(*[func(*args, **kwargs) for _ in range(20)])
 
