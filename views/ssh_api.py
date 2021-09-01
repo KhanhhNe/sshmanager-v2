@@ -3,7 +3,7 @@ from typing import List
 from fastapi.routing import APIRouter
 from pony.orm import db_session
 
-from models import ssh_models
+from models.ssh_models import SSH
 from models.io_models import SSHIn, SSHOut
 
 router = APIRouter()
@@ -15,7 +15,7 @@ def get_all_ssh():
     Get all SSH from database.
     """
     with db_session:
-        ssh_list = ssh_models.SSH.select()[:].to_list()
+        ssh_list = SSH.select()[:].to_list()
     return [SSHOut.from_orm(ssh) for ssh in ssh_list]
 
 
@@ -27,7 +27,7 @@ def add_ssh(ssh_list: List[SSHIn]):
     """
     with db_session:
         for ssh in ssh_list:
-            if not ssh_models.SSH.get(**ssh.dict()):
+            if not SSH.get(**ssh.dict()):
                 SSH(**ssh.dict())  # Add new SSH
     return {}
 
@@ -39,7 +39,7 @@ def delete_ssh(ssh_list: List[SSHIn]):
     """
     with db_session:
         for ssh in ssh_list:
-            ssh_obj = ssh_models.SSH.get(**ssh.dict())
+            ssh_obj = SSH.get(**ssh.dict())
             if ssh_obj:
                 ssh_obj.delete()
     return {}

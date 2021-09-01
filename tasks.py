@@ -6,7 +6,8 @@ import psutil
 from pony.orm import db_session
 
 from controllers import bitvise_controllers
-from models import port_models, ssh_models
+from models.port_models import Port
+from models.ssh_models import SSH
 
 
 def runners(func):
@@ -45,7 +46,7 @@ async def ssh_check_task():
         # Reduce system load
         await asyncio.sleep(5)
 
-        next_ssh = get_check_next(ssh_models.SSH)
+        next_ssh = get_check_next(SSH)
         if not next_ssh:
             continue
 
@@ -53,7 +54,7 @@ async def ssh_check_task():
                                                        next_ssh.username,
                                                        next_ssh.password)
         with db_session:
-            ssh: SSH = ssh_models.SSH[next_ssh.id]
+            ssh: SSH = SSH[next_ssh.id]
             if ssh:
                 ssh.last_checked = datetime.now()
                 ssh.is_live = is_live
@@ -68,13 +69,13 @@ async def port_check_task():
         # Reduce system load
         await asyncio.sleep(5)
 
-        next_port = get_check_next(port_models.Port)
+        next_port = get_check_next(Port)
         if not next_port:
             continue
 
         ip = await bitvise_controllers.get_proxy_ip(next_port.proxy_address)
         with db_session:
-            port: Port = port_models.Port[next_port.id]
+            port: Port = Port[next_port.id]
             if port:
                 port.last_checked = datetime.now()
                 port.ip = ip
@@ -97,12 +98,12 @@ async def port_connect_task():
 
         with db_session:
             # Get unassigned ports
-            port: Port = port_models.Port.select(lambda p: not p.ssh)
+            port: Port = Port.select(lambda p: not p.ssh)
             if not port:
                 continue
 
             # Get free live SSH (not assigned to any port)
-            ssh: SSH = ssh_models.SSH.select(lambda s: s.live and not s.port)
+            ssh: SSH = SSH.select(lambda s: s.live and not s.port)
             if not ssh:
                 continue
 
@@ -137,9 +138,9 @@ def reset_ssh_and_port_status():
     Reset attribute is_checking of Port and SSH to False on startup
     """
     with db_session:
-        for ssh in ssh_models.SSH.select():
+        for ssh in SSH.select():
             ssh.is_checking = False
-        for port in port_models.Port.select():
+        for port in Port.select():
             port.is_checking = False
 
 
