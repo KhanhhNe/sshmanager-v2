@@ -10,7 +10,9 @@ from views import ports_api, ssh_api
 
 logging.basicConfig(level=logging.INFO,
                     format="[%(asctime)s] %(name)s - %(message)s")
-app = FastAPI()
+app = FastAPI(title="SSHManager by KhanhhNe",
+              description="Quản lý SSH chuyên nghiệp và nhanh chóng",
+              version="2.0.0")
 db.bind('sqlite', 'db.sqlite', create_db=True)
 db.generate_mapping(create_tables=True)
 
