@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from fastapi import FastAPI
 
@@ -6,6 +7,9 @@ import tasks
 from models.database import db
 from views import ports_api, ssh_api
 
+
+logging.basicConfig(level=logging.INFO,
+                    format="[%(asctime)s] %(name)s - %(message)s")
 app = FastAPI()
 db.bind('sqlite', 'db.sqlite', create_db=True)
 db.generate_mapping(create_tables=True)
