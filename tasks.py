@@ -88,7 +88,7 @@ async def port_check_task():
                 if not port.ip and port.is_connected_to_ssh:
                     port.ssh = None
                     port.is_connected_to_ssh = False
-            port.is_checking = False
+                port.is_checking = False
 
 
 @runners
@@ -145,6 +145,9 @@ def reset_ssh_and_port_status():
             ssh.is_checking = False
         for port in Port.select():
             port.is_checking = False
+            port.ip = ''
+            port.ssh = None
+            port.is_connected_to_ssh = False
 
 
 def kill_child_processes():
