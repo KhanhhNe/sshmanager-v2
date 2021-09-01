@@ -50,7 +50,8 @@ def connect_ssh_sync(host: str, username: str, password: str,
     process = subprocess.Popen([
         'executables/stnlc.exe', host,
         f'-user={username}', f'-pw={password}',
-        '-proxyFwding=y', '-noRegistry', f'-proxyListPort={port}'
+        '-proxyFwding=y', '-proxyListIntf=0.0.0.0', f'-proxyListPort={port}',
+        '-noRegistry'
     ], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     process.stdin.write(b'a\na\na')
     process.stdin.flush()
@@ -107,10 +108,11 @@ async def verify_ssh(host: str, username: str, password: str) -> bool:
         return False
 
 
-async def get_proxy_ip(proxy_address) -> str:
+async def get_proxy_ip(proxy_address, tries=5) -> str:
     """
     Retrieves proxy's real IP address. Returns empty string if failed
     :param proxy_address: Proxy connection address in <protocol>://<ip>:<port>
+    :param tries: Total request tries
     :return: Proxy real IP address on success connection, empty string otherwise
     """
     try:
@@ -121,4 +123,8 @@ async def get_proxy_ip(proxy_address) -> str:
     except (aiohttp.ClientError, python_socks.ProxyConnectionError,
             python_socks.ProxyError, python_socks.ProxyTimeoutError,
             ConnectionError):
-        return ''
+        if not tries:
+            return ''
+
+        await asyncio.sleep(1)
+        return await get_proxy_ip(proxy_address, tries=tries - 1)
