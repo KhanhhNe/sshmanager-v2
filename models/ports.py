@@ -13,7 +13,7 @@ class Port(db.Entity):
     """
     port = Required(int)
     ssh = Optional(SSH)
-    ip = Required(str, default='')  # External IP after proxying through port
+    ip = Optional(str)  # External IP after proxying through port
     is_checking = Required(bool, default=False)
     last_checked = Required(datetime, default=datetime(1000, 1, 1))
 
