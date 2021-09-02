@@ -5,6 +5,7 @@ from typing import List
 from fastapi.routing import APIRouter
 from fastapi.websockets import WebSocket
 from pony.orm import db_session
+from websockets import ConnectionClosedOK
 
 from models.database import db
 from models.io_models import PortIn, PortOut
@@ -30,9 +31,12 @@ async def update_information(websocket: WebSocket):
 
     while True:
         if total_slept >= 60 or not db.last_sql.startswith('SELECT'):
-            await websocket.send_json([
-                json.loads(p.json()) for p in get_all_ports()
-            ])
+            try:
+                await websocket.send_json([
+                    json.loads(p.json()) for p in get_all_ports()
+                ])
+            except ConnectionClosedOK:
+                pass
             total_slept = 0
         await asyncio.sleep(0.5)
         total_slept += 0.5
