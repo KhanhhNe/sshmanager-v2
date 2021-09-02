@@ -1,10 +1,14 @@
+import asyncio
+import json
 from typing import List
 
 from fastapi.routing import APIRouter
+from fastapi.websockets import WebSocket
 from pony.orm import db_session
 
-from models.port_models import Port
+from models.database import db
 from models.io_models import PortIn, PortOut
+from models.port_models import Port
 
 router = APIRouter()
 
@@ -17,6 +21,21 @@ def get_all_ports():
     with db_session:
         ports = Port.select()[:].to_list()
         return [PortOut.from_orm(port) for port in ports]
+
+
+@router.websocket('/')
+async def update_information(websocket: WebSocket):
+    await websocket.accept()
+    total_slept = float('inf')
+
+    while True:
+        if total_slept >= 60 or not db.last_sql.startswith('SELECT'):
+            await websocket.send_json([
+                json.loads(p.json()) for p in get_all_ports()
+            ])
+            total_slept = 0
+        await asyncio.sleep(0.5)
+        total_slept += 0.5
 
 
 @router.post('/')

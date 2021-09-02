@@ -13,6 +13,7 @@ aiohttp-socks = "*"
 psutil = "*"
 aiofiles = "*"
 jinja2 = "*"
+websockets = "*"
 
 [dev-packages]
 
