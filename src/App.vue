@@ -8,9 +8,11 @@
     <SSHTabs class="live-die">
       <SSHList :sshList="liveList"
                :listName="`Live (${liveList.length})`"
+               @delete-ssh="sshRequest($event, 'delete')"
                :readOnly="true"></SSHList>
       <SSHList :sshList="dieList"
                :listName="`Die (${dieList.length})`"
+               @delete-ssh="sshRequest($event, 'delete')"
                :readOnly="true"></SSHList>
     </SSHTabs>
     <Ports

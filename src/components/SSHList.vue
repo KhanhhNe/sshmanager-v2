@@ -6,6 +6,8 @@
       <button v-if="!readOnly"
               @click="fileInput.click()"><i class="fi fi-upload"></i></button>
       <button @click="downloadSSHList"><i class="fi fi-download"></i></button>
+      <button @click="$emit('delete-ssh', sshList)"
+              class="secondary"><i class="fi fi-trash"></i></button>
     </ArticleTitle>
     <div class="list-content">
       <table>
