@@ -30,8 +30,7 @@ def get_ports_json():
 @router.post('/')
 def add_ports(port_list: List[PortIn]):
     """
-    Add port to database
-    :param port_list: Ports to add
+    Add ports to database
     """
     with db_session:
         for port in port_list:
@@ -41,13 +40,27 @@ def add_ports(port_list: List[PortIn]):
 
 
 @router.delete('/')
-def delete_port(port_list: List[PortIn]):
+def delete_ports(port_list: List[PortIn]):
     """
-    Remove a list of port from the database.
+    Remove a list of ports from the database.
     """
     with db_session:
         for port in port_list:
             port_obj = Port.get(**port.dict())
             if port_obj:
                 port_obj.delete()
+    return {}
+
+
+@router.put('/')
+def reset_ports_ssh(port_list: List[PortIn]):
+    """
+    Reset assigned SSH of ports
+    """
+    with db_session:
+        for port in port_list:
+            port_obj = Port.get(**port.dict())
+            if port_obj:
+                port_obj.ssh = None
+                port_obj.is_connected_to_ssh = False
     return {}
