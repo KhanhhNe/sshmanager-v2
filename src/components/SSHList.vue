@@ -1,3 +1,4 @@
+<!--suppress JSUnresolvedVariable -->
 <template>
   <article v-show="!hidden">
     <ArticleTitle>
@@ -12,18 +13,25 @@
       <table v-show="displayMode === 'table'">
         <thead>
         <tr>
-          <td>Trạng thái</td>
+          <td>T.Trạng</td>
           <td>IP</td>
           <td>Username</td>
           <td>Password</td>
+          <td>Check</td>
         </tr>
         </thead>
         <tbody>
-        <tr v-for="ssh in sshList" :key="getSshText(ssh)" :class="[ssh.status]" class="ssh">
-          <td>{{ ssh.status }}</td>
+        <tr
+            v-for="ssh in sshList"
+            :key="getSshText(ssh)"
+            :class="[ssh.is_checked ? (ssh.is_live ? 'live' : 'die') : '']"
+            class="ssh"
+        >
+          <td>{{ ssh.is_checked ? (ssh.is_live ? 'Live' : 'Die') : '' }}</td>
           <td>{{ ssh.ip }}</td>
           <td>{{ ssh.username }}</td>
           <td>{{ ssh.password }}</td>
+          <td>{{ getTimeDisplay(ssh.last_checked) }}</td>
         </tr>
         </tbody>
       </table>
@@ -40,6 +48,7 @@
 <!--suppress JSUnusedGlobalSymbols -->
 <script>
 import ArticleTitle from "@/components/ArticleTitle";
+import {getSshText, getTimeDisplay, isInList, isSameSSH} from "@/utils";
 
 export default {
   name: 'SSHList',
@@ -77,33 +86,34 @@ export default {
         const sshList = []
         for (const line of text.split('\n')) {
           try {
-            const [status, ip, username, password] = line.split('|')
-            let already = sshList.filter(ssh => {
-              return ssh.ip === ip && ssh.username === username && ssh.password === password
-            })
+            const [ip, username, password] = line
+                .match(new RegExp(/(\d+\.){3}\d+(\|[^|]*){2}/g))[0]
+                .split('|')
+            const ssh = {
+              is_live: false,
+              ip,
+              username,
+              password
+            }
+            let already = sshList.filter(s => this.isSameSSH(s, ssh))
 
             // Only add more if it's not added
             if (!already.length) {
-              sshList.push({status, ip, username, password})
+              sshList.push(ssh)
             }
           } catch (e) {
             // Ignore parsing errors
           }
         }
-        // Emit parsed SSH list to parent element
-        this.$emit('update-ssh-list', sshList)
+        this.updateSSH(sshList)
       }
     }
   },
   methods: {
-    /**
-     * Get SSH display text, in format of status|ip|username|password
-     * @param ssh SSH object
-     * @returns {string} SSH display text
-     */
-    getSshText(ssh) {
-      return Object.values(ssh).join('|')
-    },
+    getTimeDisplay,
+    getSshText,
+    isSameSSH,
+    isInList,
 
     /**
      * Toggle component's display mode between table and text mode
@@ -114,6 +124,17 @@ export default {
       } else {
         this.displayMode = 'table'
       }
+    },
+
+    /**
+     * Update SSH list to backend
+     */
+    async updateSSH(sshList) {
+      const added = sshList.filter(ssh => !this.isInList(ssh, this.sshList))
+      const removed = this.sshList.filter(ssh => !this.isInList(ssh, sshList))
+
+      this.$emit('delete-ssh', removed)
+      this.$emit('add-ssh', added)
     }
   }
 }
@@ -134,10 +155,6 @@ article {
   }
 
   .ssh {
-    td:first-child {
-      text-transform: capitalize;
-    }
-
     &.live td:first-child {
       color: green
     }

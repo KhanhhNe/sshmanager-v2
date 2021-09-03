@@ -35,7 +35,7 @@ export default {
     ArticleTitle
   },
   props: {
-    settings: Object
+    settings: Array
   },
   methods: {
     updateSettings() {

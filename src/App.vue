@@ -1,21 +1,32 @@
 <template>
   <div id="app">
-    <SSHList :sshList="sshList" :listName="`SSH (${sshList.length})`" @update-ssh-list="sshList = $event"
+    <SSHList :sshList="sshList"
+             :listName="`SSH (${sshList.length})`"
+             @add-ssh="sshRequest($event, 'post')"
+             @delete-ssh="sshRequest($event, 'delete')"
              class="all-ssh"></SSHList>
     <SSHTabs class="live-die">
-      <SSHList :sshList="liveList" :listName="`Live (${liveList.length})`" :readOnly="true"></SSHList>
-      <SSHList :sshList="dieList" :listName="`Die (${dieList.length})`" :readOnly="true"></SSHList>
+      <SSHList :sshList="liveList"
+               :listName="`Live (${liveList.length})`"
+               :readOnly="true"></SSHList>
+      <SSHList :sshList="dieList"
+               :listName="`Die (${dieList.length})`"
+               :readOnly="true"></SSHList>
     </SSHTabs>
-    <Ports :ports="ports" @add-ports="addPorts($event)" class="ports"></Ports>
-    <Settings :settings="settings" @update-settings="this.settings = $event" class="settings"></Settings>
+    <Ports
+        :ports="ports"
+        @add-ports="portsRequest($event, 'post')"
+        @reset-port="portsRequest($event, 'put')"
+        @remove-port="portsRequest($event, 'delete')"
+        class="ports"></Ports>
   </div>
 </template>
 
+<!--suppress JSUnresolvedVariable -->
 <script>
 import SSHList from './components/SSHList.vue'
 import SSHTabs from './components/SSHTabs.vue'
 import Ports from './components/Ports.vue'
-import Settings from "@/components/Settings";
 import '@picocss/pico'
 
 export default {
@@ -23,71 +34,75 @@ export default {
   components: {
     SSHList,
     SSHTabs,
-    Ports,
-    Settings
+    Ports
   },
   data() {
     return {
-      // TODO add backend data update to replace this mockup
-      sshList: [
-        {
-          status: 'live', ip: '255.255.255.1',
-          username: 'username',
-          password: 'password'
-        },
-        {
-          status: 'live', ip: '255.255.255.2',
-          username: 'username',
-          password: 'password'
-        },
-        {
-          status: 'live', ip: '255.255.255.3',
-          username: 'username',
-          password: 'password'
-        },
-        {
-          status: 'die', ip: '255.255.255.4',
-          username: 'username',
-          password: 'password'
-        }
-      ],
-      ports: [
-        {
-          port: 80,
-          ip: '255.255.255.1'
-        },
-        {
-          port: 8013,
-          ip: '255.255.255.2'
-        }
-      ],
-      settings: [
-        {
-          name: 'remove_died',
-          readable_name: "Xoá SSH die",
-          value: false
-        }
-      ]
+      sshSocket: new WebSocket(`ws://${location.host}/api/ssh/`),
+      portsSocket: new WebSocket(`ws://${location.host}/api/ports/`),
+      sshList: [],
+      ports: []
     }
   },
   computed: {
     liveList() {
-      return this.sshList.filter(ssh => ssh.status === 'live')
+      return this.sshList.filter(ssh => ssh.is_checked && ssh.is_live)
     },
     dieList() {
-      return this.sshList.filter(ssh => ssh.status === 'die')
+      return this.sshList.filter(ssh => ssh.is_checked && !ssh.is_live)
     }
   },
   methods: {
     /**
-     * Add new port to ports list
-     * @param ports
+     * Send request to /api/ssh/ with SSH list and specified method, then
+     * request an update from server via WebSocket
+     * @param sshList
+     * @param method
+     * @returns {Promise<void>}
      */
-    addPorts(ports) {
-      this.ports = this.ports.concat(ports.map(port => {
-        return {port, ip: ''}
-      }))
+    async sshRequest(sshList, method) {
+      await fetch(`${new URL(location.href).origin}/api/ssh/`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(sshList)
+      })
+      this.sshSocket.send('update')
+    },
+
+    /**
+     * Send request to /api/ports/ with ports and specified method, then request
+     * an update from server via WebSocket
+     * @param ports
+     * @param method
+     * @returns {Promise<void>}
+     */
+    async portsRequest(ports, method) {
+      await fetch(`${new URL(location.href).origin}/api/ports/`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(ports)
+      })
+      this.portsSocket.send('update')
     }
+  },
+  mounted() {
+    const self = this
+    this.sshSocket.addEventListener('message', function (event) {
+      self.sshList = JSON.parse(event.data)
+      for (const ssh of self.sshList) {
+        // Add is_checked attribute that is true if the SSH is checked recently
+        // (less than 1 year before)
+        const oneYear = 3600 * 1000 * 24 * 365 // 1 year in milliseconds
+        ssh.is_checked = (new Date() - new Date(ssh.last_checked)) / oneYear < 1
+      }
+    })
+    this.portsSocket.addEventListener('message', function (event) {
+      self.ports = JSON.parse(event.data)
+    })
   }
 }
 </script>
@@ -105,9 +120,9 @@ export default {
   display: grid;
   grid-template-areas:
       "live-die all"
-      "ports settings";
+      "ports all";
   grid-auto-columns: calc(50% - #{$used_space_vertical}) calc(50% - #{$used_space_vertical});
-  grid-auto-rows: calc(50% - #{$used_space_vertical}) calc(50% - #{$used_space_horizontal});
+  grid-auto-rows: calc(55% - #{$used_space_vertical}) calc(45% - #{$used_space_horizontal});
   gap: $gap;
   overflow: hidden;
 

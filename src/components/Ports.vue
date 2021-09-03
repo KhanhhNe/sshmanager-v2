@@ -1,29 +1,35 @@
+<!--suppress JSUnresolvedVariable -->
 <template>
   <article>
     <ArticleTitle>
       <template v-slot:title>Ports ({{ ports.length }})</template>
-      <button @click="showPortsInput = !showPortsInput">Thêm Port</button>
-    </ArticleTitle>
-    <div class="ports-input" v-show="showPortsInput">
       <input type="text" v-model="portsText" placeholder="8080,8000-8005,...">
-      <a role="button" @click="addPorts">Thêm</a>
-    </div>
+      <button @click="addPorts">Thêm Port</button>
+    </ArticleTitle>
     <div class="ports">
       <table>
         <thead>
         <tr>
           <th>Port</th>
           <th>IP</th>
-          <th><a role="button" @click="changeIP('all')">Đổi</a></th>
-          <th><a role="button" @click="removePort('all')" class="secondary">Xoá</a></th>
+          <th>Check</th>
+          <th><a role="button"
+                 @click="$emit('reset-port', ports)">Đổi</a></th>
+          <th><a role="button"
+                 @click="$emit('remove-port', ports)"
+                 class="secondary">Xoá</a></th>
         </tr>
         </thead>
         <tbody>
         <tr v-for="portInfo in ports" :key="portInfo.port">
           <td>{{ portInfo.port }}</td>
           <td>{{ portInfo.ip }}</td>
-          <td><a role="button" @click="changeIP(portInfo)">Đổi</a></td>
-          <td><a role="button" @click="removePort(portInfo)" class="secondary">Xoá</a></td>
+          <td>{{ getTimeDisplay(portInfo.last_checked) }}</td>
+          <td><a role="button"
+                 @click="$emit('reset-port', [portInfo])">Đổi</a></td>
+          <td><a role="button"
+                 @click="$emit('remove-port', [portInfo])"
+                 class="secondary">Xoá</a></td>
         </tr>
         </tbody>
       </table>
@@ -32,7 +38,8 @@
 </template>
 
 <script>
-import ArticleTitle from "@/components/ArticleTitle";
+import ArticleTitle from "@/components/ArticleTitle"
+import {getTimeDisplay} from "@/utils"
 
 export default {
   name: "Ports",
@@ -49,29 +56,7 @@ export default {
     }
   },
   methods: {
-    /**
-     * Change a port's proxy (or IP)
-     * @param portInfo
-     */
-    changeIP(portInfo) {
-      if (portInfo === 'all') {
-        this.ports.map(pInfo => this.changeIP(pInfo))
-        return
-      }
-      alert('change ' + portInfo.port) // TODO add backend code
-    },
-
-    /**
-     * Remove a port and disconnect it from the proxy
-     * @param portInfo
-     */
-    removePort(portInfo) {
-      if (portInfo === 'all') {
-        this.ports.map(pInfo => this.removePort(pInfo))
-        return
-      }
-      alert('remove ' + portInfo.port) // TODO add backend code
-    },
+    getTimeDisplay,
 
     /**
      * Add ports to list by parsing from user's input
@@ -81,14 +66,17 @@ export default {
         try {
           let ports
           if (portText.includes('-')) {
-            const [start, stop] = portText.split('-').map(p => parseInt(p))
-            ports = new Array(stop - start + 1).map((val, ind) => start + ind)
+            const [start, stop] = portText
+                .split('-')
+                .map(p => parseInt(p))
+            ports = [...new Array(stop - start + 1).keys()]
+                .map(val => val + start)
           } else {
             ports = [parseInt(portText)]
           }
 
           // Filter out already added ports
-          ports = ports.filter(port => this.ports.filter(p => p.port === port).length === 0)
+          ports = ports.filter(port => !this.ports.includes(port))
           this.$emit('add-ports', ports)
         } catch (e) {
           // Do nothing
@@ -120,6 +108,13 @@ article {
     a[role=button] {
       padding: 0.25rem 0.5rem;
     }
+  }
+
+  input {
+    padding: 0 0.25rem !important;
+    margin: 0 0.25rem 0 auto !important;
+    height: auto !important;
+    width: auto !important;
   }
 }
 </style>
