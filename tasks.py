@@ -14,7 +14,7 @@ from models.ssh_models import SSH
 def runners(func):
     @wraps(func)
     async def wrapped(*args, **kwargs):
-        await asyncio.gather(*[func(*args, **kwargs) for _ in range(20)])
+        await asyncio.gather(*[func(*args, **kwargs) for _ in range(10)])
 
     return cast(func, wrapped)
 
