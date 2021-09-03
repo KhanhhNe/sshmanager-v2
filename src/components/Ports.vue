@@ -113,7 +113,7 @@ article {
   input {
     padding: 0 0.25rem !important;
     height: auto !important;
-    width: auto !important;
+    width: 35% !important;
   }
 }
 </style>

@@ -87,7 +87,9 @@ export default {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(ports)
+        body: JSON.stringify(ports.map(portNumber => {
+          return {port: portNumber}
+        }))
       })
       this.portsSocket.send('update')
     }
