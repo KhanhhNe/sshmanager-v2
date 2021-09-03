@@ -1,4 +1,7 @@
+import asyncio
 import socket
+
+from models.database import db
 
 
 def get_ipv4_address():
@@ -18,3 +21,13 @@ def get_free_port():
     sock = socket.socket()
     sock.bind(('', 0))
     return sock.getsockname()[1]
+
+
+async def wait_for_db_update():
+    """
+    Wait until there is a database query that is not SELECT
+    """
+    while True:
+        if not db.last_sql.startswith('SELECT'):
+            return
+        await asyncio.sleep(1)

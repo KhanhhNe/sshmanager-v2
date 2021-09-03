@@ -1,15 +1,12 @@
-import asyncio
 import json
 from typing import List
 
 from fastapi.routing import APIRouter
-from fastapi.websockets import WebSocket
 from pony.orm import db_session
-from websockets import ConnectionClosedOK
 
-from models.database import db
 from models.io_models import SSHIn, SSHOut
 from models.ssh_models import SSH
+from views import update_websocket
 
 router = APIRouter()
 
@@ -25,21 +22,9 @@ def get_all_ssh():
 
 
 @router.websocket('/')
-async def update_information(websocket: WebSocket):
-    await websocket.accept()
-    total_slept = float('inf')
-
-    while True:
-        if total_slept >= 60 or not db.last_sql.startswith('SELECT'):
-            try:
-                await websocket.send_json([
-                    json.loads(s.json()) for s in get_all_ssh()
-                ])
-                total_slept = 0
-            except ConnectionClosedOK:
-                pass
-        await asyncio.sleep(0.5)
-        total_slept += 0.5
+@update_websocket
+def get_ssh_json():
+    return [json.loads(s.json()) for s in get_all_ssh()]
 
 
 @router.post('/')
