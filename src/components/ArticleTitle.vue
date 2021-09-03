@@ -25,11 +25,16 @@ export default {
     margin-bottom: 0;
   }
 
-  button {
+  & > *:nth-child(n+2) {
     width: auto;
     height: 100%;
     padding: 0.5rem 0.75rem;
     box-sizing: border-box;
+    margin: 0 0.25rem 0 0;
+  }
+
+  & > *:nth-child(2) {
+    margin-left: auto;
   }
 }
 </style>

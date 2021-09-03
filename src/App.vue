@@ -28,6 +28,7 @@ import SSHList from './components/SSHList.vue'
 import SSHTabs from './components/SSHTabs.vue'
 import Ports from './components/Ports.vue'
 import '@picocss/pico'
+import 'fontisto'
 
 export default {
   name: 'App',

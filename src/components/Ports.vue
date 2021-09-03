@@ -112,7 +112,6 @@ article {
 
   input {
     padding: 0 0.25rem !important;
-    margin: 0 0.25rem 0 auto !important;
     height: auto !important;
     width: auto !important;
   }

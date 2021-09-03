@@ -10,6 +10,8 @@
   "dependencies": {
     "@picocss/pico": "^1.3.3",
     "core-js": "^3.6.5",
+    "file-saver": "^2.0.5",
+    "fontisto": "^3.0.4",
     "sass": "^1.38.1",
     "sass-loader": "^10.1.1",
     "vue": "^2.6.11"

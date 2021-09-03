@@ -3,14 +3,12 @@
   <article v-show="!hidden">
     <ArticleTitle>
       <template v-slot:title>{{ listName }}</template>
-      <button @click="toggleDisplayMode">
-        <span>Chế độ </span>
-        <span v-show="displayMode === 'table'">Bảng</span>
-        <span v-show="displayMode === 'text'">Chữ</span>
-      </button>
+      <button v-if="!readOnly"
+              @click="fileInput.click()"><i class="fi fi-upload"></i></button>
+      <button @click="downloadSSHList"><i class="fi fi-download"></i></button>
     </ArticleTitle>
     <div class="list-content">
-      <table v-show="displayMode === 'table'">
+      <table>
         <thead>
         <tr>
           <td>T.Trạng</td>
@@ -35,12 +33,12 @@
         </tr>
         </tbody>
       </table>
-      <!--suppress HtmlUnknownAttribute -->
-      <textarea :value="sshText"
-                @change="sshText = $event.target.value"
-                :readonly="readOnly"
-                v-show="displayMode === 'text'"
-      ></textarea>
+      <input v-if="!readOnly"
+             :id="`${listName}-upload`"
+             @change="getSSHListFromFile"
+             type="file"
+             accept="text/plain, text/csv"
+             style="display: none">
     </div>
   </article>
 </template>
@@ -48,6 +46,7 @@
 <!--suppress JSUnusedGlobalSymbols -->
 <script>
 import ArticleTitle from "@/components/ArticleTitle";
+import {saveAs} from "file-saver";
 import {getSshText, getTimeDisplay, isInList, isSameSSH} from "@/utils";
 
 export default {
@@ -57,7 +56,6 @@ export default {
   },
   data() {
     return {
-      displayMode: 'table',
       hidden: false
     }
   },
@@ -67,46 +65,8 @@ export default {
     readOnly: Boolean
   },
   computed: {
-    sshText: {
-      get() {
-        return this.sshList.map(this.getSshText).join('\n')
-      },
-
-      /**
-       * Parse SSH text into valid SSH list, ignoring malformed data.
-       * @param text SSH text
-       */
-      set(text) {
-        // Don't do parsing with read only SSHList (live/die list)
-        if (this.readOnly) {
-          return
-        }
-
-        // Store all parsed SSH in this
-        const sshList = []
-        for (const line of text.split('\n')) {
-          try {
-            const [ip, username, password] = line
-                .match(new RegExp(/(\d+\.){3}\d+(\|[^|]*){2}/g))[0]
-                .split('|')
-            const ssh = {
-              is_live: false,
-              ip,
-              username,
-              password
-            }
-            let already = sshList.filter(s => this.isSameSSH(s, ssh))
-
-            // Only add more if it's not added
-            if (!already.length) {
-              sshList.push(ssh)
-            }
-          } catch (e) {
-            // Ignore parsing errors
-          }
-        }
-        this.updateSSH(sshList)
-      }
+    sshText() {
+      return this.sshList.map(this.getSshText).join('\n')
     }
   },
   methods: {
@@ -116,14 +76,47 @@ export default {
     isInList,
 
     /**
-     * Toggle component's display mode between table and text mode
+     * Get SSH list from input#file-upload
      */
-    toggleDisplayMode() {
-      if (this.displayMode === 'table') {
-        this.displayMode = 'text'
-      } else {
-        this.displayMode = 'table'
-      }
+    getSSHListFromFile() {
+      const file = this.fileInput.files[0]
+      const reader = new FileReader()
+      const self = this
+
+      reader.addEventListener('load', function updateSSHList(event) {
+        // Store all parsed SSH in this
+        const sshList = []
+        for (const line of event.target.result.split('\n')) {
+          try {
+            const [ip, username, password] = line
+                .match(new RegExp(/(\d+\.){3}\d+(\|[^|]*){2}/g))[0]
+                .split('|')
+            const ssh = {
+              is_live: false,
+              ip, username, password
+            }
+            // Only add more if it's not added
+            if (!self.isInList(ssh, sshList)) {
+              sshList.push(ssh)
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
+        }
+        self.updateSSH(sshList)
+      })
+
+      reader.readAsText(file)
+    },
+
+    /**
+     * Download SSH list to a text file
+     */
+    downloadSSHList() {
+      const data = new Blob([this.sshText], {
+        type: 'text/plain;charset=utf-8'
+      })
+      saveAs(data, `${this.listName}.txt`)
     },
 
     /**
@@ -136,6 +129,9 @@ export default {
       this.$emit('delete-ssh', removed)
       this.$emit('add-ssh', added)
     }
+  },
+  mounted() {
+    this.fileInput = document.getElementById(`${this.listName}-upload`)
   }
 }
 </script>
