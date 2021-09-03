@@ -56,7 +56,7 @@ def connect_ssh_sync(host: str, username: str, password: str,
     process.stdin.write(b'a\na\na')
     process.stdin.flush()
 
-    while process.returncode is None:
+    while process.poll() is None:
         output = process.stdout.readline().decode(errors='ignore').strip()
         if 'Enabled SOCKS/HTTP proxy forwarding on ' in output:
             proxy_info = ProxyInfo(port=port, pid=process.pid)
@@ -70,9 +70,16 @@ def connect_ssh_sync(host: str, username: str, password: str,
                 logger.info(
                     f"{log_message} ({run_time()}s) - Cannot connect to proxy.")
                 raise ProxyConnectionError
+        elif output.startswith('ERROR'):
+            # Print errors but ignore the detail message(s)
+            error_list = [e for e in output.split(':')[1:] if len(e) < 75]
+            logger.info(
+                f"{log_message} ({run_time()}s) - {'. '.join(error_list)}")
+            raise ProxyConnectionError
 
     process.kill()
-    logger.info(f"{log_message} - Bitvise quit with code {process.returncode}.")
+    logger.info(
+        f"{log_message} ({run_time()}s) - Exit code {process.returncode}.")
     raise ProxyConnectionError
 
 
