@@ -55,11 +55,13 @@ async def ssh_check_task():
                                                        next_ssh.username,
                                                        next_ssh.password)
         with db_session:
-            ssh: SSH = SSH[next_ssh.id]
-            if ssh:
+            try:
+                ssh: SSH = SSH[next_ssh.id]
                 ssh.last_checked = datetime.now()
                 ssh.is_live = is_live
-            ssh.is_checking = False
+                ssh.is_checking = False
+            except pony.orm.ObjectNotFound:
+                pass
 
 
 @runners
@@ -77,8 +79,8 @@ async def port_check_task():
 
         ip = await bitvise_controllers.get_proxy_ip(next_port.proxy_address)
         with db_session:
-            port: Port = Port[next_port.id]
-            if port:
+            try:
+                port: Port = Port[next_port.id]
                 port.last_checked = datetime.now()
                 port.ip = ip
 
@@ -89,6 +91,8 @@ async def port_check_task():
                     port.ssh = None
                     port.is_connected_to_ssh = False
                 port.is_checking = False
+            except pony.orm.ObjectNotFound:
+                pass
 
 
 @runners
@@ -100,15 +104,15 @@ async def port_connect_task():
         await asyncio.sleep(5)
 
         with db_session:
-            # Get unassigned ports
-            port: Port = Port.select(lambda p: not p.ssh).first()
-            if not port:
-                continue
+            try:
+                # Get unassigned ports
+                port: Port = Port.select(lambda p: not p.ssh).first()
 
-            # Get free live SSH (not assigned to any port)
-            ssh: SSH = SSH.select(lambda s: s.is_live and not s.port).first()
-            if not ssh:
-                continue
+                # Get free live SSH (not assigned to any port)
+                ssh: SSH = SSH.select(
+                    lambda s: s.is_live and not s.port).first()
+            except pony.orm.ObjectNotFound:
+                pass
 
             # Assign SSH to port so other tasks won't try to assign another SSH
             # to this port again
@@ -124,16 +128,17 @@ async def port_connect_task():
             is_connected = False
 
         with db_session:
-            port = Port[port.id]
-            if not port:
-                continue
+            try:
+                port = Port[port.id]
 
-            # Mark port as connected if connection succeed. Otherwise remove
-            # the SSH assignment
-            if is_connected:
-                port.is_connected_to_ssh = True
-            else:
-                port.ssh = None
+                # Mark port as connected if connection succeed. Otherwise remove
+                # the SSH assignment
+                if is_connected:
+                    port.is_connected_to_ssh = True
+                else:
+                    port.ssh = None
+            except pony.orm.ObjectNotFound:
+                pass
 
 
 def reset_ssh_and_port_status():
