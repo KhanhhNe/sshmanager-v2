@@ -32,9 +32,9 @@ pip install pipenv
 pipenv install
 ```
 3. Run the build script
+
+Remember to remove app_dist/ folder prior to running compile.py to avoid permission bugs
 ```bash
-# Remove old build dir if it exists
-rmdir -recursive -force app_dist
 python compile.py
 ```
 A new file named `sshmanager-2.0.0.zip` will be generated and is ready to use!
