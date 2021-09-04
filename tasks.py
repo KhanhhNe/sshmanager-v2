@@ -6,7 +6,6 @@ from typing import List, Type, Union, cast
 import psutil
 from pony.orm import ObjectNotFound, db_session
 
-from controllers import bitvise_controllers
 from models.port_models import Port
 from models.ssh_models import SSH
 
@@ -14,7 +13,7 @@ from models.ssh_models import SSH
 def runners(func):
     @wraps(func)
     async def wrapped(*args, **kwargs):
-        await asyncio.gather(*[func(*args, **kwargs) for _ in range(10)])
+        await asyncio.gather(*[func(*args, **kwargs) for _ in range(20)])
 
     return cast(func, wrapped)
 
@@ -125,7 +124,7 @@ async def port_connect_task():
                                                   ssh.password,
                                                   port=port.port)
             is_connected = True
-        except bitvise_controllers.BitviseError:
+        except bitvise_controllers.PuttyError:
             is_connected = False
 
         with db_session:
