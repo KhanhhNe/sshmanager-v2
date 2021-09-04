@@ -112,7 +112,7 @@ async def port_connect_task():
                 ssh: SSH = SSH.select(
                     lambda s: s.is_live and not s.port).first()
             except pony.orm.ObjectNotFound:
-                pass
+                continue
 
             # Assign SSH to port so other tasks won't try to assign another SSH
             # to this port again
