@@ -3,7 +3,6 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
 import tasks
 from models.database import db
@@ -16,7 +15,6 @@ app = FastAPI(title="SSHManager by KhanhhNe",
               version="2.0.0")
 db.bind('sqlite', 'db.sqlite', create_db=True)
 db.generate_mapping(create_tables=True)
-templates = Jinja2Templates(directory='dist')
 
 
 @app.on_event('startup')
