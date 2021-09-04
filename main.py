@@ -1,7 +1,13 @@
+import webbrowser
 from multiprocessing import freeze_support
 
 import uvicorn
 
+import utils
+
 if __name__ == '__main__':
     freeze_support()
-    uvicorn.run('app:app', reload=True)
+    port = 6080
+    # noinspection HttpUrlsUsage
+    webbrowser.open_new_tab(f"http://{utils.get_ipv4_address()}:{port}")
+    uvicorn.run('app:app', host='0.0.0.0', port=port, reload=True)
