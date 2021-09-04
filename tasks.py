@@ -4,7 +4,7 @@ from functools import wraps
 from typing import List, Type, Union, cast
 
 import psutil
-from pony.orm import db_session
+from pony.orm import ObjectNotFound, db_session
 
 from controllers import bitvise_controllers
 from models.port_models import Port
@@ -60,7 +60,7 @@ async def ssh_check_task():
                 ssh.last_checked = datetime.now()
                 ssh.is_live = is_live
                 ssh.is_checking = False
-            except pony.orm.ObjectNotFound:
+            except ObjectNotFound:
                 pass
 
 
@@ -91,7 +91,7 @@ async def port_check_task():
                     port.ssh = None
                     port.is_connected_to_ssh = False
                 port.is_checking = False
-            except pony.orm.ObjectNotFound:
+            except ObjectNotFound:
                 pass
 
 
@@ -104,14 +104,15 @@ async def port_connect_task():
         await asyncio.sleep(5)
 
         with db_session:
-            try:
-                # Get unassigned ports
-                port: Port = Port.select(lambda p: not p.ssh).first()
+            # Get unassigned ports
+            port: Port = Port.select(lambda p: not p.ssh).first()
+            if not port:
+                continue
 
-                # Get free live SSH (not assigned to any port)
-                ssh: SSH = SSH.select(
-                    lambda s: s.is_live and not s.port).first()
-            except pony.orm.ObjectNotFound:
+            # Get free live SSH (not assigned to any port)
+            ssh: SSH = SSH.select(
+                lambda s: s.is_live and not s.port).first()
+            if not ssh:
                 continue
 
             # Assign SSH to port so other tasks won't try to assign another SSH
@@ -137,7 +138,7 @@ async def port_connect_task():
                     port.is_connected_to_ssh = True
                 else:
                     port.ssh = None
-            except pony.orm.ObjectNotFound:
+            except ObjectNotFound:
                 pass
 
 
