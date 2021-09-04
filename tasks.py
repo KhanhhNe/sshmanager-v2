@@ -6,6 +6,7 @@ from typing import List, Type, Union, cast
 import psutil
 from pony.orm import ObjectNotFound, db_session
 
+from controllers import putty_controllers
 from models.port_models import Port
 from models.ssh_models import SSH
 
@@ -50,9 +51,9 @@ async def ssh_check_task():
         if not next_ssh:
             continue
 
-        is_live = await bitvise_controllers.verify_ssh(next_ssh.ip,
-                                                       next_ssh.username,
-                                                       next_ssh.password)
+        is_live = await putty_controllers.verify_ssh(next_ssh.ip,
+                                                     next_ssh.username,
+                                                     next_ssh.password)
         with db_session:
             try:
                 ssh: SSH = SSH[next_ssh.id]
@@ -76,7 +77,7 @@ async def port_check_task():
         if not next_port:
             continue
 
-        ip = await bitvise_controllers.get_proxy_ip(next_port.proxy_address)
+        ip = await putty_controllers.get_proxy_ip(next_port.proxy_address)
         with db_session:
             try:
                 port: Port = Port[next_port.id]
@@ -119,12 +120,12 @@ async def port_connect_task():
             port.ssh = ssh
 
         try:
-            await bitvise_controllers.connect_ssh(ssh.ip,
-                                                  ssh.username,
-                                                  ssh.password,
-                                                  port=port.port)
+            await putty_controllers.connect_ssh(ssh.ip,
+                                                ssh.username,
+                                                ssh.password,
+                                                port=port.port)
             is_connected = True
-        except bitvise_controllers.PuttyError:
+        except putty_controllers.PuttyError:
             is_connected = False
 
         with db_session:
