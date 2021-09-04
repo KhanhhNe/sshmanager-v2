@@ -24,3 +24,9 @@ pnpm-debug.log*
 
 # Database
 db.sqlite
+
+# Built files
+build/
+app_dist/
+sshmanager-2.0.0.spec
+sshmanager-2.0.0.zip
