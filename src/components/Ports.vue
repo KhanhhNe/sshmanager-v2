@@ -77,7 +77,9 @@ export default {
 
           // Filter out already added ports
           ports = ports.filter(port => !this.ports.includes(port))
-          this.$emit('add-ports', ports)
+          this.$emit('add-ports', ports.map(port => {
+            return {port: port}
+          }))
         } catch (e) {
           // Do nothing
         }
