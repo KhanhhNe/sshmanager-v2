@@ -37,51 +37,6 @@ class ProxyConnectionError(PuttyError):
     """
 
 
-def connect_ssh_sync(host: str, username: str, password: str,
-                     port: int = None, kill_after=False) -> ProxyInfo:
-    if not port:
-        port = utils.get_free_port()
-    log_message = f"{host}|{username}|{password}|{port}"
-    start_time = time.perf_counter()
-
-    def run_time():
-        return round(time.perf_counter() - start_time, 1)
-
-    process = subprocess.Popen([
-        'executables/PLINK.EXE', f'{username}@{host}', '-pw', password,
-        '-D', f'0.0.0.0:{port}',
-        '-v'
-    ], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    process.stdin.write(b'a\na\na')
-    process.stdin.flush()
-
-    while process.poll() is None:
-        output = process.stdout.readline().decode(errors='ignore').strip()
-        if 'SOCKS dynamic forwarding' in output:
-            proxy_info = ProxyInfo(port=port, pid=process.pid)
-            if asyncio.run(get_proxy_ip(proxy_info.address)):
-                if kill_after:
-                    process.kill()
-                logger.info(
-                    f"{log_message} ({run_time()}s) - Connected successfully.")
-                return proxy_info
-            else:
-                logger.info(
-                    f"{log_message} ({run_time()}s) - Cannot connect to proxy.")
-                raise ProxyConnectionError
-        elif output.startswith('ERROR'):
-            # Print errors but ignore the detail message(s)
-            error_list = [e for e in output.split(':')[1:] if len(e) < 75]
-            logger.info(
-                f"{log_message} ({run_time()}s) - {'. '.join(error_list)}")
-            raise ProxyConnectionError
-
-    process.kill()
-    logger.info(
-        f"{log_message} ({run_time()}s) - Exit code {process.returncode}.")
-    raise ProxyConnectionError
-
-
 async def connect_ssh(host: str, username: str, password: str,
                       port: int = None, kill_after=False) -> ProxyInfo:
     """
@@ -93,10 +48,47 @@ async def connect_ssh(host: str, username: str, password: str,
     :param kill_after: Set to True to kill the proxy process after verifying
     :return: Proxy information if succeed. Will raise an error if failed
     """
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, connect_ssh_sync,
-                                      host, username, password,
-                                      port, kill_after)
+    if not port:
+        port = utils.get_free_port()
+    log_message = f"{host}|{username}|{password}|{port}"
+    start_time = time.perf_counter()
+
+    def run_time():
+        return round(time.perf_counter() - start_time, 1)
+
+    process = await asyncio.create_subprocess_exec(
+        'executables/PLINK.EXE', f'{username}@{host}', '-pw', password,
+        '-D', f'0.0.0.0:{port}',
+        '-v',
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
+    process.stdin.write(b'y\ny\ny\n')
+
+    while process.returncode is None:
+        output = (await process.stdout.readline()) \
+            .decode(errors='ignore').strip()
+        if 'SOCKS dynamic forwarding' in output:
+            proxy_info = ProxyInfo(port=port, pid=process.pid)
+            if await get_proxy_ip(proxy_info.address):
+                if kill_after:
+                    process.kill()
+                logger.info(
+                    f"{log_message} ({run_time()}s) - Connected successfully.")
+                return proxy_info
+            else:
+                logger.info(
+                    f"{log_message} ({run_time()}s) - Cannot connect to proxy.")
+                raise ProxyConnectionError
+        elif 'Password authentication failed' in output or \
+                'FATAL ERROR' in output:
+            logger.info(
+                f"{log_message} ({run_time()}s) - {output}")
+            raise ProxyConnectionError
+
+    process.kill()
+    logger.info(
+        f"{log_message} ({run_time()}s) - Exit code {process.returncode}.")
+    raise ProxyConnectionError
 
 
 async def verify_ssh(host: str, username: str, password: str) -> bool:

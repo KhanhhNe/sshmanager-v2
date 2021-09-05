@@ -19,10 +19,8 @@ db.generate_mapping(create_tables=True)
 
 @app.on_event('startup')
 def startup_tasks():
-    asyncio.ensure_future(tasks.ssh_check_task())
-    asyncio.ensure_future(tasks.port_check_task())
-    asyncio.ensure_future(tasks.port_connect_task())
     tasks.reset_ssh_and_port_status()
+    asyncio.ensure_future(tasks.main_task())
 
 
 @app.on_event('shutdown')
