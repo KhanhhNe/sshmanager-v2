@@ -20,9 +20,9 @@ Features
 
 Usage
 ----
-Download the latest release, run sshmanager-2.0.0.exe and that's it! A browser
-tab will open with the app's URL, and it is accessible over LAN network from
-other devices too.
+Download the latest release, run sshmanager-v2.exe and that's it! A browser tab
+will open with the app's URL, and it is accessible over LAN network from other
+devices too.
 
 Building your own sshmanager
 ----
@@ -34,8 +34,8 @@ Steps:
 1. Clone the repository
 
 ```bash
-https://github.com/KhanhhNe/sshmanager-2.0.0.git
-cd sshmanager-2.0.0
+https://github.com/KhanhhNe/sshmanager-v2.git
+cd sshmanager-v2
 ```
 
 2. Install needed libraries
@@ -56,4 +56,4 @@ npm run build
 pipenv run compile.py
 ```
 
-A new file named `sshmanager-2.0.0.zip` will be generated and is ready to use!
+A new file named `sshmanager-v2.zip` will be generated and is ready to use!
