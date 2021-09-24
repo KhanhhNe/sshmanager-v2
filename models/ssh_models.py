@@ -10,8 +10,8 @@ class SSH(db.Entity):
     Store SSH information
     """
     ip = Required(str)
-    username = Required(str)
-    password = Required(str)
+    username = Optional(str)
+    password = Optional(str)
     is_live = Required(bool, default=False)
     port = Optional('Port')
     is_checking = Required(bool, default=False)
