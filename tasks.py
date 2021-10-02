@@ -118,6 +118,7 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
     with db_session:
         try:
             port = Port[port.id]
+            ssh = SSH[ssh.id]
 
             # Mark port as connected if connection succeed. Otherwise remove
             # the SSH assignment
@@ -125,6 +126,7 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
                 port.is_connected_to_ssh = True
             else:
                 port.ssh = None
+                ssh.is_live = False
         except ObjectNotFound:
             pass
 
