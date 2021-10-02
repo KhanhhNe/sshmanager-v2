@@ -152,13 +152,17 @@ article {
     }
   }
 
-  .ssh {
-    &.live td:first-child {
-      color: green
-    }
+  table {
+    white-space: nowrap;
 
-    &.die td:first-child {
-      color: red
+    .ssh {
+      &.live td:first-child {
+        color: green
+      }
+
+      &.die td:first-child {
+        color: red
+      }
     }
   }
 }

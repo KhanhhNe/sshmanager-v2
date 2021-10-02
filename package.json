@@ -14,6 +14,7 @@
     "core-js": "^3.6.5",
     "file-saver": "^2.0.5",
     "fontisto": "^3.0.4",
+    "moment": "^2.29.1",
     "sass": "^1.38.1",
     "sass-loader": "^10.1.1",
     "tippy.js": "^6.3.2",

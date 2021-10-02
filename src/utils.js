@@ -1,10 +1,13 @@
+const moment = require('moment')
+
+
 /**
  * Parse a date string and return time string in format HH:MM:SS
  * @param timeString
  * @returns {string}
  */
 function getTimeDisplay(timeString) {
-    return new Date(timeString).toTimeString().slice(0, 8)
+    return new moment(timeString).fromNow(true)
 }
 
 

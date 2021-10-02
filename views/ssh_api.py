@@ -2,7 +2,7 @@ import json
 from typing import List
 
 from fastapi.routing import APIRouter
-from pony.orm import db_session
+from pony.orm import db_session, desc
 
 from models.io_models import SSHIn, SSHOut
 from models.ssh_models import SSH
@@ -17,7 +17,7 @@ def get_all_ssh():
     Get all SSH from database.
     """
     with db_session:
-        ssh_list = SSH.select()[:].to_list()
+        ssh_list = SSH.select().order_by(desc(SSH.last_checked))[:].to_list()
         return [SSHOut.from_orm(ssh) for ssh in ssh_list]
 
 
