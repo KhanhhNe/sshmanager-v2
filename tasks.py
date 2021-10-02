@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List
 
 import psutil
-from pony.orm import ObjectNotFound, db_session
+from pony.orm import ObjectNotFound, db_session, desc
 
 from controllers import putty_controllers
 from models.port_models import Port
@@ -36,7 +36,8 @@ async def port_task():
             # Check port for external IP
             checking_ports = Port \
                 .select() \
-                .filter(lambda obj: obj.is_checking is False) \
+                .filter(lambda obj: not obj.is_checking) \
+                .filter(lambda obj: obj.ssh is not None) \
                 .order_by(lambda obj: obj.last_checked) \
                 .limit(20)
             for port in checking_ports:
@@ -47,8 +48,10 @@ async def port_task():
             connecting_ports = Port \
                 .select(lambda p: not p.ssh) \
                 .limit(20)
+            # Get latest SSHs
             connecting_ssh = SSH \
                 .select(lambda s: s.is_live and not s.port) \
+                .order_by(desc(SSH.last_checked)) \
                 .limit(20)
             for port, ssh in zip(connecting_ports, connecting_ssh):
                 port.ssh = ssh
@@ -124,6 +127,7 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
             # the SSH assignment
             if is_connected:
                 port.is_connected_to_ssh = True
+                port.ip = ssh.ip
             else:
                 port.ssh = None
                 ssh.is_live = False

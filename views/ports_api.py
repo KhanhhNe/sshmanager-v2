@@ -57,10 +57,9 @@ def reset_ports_ssh(port_list: List[PortIn]):
     """
     Reset assigned SSH of ports
     """
+    ports_number = [port.port for port in port_list]
     with db_session:
-        for port in port_list:
-            port_obj = Port.get(**port.dict())
-            if port_obj:
-                port_obj.ssh = None
-                port_obj.is_connected_to_ssh = False
+        for port in Port.select(lambda p: p.port in ports_number):
+            port.ssh = None
+            port.is_connected_to_ssh = False
     return {}
