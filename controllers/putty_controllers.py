@@ -56,6 +56,14 @@ async def connect_ssh(host: str, username: str, password: str,
     def run_time():
         return round(time.perf_counter() - start_time, 1)
 
+    loop = asyncio.get_event_loop()
+    if not await loop.run_in_executor(None,
+                                      utils.can_connect_to_socket,
+                                      host, 21):
+        logger.info(
+            f"{log_message} ({run_time()}s) - Connection to SSH failed.")
+        raise ProxyConnectionError
+
     process = await asyncio.create_subprocess_exec(
         'executables/PLINK.EXE', f'{username}@{host}', '-pw', password,
         '-D', f'0.0.0.0:{port}',
