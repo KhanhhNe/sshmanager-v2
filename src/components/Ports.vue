@@ -23,7 +23,11 @@
         <tbody>
         <tr v-for="portInfo in ports" :key="portInfo.port">
           <td>{{ portInfo.port }}</td>
-          <td>{{ portInfo.ip }}</td>
+          <td v-if="portInfo.ssh">
+            <span :data-clipboard-text="proxyUrl(portInfo)"
+                  class="proxy-ip">{{ portInfo.ip }}</span>
+          </td>
+          <td v-else class="no-proxy">Chưa kết nối</td>
           <td>{{ getTimeDisplay(portInfo.last_checked) }}</td>
           <td><a role="button"
                  @click="$emit('reset-port', [portInfo])">Đổi</a></td>
@@ -40,6 +44,9 @@
 <script>
 import ArticleTitle from "@/components/ArticleTitle"
 import {getTimeDisplay} from "@/utils"
+import ClipboardJS from "clipboard"
+import {delegate} from "tippy.js"
+import "tippy.js/dist/tippy.css";
 
 export default {
   name: "Ports",
@@ -84,6 +91,33 @@ export default {
           // Do nothing
         }
       }
+    },
+
+    /**
+     * Get proxy URL for display. Returns an empty string if port is not
+     * connected to any SSH
+     * @param portInfo port
+     * @returns {string} Proxy string in format <scheme>://<host>:<port>
+     */
+    proxyUrl(portInfo) {
+      if (portInfo.ssh) {
+        return `socks5://${new URL(location.href).hostname}:${portInfo.port}`
+      } else {
+        return ''
+      }
+    }
+  },
+  watch: {
+    ports() {
+      new ClipboardJS('.proxy-ip')
+      delegate('.ports', {
+        target: '.proxy-ip',
+        content: 'Đã copy',
+        trigger: 'click',
+        onShow(instance) {
+          setTimeout(() => instance.hide(), 1000)
+        }
+      })
     }
   }
 }
@@ -91,24 +125,19 @@ export default {
 
 <style lang="scss" scoped>
 article {
-  .ports-input {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-
-    * {
-      margin: 0 !important;
-    }
-  }
-
   .ports {
     overflow: auto;
 
     a[role=button] {
       padding: 0.25rem 0.5rem;
+    }
+
+    .proxy-ip:hover {
+      cursor: pointer;
+    }
+
+    .no-proxy {
+      opacity: 0.3;
     }
   }
 
