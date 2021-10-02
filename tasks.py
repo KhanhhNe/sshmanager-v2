@@ -15,7 +15,6 @@ logger = logging.getLogger('Tasks')
 
 async def ssh_task():
     while True:
-        logger.info("hey im alive")
         tasks = []
         with db_session:
             # Check SSH for live/die status

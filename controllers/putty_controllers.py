@@ -68,7 +68,8 @@ async def connect_ssh(host: str, username: str, password: str,
         output = (await process.stdout.readline()) \
             .decode(errors='ignore').strip()
         if 'SOCKS dynamic forwarding' in output:
-            proxy_info = ProxyInfo(port=port, pid=process.pid)
+            proxy_info = ProxyInfo(host=utils.get_ipv4_address(),
+                                   port=port, pid=process.pid)
             if await get_proxy_ip(proxy_info.address):
                 if kill_after:
                     process.kill()
@@ -116,13 +117,16 @@ async def get_proxy_ip(proxy_address, tries=5) -> str:
     try:
         connector = ProxyConnector.from_url(proxy_address)
         async with aiohttp.ClientSession(connector=connector) as client:
-            async with client.get('https://api.ipify.org?format=text') as resp:
-                return await resp.text()
+            try:
+                async with client.get(
+                        'https://api.ipify.org?format=text') as resp:
+                    return await resp.text()
+            except:
+                async with client.get('https://ip.seeip.org') as resp:
+                    return await resp.text()
     except (aiohttp.ClientError, python_socks.ProxyConnectionError,
             python_socks.ProxyError, python_socks.ProxyTimeoutError,
-            ConnectionError):
+            ConnectionError, asyncio.exceptions.IncompleteReadError):
         if not tries:
             return ''
-
-        await asyncio.sleep(1)
         return await get_proxy_ip(proxy_address, tries=tries - 1)
