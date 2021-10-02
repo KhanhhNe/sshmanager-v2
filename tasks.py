@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from datetime import datetime
 from typing import List
 
@@ -9,16 +10,13 @@ from controllers import putty_controllers
 from models.port_models import Port
 from models.ssh_models import SSH
 
+logger = logging.getLogger('Tasks')
 
-async def main_task():
-    """
-    Run both check_ssh_status(), check_port_ip() and connect_ssh_to_port()
-    :return:
-    """
+
+async def ssh_task():
     while True:
-        await asyncio.sleep(5)
+        logger.info("hey im alive")
         tasks = []
-
         with db_session:
             # Check SSH for live/die status
             checking_ssh = SSH \
@@ -29,7 +27,13 @@ async def main_task():
             for ssh in checking_ssh:
                 ssh.is_checking = True
                 tasks.append(asyncio.ensure_future(check_ssh_status(ssh)))
+        await asyncio.gather(*tasks)
 
+
+async def port_task():
+    while True:
+        tasks = []
+        with db_session:
             # Check port for external IP
             checking_ports = Port \
                 .select() \
@@ -51,7 +55,6 @@ async def main_task():
                 port.ssh = ssh
                 tasks.append(
                     asyncio.ensure_future(connect_ssh_to_port(ssh, port)))
-
         await asyncio.gather(*tasks)
 
 
@@ -108,8 +111,10 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
         await putty_controllers.connect_ssh(ssh.ip, ssh.username, ssh.password,
                                             port=port.port)
         is_connected = True
+        logger.info(f"Port {port.port} connected to SSH {ssh.ip}")
     except putty_controllers.PuttyError:
         is_connected = False
+        logger.info(f"Port {port.port} failed to connect to SSH {ssh.ip}")
 
     with db_session:
         try:
