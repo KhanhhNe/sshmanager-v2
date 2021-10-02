@@ -6,6 +6,7 @@ from typing import List
 import psutil
 from pony.orm import ObjectNotFound, db_session, desc
 
+import config
 from controllers import putty_controllers
 from models.port_models import Port
 from models.ssh_models import SSH
@@ -15,23 +16,33 @@ logger = logging.getLogger('Tasks')
 
 async def ssh_task():
     while True:
+        conf = config.get_config()
+        workers_count = conf.getint('WEB', 'workers')
+        ssh_tasks_count = conf.getint('SSH', 'tasks_count')
+        ssh_tasks_count //= workers_count
         tasks = []
+
         with db_session:
             # Check SSH for live/die status
             checking_ssh = SSH \
                 .select() \
                 .filter(lambda obj: obj.is_checking is False) \
                 .order_by(lambda obj: obj.last_checked) \
-                .limit(20)
+                .limit(ssh_tasks_count)
             for ssh in checking_ssh:
-                ssh.is_checking = True
-                tasks.append(asyncio.ensure_future(check_ssh_status(ssh)))
+                tasks.append(check_ssh_status(ssh))
+
         await asyncio.gather(*tasks)
 
 
 async def port_task():
     while True:
+        conf = config.get_config()
+        workers_count = conf.getint('WEB', 'workers')
+        port_tasks_count = conf.getint('PORT', 'tasks_count')
+        port_tasks_count //= workers_count
         tasks = []
+
         with db_session:
             # Check port for external IP
             checking_ports = Port \
@@ -39,24 +50,23 @@ async def port_task():
                 .filter(lambda obj: not obj.is_checking) \
                 .filter(lambda obj: obj.ssh is not None) \
                 .order_by(lambda obj: obj.last_checked) \
-                .limit(20)
+                .limit(port_tasks_count)
             for port in checking_ports:
-                port.is_checking = True
-                tasks.append(asyncio.ensure_future(check_port_ip(port)))
+                tasks.append(check_port_ip(port))
 
             # Connect ports to empty SSH
             connecting_ports = Port \
                 .select(lambda p: not p.ssh) \
-                .limit(20)
+                .limit(port_tasks_count)
             # Get latest SSHs
             connecting_ssh = SSH \
                 .select(lambda s: s.is_live and not s.port) \
                 .order_by(desc(SSH.last_checked)) \
-                .limit(20)
+                .limit(port_tasks_count)
+
             for port, ssh in zip(connecting_ports, connecting_ssh):
-                port.ssh = ssh
-                tasks.append(
-                    asyncio.ensure_future(connect_ssh_to_port(ssh, port)))
+                tasks.append(connect_ssh_to_port(ssh, port))
+
         await asyncio.gather(*tasks)
 
 
@@ -65,6 +75,9 @@ async def check_ssh_status(ssh: SSH):
     Check for SSH live/die status and save to db
     :param ssh: Target SSH
     """
+    with db_session:
+        SSH[ssh.id].is_checking = True
+
     is_live = await putty_controllers.verify_ssh(ssh.ip,
                                                  ssh.username,
                                                  ssh.password)
@@ -84,6 +97,9 @@ async def check_port_ip(port: Port):
     Check for port's external IP and save to db
     :param port: Target port
     """
+    with db_session:
+        Port[port.id].is_checking = True
+
     ip = await putty_controllers.get_proxy_ip(port.proxy_address)
 
     with db_session:
@@ -109,6 +125,9 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
     :param port: Target port
     :param ssh: SSH to perform port-forwarding
     """
+    with db_session:
+        Port[port.id].ssh = SSH[ssh.id]
+
     try:
         await putty_controllers.connect_ssh(ssh.ip, ssh.username, ssh.password,
                                             port=port.port)
@@ -120,8 +139,8 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
 
     with db_session:
         try:
-            port = Port[port.id]
-            ssh = SSH[ssh.id]
+            port: Port = Port[port.id]
+            ssh: SSH = SSH[ssh.id]
 
             # Mark port as connected if connection succeed. Otherwise remove
             # the SSH assignment

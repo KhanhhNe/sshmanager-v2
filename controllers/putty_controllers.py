@@ -134,7 +134,8 @@ async def get_proxy_ip(proxy_address, tries=0) -> str:
                     return await resp.text()
     except (aiohttp.ClientError, python_socks.ProxyConnectionError,
             python_socks.ProxyError, python_socks.ProxyTimeoutError,
-            ConnectionError, asyncio.exceptions.IncompleteReadError):
+            ConnectionError, asyncio.exceptions.IncompleteReadError,
+            asyncio.exceptions.TimeoutError):
         if not tries:
             return ''
         return await get_proxy_ip(proxy_address, tries=tries - 1)

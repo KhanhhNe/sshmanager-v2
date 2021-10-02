@@ -33,3 +33,6 @@ build/
 app_dist/
 *.spec
 *.zip
+
+# Config file
+config.ini
