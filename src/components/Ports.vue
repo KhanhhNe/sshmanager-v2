@@ -23,7 +23,7 @@
         <tbody>
         <tr v-for="portInfo in ports" :key="portInfo.port">
           <td>{{ portInfo.port }}</td>
-          <td v-if="portInfo.ssh">
+          <td v-if="portInfo.ip">
             <span :data-clipboard-text="proxyUrl(portInfo)"
                   class="proxy-ip">{{ portInfo.ip }}</span>
           </td>
@@ -100,11 +100,7 @@ export default {
      * @returns {string} Proxy string in format <scheme>://<host>:<port>
      */
     proxyUrl(portInfo) {
-      if (portInfo.ssh) {
-        return `socks5://${new URL(location.href).hostname}:${portInfo.port}`
-      } else {
-        return ''
-      }
+      return `socks5://${new URL(location.href).hostname}:${portInfo.port}`
     }
   },
   watch: {
