@@ -115,7 +115,7 @@ async def verify_ssh(host: str, username: str, password: str) -> bool:
         return False
 
 
-async def get_proxy_ip(proxy_address, tries=5) -> str:
+async def get_proxy_ip(proxy_address, tries=0) -> str:
     """
     Retrieves proxy's real IP address. Returns empty string if failed
     :param proxy_address: Proxy connection address in <protocol>://<ip>:<port>
