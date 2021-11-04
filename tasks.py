@@ -33,6 +33,7 @@ async def ssh_task():
                 tasks.append(check_ssh_status(ssh))
 
         await asyncio.gather(*tasks)
+        await asyncio.sleep(0.5)
 
 
 async def port_task():
@@ -62,12 +63,13 @@ async def port_task():
             connecting_ssh = SSH \
                 .select(lambda s: s.is_live and not s.port) \
                 .order_by(desc(SSH.last_checked)) \
-                .limit(port_tasks_count)
+                .limit(len(connecting_ports))
 
             for port, ssh in zip(connecting_ports, connecting_ssh):
                 tasks.append(connect_ssh_to_port(ssh, port))
 
         await asyncio.gather(*tasks)
+        await asyncio.sleep(0.5)
 
 
 async def check_ssh_status(ssh: SSH):
