@@ -1,5 +1,8 @@
 import Vue from 'vue'
 import App from './App.vue'
+import moment from "moment";
+
+moment.locale('vi')
 
 Vue.config.productionTip = false
 
