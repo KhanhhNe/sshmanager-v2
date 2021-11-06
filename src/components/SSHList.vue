@@ -3,6 +3,14 @@
   <article v-show="!hidden">
     <ArticleTitle>
       <template v-slot:title>{{ listName }}</template>
+      <label style="padding-right: 0.2rem">Hiển thị</label>
+      <select v-model="maxToDisplay" style="margin-right: 1rem">
+        <option :value="200" selected>200</option>
+        <option :value="500">500</option>
+        <option :value="1000">1000</option>
+        <option :value="2000">2000</option>
+        <option :value="Infinity">Tất cả</option>
+      </select>
       <button v-if="!readOnly"
               @click="fileInput.click()"><i class="fi fi-upload"></i></button>
       <button @click="downloadSSHList"><i class="fi fi-download"></i></button>
@@ -22,7 +30,7 @@
         </thead>
         <tbody>
         <tr
-            v-for="ssh in sshList"
+            v-for="ssh in sshList.slice(0, maxToDisplay)"
             :key="getSshText(ssh)"
             :class="[ssh.is_checked ? (ssh.is_live ? 'live' : 'die') : '']"
             class="ssh"
@@ -58,7 +66,8 @@ export default {
   },
   data() {
     return {
-      hidden: false
+      hidden: false,
+      maxToDisplay: 200
     }
   },
   props: {
