@@ -44,7 +44,7 @@
         </tbody>
       </table>
       <input v-if="!readOnly"
-             :id="`${listName}-upload`"
+             :id="`${title}-upload`"
              @change="getSSHListFromFile"
              type="file"
              accept="text/plain, text/csv"
@@ -127,7 +127,7 @@ export default {
       const data = new Blob([this.sshText], {
         type: 'text/plain;charset=utf-8'
       })
-      saveAs(data, `${this.listName}.txt`)
+      saveAs(data, `${this.title}.txt`)
     },
 
     /**
@@ -142,7 +142,7 @@ export default {
     }
   },
   mounted() {
-    this.fileInput = document.getElementById(`${this.listName}-upload`)
+    this.fileInput = document.getElementById(`${this.title}-upload`)
   }
 }
 </script>
