@@ -2,8 +2,14 @@
   <article>
     <ArticleTitle>
       <template v-slot:title>Settings</template>
-      <a @click="$emit('reset-settings')" role="button">Đặt lại</a>
-      <a @click="updateSettings" role="button">Cập nhật</a>
+      <div class="warning"
+           v-if="needRestart">Khởi động lại SSHManager để cập nhật cài đặt
+      </div>
+      <a @click="$emit('reset-settings')"
+         role="button"
+         class="outline"><i class="fi fi-spinner-refresh"></i></a>
+      <a @click="updateSettings"
+         role="button"><i class="fi fi-check"></i></a>
     </ArticleTitle>
     <div class="content">
       <table>
@@ -38,7 +44,8 @@ export default {
     ArticleTitle
   },
   props: {
-    settings: Array
+    settings: Array,
+    needRestart: Boolean
   },
   methods: {
     updateSettings() {
@@ -49,6 +56,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.warning {
+  color: red;
+  font-size: 0.85rem;
+}
+
 .content {
   display: flex;
   flex-direction: column;

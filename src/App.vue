@@ -24,6 +24,7 @@
     </Tabs>
     <Settings
         :settings="settings"
+        :needRestart="needRestart"
         @update-settings="updateSettings($event)"
         @reset-settings="resetSettings()"
         class="settings"/>
@@ -53,7 +54,8 @@ export default {
       portsSocket: new WebSocket(`ws://${location.host}/api/ports/`),
       sshList: [],
       ports: [],
-      settings: []
+      settings: [],
+      needRestart: false
     }
   },
   computed: {
@@ -129,13 +131,13 @@ export default {
       for (const setting of newSettings) {
         settings[setting.name] = setting.value
       }
-      await fetch('/api/settings/', {
+      this.needRestart = await (await fetch('/api/settings/', {
         method: 'post',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(settings)
-      })
+      })).json()
       await this.getSettings()
     },
 
@@ -145,6 +147,7 @@ export default {
      */
     async resetSettings() {
       await fetch('/api/settings/', {method: 'delete'})
+      this.needRestart = false
       await this.getSettings()
     }
   },
