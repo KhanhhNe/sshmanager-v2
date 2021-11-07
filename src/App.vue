@@ -97,10 +97,7 @@ export default {
     this.sshSocket.addEventListener('message', function (event) {
       self.sshList = JSON.parse(event.data)
       for (const ssh of self.sshList) {
-        // Add is_checked attribute that is true if the SSH is checked recently
-        // (less than 1 year before)
-        const oneYear = 3600 * 1000 * 24 * 365 // 1 year in milliseconds
-        ssh.is_checked = (new Date() - new Date(ssh.last_checked)) / oneYear < 1
+        ssh.is_checked = ssh.last_checked !== null
       }
     })
     this.portsSocket.addEventListener('message', function (event) {

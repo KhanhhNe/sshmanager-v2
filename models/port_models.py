@@ -16,7 +16,7 @@ class Port(db.Entity):
     ip = Optional(str)  # External IP after proxying through port
     is_checking = Required(bool, default=False)
     is_connected_to_ssh = Required(bool, default=False)
-    last_checked = Required(datetime, default=datetime(1000, 1, 1))
+    last_checked = Optional(datetime)
 
     @property
     def proxy_address(self):

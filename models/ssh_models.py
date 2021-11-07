@@ -15,4 +15,4 @@ class SSH(db.Entity):
     is_live = Required(bool, default=False)
     port = Optional('Port')
     is_checking = Required(bool, default=False)
-    last_checked = Required(datetime, default=datetime(1000, 1, 1))
+    last_checked = Optional(datetime)

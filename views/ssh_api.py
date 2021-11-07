@@ -17,7 +17,15 @@ def get_all_ssh():
     Get all SSH from database.
     """
     with db_session:
-        ssh_list = SSH.select().order_by(desc(SSH.last_checked))[:].to_list()
+        checked_ssh_list = SSH \
+                               .select(lambda ssh: ssh.last_checked is not None) \
+                               .order_by(desc(SSH.last_checked))[:] \
+            .to_list()
+        unchecked_ssh_list = SSH \
+                                 .select(lambda ssh: ssh.last_checked is None)[
+                             :] \
+            .to_list()
+        ssh_list = checked_ssh_list + unchecked_ssh_list
         return [SSHOut.from_orm(ssh) for ssh in ssh_list]
 
 

@@ -51,15 +51,13 @@ class SSHCheckRunner(TaskRunner):
 
     def get_new_task(self):
         with db_session:
-            ssh = SSH \
-                .select() \
-                .filter(lambda obj: obj.is_checking is False) \
+            not_checked = SSH.select().filter(
+                lambda obj: obj.is_checking is False)
+            ssh = not_checked \
                 .filter(lambda obj: obj.last_checked is None) \
                 .first()
             if ssh is None:
-                ssh = SSH \
-                    .select() \
-                    .filter(lambda obj: obj.is_checking is False) \
+                ssh = not_checked \
                     .order_by(lambda obj: obj.last_checked) \
                     .first()
             if ssh is None:
@@ -78,12 +76,16 @@ class PortCheckRunner(TaskRunner):
 
     def get_new_task(self):
         with db_session:
-            port = Port \
-                .select() \
+            not_checked = Port.select() \
                 .filter(lambda obj: not obj.is_checking) \
-                .filter(lambda obj: obj.ssh is not None) \
-                .order_by(lambda obj: obj.last_checked) \
+                .filter(lambda obj: obj.ssh is not None)
+            port = not_checked \
+                .filter(lambda obj: obj.last_checked is None) \
                 .first()
+            if port is None:
+                port = not_checked \
+                    .order_by(lambda obj: obj.last_checked) \
+                    .first()
             if port is not None:
                 port.is_checking = True
                 return check_port_ip(port)

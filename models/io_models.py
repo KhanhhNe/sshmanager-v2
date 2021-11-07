@@ -15,7 +15,7 @@ class SSHOut(BaseModel):
     password: str
     is_live: bool
     is_checking: bool
-    last_checked: datetime
+    last_checked: datetime = None
 
     class Config:
         orm_mode = True
@@ -31,7 +31,7 @@ class PortOut(BaseModel):
     ip: str = ''
     is_checking: bool
     is_connected_to_ssh: bool
-    last_checked: datetime
+    last_checked: datetime = None
 
     class Config:
         orm_mode = True

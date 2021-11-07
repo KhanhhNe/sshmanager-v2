@@ -39,7 +39,7 @@
           <td>{{ ssh.ip }}</td>
           <td>{{ ssh.username }}</td>
           <td>{{ ssh.password }}</td>
-          <td>{{ getTimeDisplay(ssh.last_checked) }}</td>
+          <td>{{ ssh.is_checked ? getTimeDisplay(ssh.last_checked) : '' }}</td>
         </tr>
         </tbody>
       </table>
