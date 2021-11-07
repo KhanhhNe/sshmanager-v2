@@ -3,8 +3,8 @@
   <article v-show="!hidden">
     <ArticleTitle>
       <template v-slot:title>{{ title }}</template>
-      <label style="padding-right: 0.2rem">Hiển thị</label>
-      <select v-model="maxToDisplay" style="margin-right: 1rem">
+      <label style="padding-right: 0">Hiển thị</label>
+      <select v-model="maxToDisplay" style="margin-right: 0.75rem">
         <option :value="200" selected>200</option>
         <option :value="500">500</option>
         <option :value="1000">1000</option>
@@ -13,7 +13,8 @@
       </select>
       <button v-if="!readOnly"
               @click="fileInput.click()"><i class="fi fi-upload"></i></button>
-      <button @click="downloadSSHList"><i class="fi fi-download"></i></button>
+      <button @click="downloadSSHList" style="margin-right: 0.75rem"><i
+          class="fi fi-download"></i></button>
       <button @click="$emit('delete-ssh', sshList)"
               class="secondary outline"><i class="fi fi-trash"></i></button>
     </ArticleTitle>

@@ -3,8 +3,11 @@
   <article v-show="!hidden">
     <ArticleTitle>
       <template v-slot:title>{{ title }}</template>
-      <input type="text" v-model="portsText" placeholder="8080,8000-8005,...">
-      <button @click="addPorts">Thêm Port</button>
+      <input
+          type="text"
+          v-model="portsText"
+          placeholder="8080,8000-8005,...">
+      <button @click="addPorts"><i class="fi fi-plus-a"></i></button>
     </ArticleTitle>
     <div class="ports">
       <table>
@@ -13,11 +16,14 @@
           <th>Port</th>
           <th>IP</th>
           <th>Check</th>
-          <th><a role="button"
-                 @click="$emit('reset-port', ports)">Đổi</a></th>
+          <th><a
+              role="button"
+              @click="$emit('reset-port', ports)"
+          ><i class="fi fi-spinner-refresh"></i></a></th>
           <th><a role="button"
                  @click="$emit('remove-port', ports)"
-                 class="secondary">Xoá</a></th>
+                 class="secondary outline"
+          ><i class="fi fi-trash"></i></a></th>
         </tr>
         </thead>
         <tbody>
@@ -28,12 +34,16 @@
                   class="proxy-ip">{{ portInfo.ip }}</span>
           </td>
           <td v-else class="no-proxy">Chưa kết nối</td>
-          <td>{{ getTimeDisplay(portInfo.last_checked) }}</td>
+          <td v-if="portInfo.last_checked">
+            {{ getTimeDisplay(portInfo.last_checked) }}
+          </td>
           <td><a role="button"
-                 @click="$emit('reset-port', [portInfo])">Đổi</a></td>
+                 @click="$emit('reset-port', [portInfo])"
+          ><i class="fi fi-spinner-refresh"></i></a></td>
           <td><a role="button"
                  @click="$emit('remove-port', [portInfo])"
-                 class="secondary">Xoá</a></td>
+                 class="secondary outline"
+          ><i class="fi fi-trash"></i></a></td>
         </tr>
         </tbody>
       </table>
