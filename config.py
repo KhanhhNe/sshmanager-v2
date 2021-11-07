@@ -28,3 +28,7 @@ def get_config():
 def write_config(config):
     with open('config.ini', 'w+') as file:
         config.write(file)
+
+
+def reset_config():
+    write_config(default_config())

@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 import tasks
 from models.database import db
-from views import ports_api, ssh_api
+from views import ports_api, settings_api, ssh_api
 
 logging.basicConfig(level=logging.INFO,
                     format="[%(asctime)s] %(name)s - %(message)s")
@@ -38,4 +38,5 @@ def shutdown_tasks():
 
 app.include_router(ssh_api.router, prefix='/api/ssh')
 app.include_router(ports_api.router, prefix='/api/ports')
+app.include_router(settings_api.router, prefix='/api/settings')
 app.mount('/', StaticFiles(directory='dist', html=True))

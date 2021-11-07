@@ -35,3 +35,14 @@ class PortOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class SettingsInOut(BaseModel):
+    ssh_tasks_count: int
+    port_tasks_count: int
+    web_workers_count: int
+    web_port: int
+
+
+class SettingsUpdateResult(BaseModel):
+    need_restart: bool

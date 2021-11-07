@@ -21,6 +21,11 @@
         @reset-port="portsRequest($event, 'put')"
         @remove-port="portsRequest($event, 'delete')"
         class="ports"/>
+    <Settings
+        :settings="settings"
+        @update-settings="updateSettings($event)"
+        @reset-settings="resetSettings()"
+        class="settings"/>
   </div>
 </template>
 
@@ -29,6 +34,7 @@
 import SSHList from './components/SSHList.vue'
 import SSHTabs from './components/SSHTabs.vue'
 import Ports from './components/Ports.vue'
+import Settings from './components/Settings.vue'
 import '@picocss/pico'
 import 'fontisto'
 
@@ -37,14 +43,16 @@ export default {
   components: {
     SSHList,
     SSHTabs,
-    Ports
+    Ports,
+    Settings
   },
   data() {
     return {
       sshSocket: new WebSocket(`ws://${location.host}/api/ssh/`),
       portsSocket: new WebSocket(`ws://${location.host}/api/ports/`),
       sshList: [],
-      ports: []
+      ports: [],
+      settings: []
     }
   },
   computed: {
@@ -64,7 +72,7 @@ export default {
      * @returns {Promise<void>}
      */
     async sshRequest(sshList, method) {
-      await fetch(`${new URL(location.href).origin}/api/ssh/`, {
+      await fetch('/api/ssh/', {
         method,
         headers: {
           'Content-Type': 'application/json'
@@ -82,7 +90,7 @@ export default {
      * @returns {Promise<void>}
      */
     async portsRequest(ports, method) {
-      await fetch(`${new URL(location.href).origin}/api/ports/`, {
+      await fetch('/api/ports/', {
         method,
         headers: {
           'Content-Type': 'application/json'
@@ -90,6 +98,53 @@ export default {
         body: JSON.stringify(ports)
       })
       this.portsSocket.send('update')
+    },
+
+    /**
+     * Get settings and settings names, merge them together and update to
+     * this.settings
+     * @returns {Promise<void>}
+     */
+    async getSettings() {
+      const settingsValues = await (await fetch('/api/settings/')).json()
+      const settingsNames = await (await fetch('/api/settings/names/')).json()
+      const settings = []
+      for (const [name, value] of Object.entries(settingsValues)) {
+        settings.push({
+          name, value,
+          readable_name: settingsNames[name]
+        })
+      }
+      this.settings = settings
+    },
+
+    /**
+     * Send settings update request to BE and call getSettings to sync FE & BE
+     * again
+     * @returns {Promise<void>}
+     */
+    async updateSettings(newSettings) {
+      const settings = {}
+      for (const setting of newSettings) {
+        settings[setting.name] = setting.value
+      }
+      await fetch('/api/settings/', {
+        method: 'post',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(settings)
+      })
+      await this.getSettings()
+    },
+
+    /**
+     * Reset all settings and call getSettings
+     * @returns {Promise<void>}
+     */
+    async resetSettings() {
+      await fetch('/api/settings/', {method: 'delete'})
+      await this.getSettings()
     }
   },
   mounted() {
@@ -103,6 +158,7 @@ export default {
     this.portsSocket.addEventListener('message', function (event) {
       self.ports = JSON.parse(event.data)
     })
+    this.getSettings()
   }
 }
 </script>
@@ -120,7 +176,7 @@ export default {
   display: grid;
   grid-template-areas:
       "live-die all"
-      "ports all";
+      "ports settings";
   grid-auto-columns: calc(50% - #{$used_space_vertical}) calc(50% - #{$used_space_vertical});
   grid-auto-rows: calc(55% - #{$used_space_vertical}) calc(45% - #{$used_space_horizontal});
   gap: $gap;
