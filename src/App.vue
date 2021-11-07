@@ -4,23 +4,23 @@
              :listName="`SSH (${sshList.length})`"
              @add-ssh="sshRequest($event, 'post')"
              @delete-ssh="sshRequest($event, 'delete')"
-             class="all-ssh"></SSHList>
+             class="all-ssh"/>
     <SSHTabs class="live-die">
       <SSHList :sshList="liveList"
                :listName="`Live (${liveList.length})`"
                @delete-ssh="sshRequest($event, 'delete')"
-               :readOnly="true"></SSHList>
+               :readOnly="true"/>
       <SSHList :sshList="dieList"
                :listName="`Die (${dieList.length})`"
                @delete-ssh="sshRequest($event, 'delete')"
-               :readOnly="true"></SSHList>
+               :readOnly="true"/>
     </SSHTabs>
     <Ports
         :ports="ports"
         @add-ports="portsRequest($event, 'post')"
         @reset-port="portsRequest($event, 'put')"
         @remove-port="portsRequest($event, 'delete')"
-        class="ports"></Ports>
+        class="ports"/>
   </div>
 </template>
 
