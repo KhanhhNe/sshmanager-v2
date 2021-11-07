@@ -1,8 +1,11 @@
 <template>
   <div class="tabs-wrapper">
     <ul>
-      <li v-for="tab in tabs" :key="tab.listName">
-        <button @click="selectTab(tab)">{{ tab.listName }}</button>
+      <li v-for="tab in tabs" :key="tab.title">
+        <button
+            @click="selectTab(tab)"
+            :class="tab !== currentTab ? 'outline' : ''">{{ tab.title }}
+        </button>
       </li>
     </ul>
     <slot></slot>

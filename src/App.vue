@@ -1,26 +1,27 @@
 <template>
   <div id="app">
     <SSHList :sshList="sshList"
-             :listName="`SSH (${sshList.length})`"
+             :title="`SSH (${sshList.length})`"
              @add-ssh="sshRequest($event, 'post')"
              @delete-ssh="sshRequest($event, 'delete')"
              class="all-ssh"/>
-    <SSHTabs class="live-die">
+    <Tabs class="live-die">
       <SSHList :sshList="liveList"
-               :listName="`Live (${liveList.length})`"
+               :title="`Live (${liveList.length})`"
                @delete-ssh="sshRequest($event, 'delete')"
                :readOnly="true"/>
       <SSHList :sshList="dieList"
-               :listName="`Die (${dieList.length})`"
+               :title="`Die (${dieList.length})`"
                @delete-ssh="sshRequest($event, 'delete')"
                :readOnly="true"/>
-    </SSHTabs>
-    <Ports
-        :ports="ports"
-        @add-ports="portsRequest($event, 'post')"
-        @reset-port="portsRequest($event, 'put')"
-        @remove-port="portsRequest($event, 'delete')"
-        class="ports"/>
+      <Ports
+          :ports="ports"
+          :title="`Ports (${ports.length})`"
+          @add-ports="portsRequest($event, 'post')"
+          @reset-port="portsRequest($event, 'put')"
+          @remove-port="portsRequest($event, 'delete')"
+      />
+    </Tabs>
     <Settings
         :settings="settings"
         @update-settings="updateSettings($event)"
@@ -32,7 +33,7 @@
 <!--suppress JSUnresolvedVariable -->
 <script>
 import SSHList from './components/SSHList.vue'
-import SSHTabs from './components/SSHTabs.vue'
+import Tabs from './components/Tabs.vue'
 import Ports from './components/Ports.vue'
 import Settings from './components/Settings.vue'
 import '@picocss/pico'
@@ -41,8 +42,8 @@ import 'fontisto'
 export default {
   name: 'App',
   components: {
+    Tabs,
     SSHList,
-    SSHTabs,
     Ports,
     Settings
   },
@@ -176,9 +177,9 @@ export default {
   display: grid;
   grid-template-areas:
       "live-die all"
-      "ports settings";
+      "settings all";
   grid-auto-columns: calc(50% - #{$used_space_vertical}) calc(50% - #{$used_space_vertical});
-  grid-auto-rows: calc(55% - #{$used_space_vertical}) calc(45% - #{$used_space_horizontal});
+  grid-auto-rows: calc(60% - #{$used_space_vertical}) calc(40% - #{$used_space_horizontal});
   gap: $gap;
   overflow: hidden;
 

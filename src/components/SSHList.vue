@@ -2,7 +2,7 @@
 <template>
   <article v-show="!hidden">
     <ArticleTitle>
-      <template v-slot:title>{{ listName }}</template>
+      <template v-slot:title>{{ title }}</template>
       <label style="padding-right: 0.2rem">Hiển thị</label>
       <select v-model="maxToDisplay" style="margin-right: 1rem">
         <option :value="200" selected>200</option>
@@ -72,7 +72,7 @@ export default {
   },
   props: {
     sshList: Array,
-    listName: String,
+    title: String,
     readOnly: Boolean
   },
   computed: {

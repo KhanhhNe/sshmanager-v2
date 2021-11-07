@@ -1,8 +1,8 @@
 <!--suppress JSUnresolvedVariable -->
 <template>
-  <article>
+  <article v-show="!hidden">
     <ArticleTitle>
-      <template v-slot:title>Ports ({{ ports.length }})</template>
+      <template v-slot:title>{{ title }}</template>
       <input type="text" v-model="portsText" placeholder="8080,8000-8005,...">
       <button @click="addPorts">Thêm Port</button>
     </ArticleTitle>
@@ -54,10 +54,12 @@ export default {
     ArticleTitle
   },
   props: {
-    ports: Array
+    ports: Array,
+    title: String
   },
   data() {
     return {
+      hidden: false,
       showPortsInput: false,
       portsText: ''
     }
