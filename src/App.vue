@@ -1,19 +1,22 @@
 <template>
   <div id="app">
-    <SSHList :sshList="sshList"
-             :title="`SSH (${sshList.length})`"
-             @add-ssh="sshRequest($event, 'post')"
-             @delete-ssh="sshRequest($event, 'delete')"
-             class="all-ssh"/>
+    <SSHList
+        :sshList="sshList"
+        :title="`SSH (${sshList.length})`"
+        @add-ssh="sshRequest($event, 'post')"
+        @delete-ssh="sshRequest($event, 'delete')"
+        class="all-ssh"/>
     <Tabs class="live-die">
-      <SSHList :sshList="liveList"
-               :title="`Live (${liveList.length})`"
-               @delete-ssh="sshRequest($event, 'delete')"
-               :readOnly="true"/>
-      <SSHList :sshList="dieList"
-               :title="`Die (${dieList.length})`"
-               @delete-ssh="sshRequest($event, 'delete')"
-               :readOnly="true"/>
+      <SSHList
+          :sshList="liveList"
+          :title="`Live (${liveList.length})`"
+          @delete-ssh="sshRequest($event, 'delete')"
+          :readOnly="true"/>
+      <SSHList
+          :sshList="dieList"
+          :title="`Die (${dieList.length})`"
+          @delete-ssh="sshRequest($event, 'delete')"
+          :readOnly="true"/>
       <Ports
           :ports="ports"
           :title="`Ports (${ports.length})`"
@@ -37,6 +40,7 @@ import SSHList from './components/SSHList.vue'
 import Tabs from './components/Tabs.vue'
 import Ports from './components/Ports.vue'
 import Settings from './components/Settings.vue'
+import tippy from 'tippy.js'
 import '@picocss/pico'
 import 'fontisto'
 
@@ -163,6 +167,7 @@ export default {
       self.ports = JSON.parse(event.data)
     })
     this.getSettings()
+    tippy('[data-tippy-content]')
   }
 }
 </script>

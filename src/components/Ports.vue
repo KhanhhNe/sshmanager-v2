@@ -7,7 +7,9 @@
           type="text"
           v-model="portsText"
           placeholder="8080,8000-8005,...">
-      <button @click="addPorts"><i class="fi fi-plus-a"></i></button>
+      <button
+          @click="addPorts"
+          data-tippy-content="Thêm ports"><i class="fi fi-plus-a"></i></button>
     </ArticleTitle>
     <div class="ports">
       <table>
@@ -19,10 +21,13 @@
           <th><a
               role="button"
               @click="$emit('reset-port', ports)"
+              data-tippy-content="Đổi lại toàn bộ ports"
           ><i class="fi fi-spinner-refresh"></i></a></th>
-          <th><a role="button"
-                 @click="$emit('remove-port', ports)"
-                 class="secondary outline"
+          <th><a
+              role="button"
+              @click="$emit('remove-port', ports)"
+              class="secondary outline"
+              data-tippy-content="Xoá toàn bộ ports"
           ><i class="fi fi-trash"></i></a></th>
         </tr>
         </thead>
@@ -30,19 +35,22 @@
         <tr v-for="portInfo in ports" :key="portInfo.port">
           <td>{{ portInfo.port }}</td>
           <td v-if="portInfo.ip">
-            <span :data-clipboard-text="proxyUrl(portInfo)"
-                  class="proxy-ip">{{ portInfo.ip }}</span>
+            <span
+                :data-clipboard-text="proxyUrl(portInfo)"
+                class="proxy-ip">{{ portInfo.ip }}</span>
           </td>
           <td v-else class="no-proxy">Chưa kết nối</td>
           <td v-if="portInfo.last_checked">
             {{ getTimeDisplay(portInfo.last_checked) }}
           </td>
-          <td><a role="button"
-                 @click="$emit('reset-port', [portInfo])"
+          <td><a
+              role="button"
+              @click="$emit('reset-port', [portInfo])"
           ><i class="fi fi-spinner-refresh"></i></a></td>
-          <td><a role="button"
-                 @click="$emit('remove-port', [portInfo])"
-                 class="secondary outline"
+          <td><a
+              role="button"
+              @click="$emit('remove-port', [portInfo])"
+              class="secondary outline"
           ><i class="fi fi-trash"></i></a></td>
         </tr>
         </tbody>

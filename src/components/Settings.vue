@@ -2,14 +2,19 @@
   <article>
     <ArticleTitle>
       <template v-slot:title>Settings</template>
-      <div class="warning"
-           v-if="needRestart">Khởi động lại SSHManager để cập nhật cài đặt
+      <div
+          class="warning"
+          v-if="needRestart">Khởi động lại SSHManager để cập nhật cài đặt
       </div>
-      <a @click="$emit('reset-settings')"
-         role="button"
-         class="outline"><i class="fi fi-spinner-refresh"></i></a>
-      <a @click="updateSettings"
-         role="button"><i class="fi fi-check"></i></a>
+      <a
+          @click="$emit('reset-settings')"
+          role="button"
+          data-tippy-content="Đặt lại toàn bộ cài đặt"
+          class="outline"><i class="fi fi-spinner-refresh"></i></a>
+      <a
+          @click="updateSettings"
+          data-tippy-content="Cập nhật cài đặt"
+          role="button"><i class="fi fi-check"></i></a>
     </ArticleTitle>
     <div class="content">
       <table>
@@ -23,9 +28,12 @@
         <tr v-for="setting in settings" :key="setting.name">
           <td>{{ setting.readable_name }}</td>
           <td>
-            <input v-model="setting.value" v-if="typeof setting.value === 'boolean'" type="checkbox">
-            <input v-model="setting.value"
-                   v-if="typeof setting.value === 'number'" type="number">
+            <input
+                v-model="setting.value"
+                v-if="typeof setting.value === 'boolean'" type="checkbox">
+            <input
+                v-model="setting.value"
+                v-if="typeof setting.value === 'number'" type="number">
             <input v-model="setting.value" v-else type="text">
           </td>
         </tr>

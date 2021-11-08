@@ -11,12 +11,18 @@
         <option :value="2000">2000</option>
         <option :value="Infinity">Tất cả</option>
       </select>
-      <button v-if="!readOnly"
-              @click="fileInput.click()"><i class="fi fi-upload"></i></button>
-      <button @click="downloadSSHList" style="margin-right: 0.75rem"><i
-          class="fi fi-download"></i></button>
-      <button @click="$emit('delete-ssh', sshList)"
-              class="secondary outline"><i class="fi fi-trash"></i></button>
+      <button
+          v-if="!readOnly"
+          @click="fileInput.click()"
+          data-tippy-content="Tải lên"><i class="fi fi-upload"></i></button>
+      <button
+          @click="downloadSSHList"
+          data-tippy-content="Tải xuống"
+          style="margin-right: 0.75rem"><i class="fi fi-download"></i></button>
+      <button
+          @click="$emit('delete-ssh', sshList)"
+          data-tippy-content="Xoá"
+          class="secondary outline"><i class="fi fi-trash"></i></button>
     </ArticleTitle>
     <div class="list-content">
       <table>
@@ -34,8 +40,7 @@
             v-for="ssh in sshList.slice(0, maxToDisplay)"
             :key="getSshText(ssh)"
             :class="[ssh.is_checked ? (ssh.is_live ? 'live' : 'die') : '']"
-            class="ssh"
-        >
+            class="ssh">
           <td>{{ ssh.is_checked ? (ssh.is_live ? 'Live' : 'Die') : '' }}</td>
           <td>{{ ssh.ip }}</td>
           <td>{{ ssh.username }}</td>
@@ -44,12 +49,13 @@
         </tr>
         </tbody>
       </table>
-      <input v-if="!readOnly"
-             :id="`${title}-upload`"
-             @change="getSSHListFromFile"
-             type="file"
-             accept="text/plain, text/csv"
-             style="display: none">
+      <input
+          v-if="!readOnly"
+          :id="`${title}-upload`"
+          @change="getSSHListFromFile"
+          type="file"
+          accept="text/plain, text/csv"
+          style="display: none">
     </div>
   </article>
 </template>
