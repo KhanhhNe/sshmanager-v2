@@ -34,10 +34,14 @@ class TaskRunner(ABC):
             while len(self.tasks) < self.tasks_limit():
                 new_task = self.get_new_task()
                 if new_task is not None:
-                    self.tasks.append(asyncio.ensure_future(new_task))
+                    self.tasks.append(new_task)
                 else:
                     break
-            # Remove done tasks
+
+            # Await done tasks
+            await asyncio.gather(*[task for task in self.tasks if task.done()])
+
+            # Remove those tasks, keeping only pending ones
             self.tasks = [task for task in self.tasks if not task.done()]
             await asyncio.sleep(1)
 
@@ -55,16 +59,15 @@ class SSHCheckRunner(TaskRunner):
                 lambda obj: obj.is_checking is False)
             ssh = not_checked \
                 .filter(lambda obj: obj.last_checked is None) \
-                .first()
+                .for_update().first()
             if ssh is None:
                 ssh = not_checked \
                     .order_by(lambda obj: obj.last_checked) \
-                    .first()
+                    .for_update().first()
             if ssh is None:
                 return None
-
             ssh.is_checking = True
-            return check_ssh_status(ssh)
+            return asyncio.ensure_future(check_ssh_status(ssh))
 
 
 class PortCheckRunner(TaskRunner):
@@ -81,16 +84,16 @@ class PortCheckRunner(TaskRunner):
                 .filter(lambda obj: obj.ssh is not None)
             port = not_checked \
                 .filter(lambda obj: obj.last_checked is None) \
-                .first()
+                .for_update().first()
             if port is None:
                 port = not_checked \
                     .order_by(lambda obj: obj.last_checked) \
-                    .first()
-            if port is not None:
-                port.is_checking = True
-                return check_port_ip(port)
-            else:
+                    .for_update().first()
+            if port is None:
                 return None
+            else:
+                port.is_checking = True
+            return asyncio.ensure_future(check_port_ip(port))
 
 
 class ConnectSSHToPortRunner(TaskRunner):
@@ -102,14 +105,16 @@ class ConnectSSHToPortRunner(TaskRunner):
 
     def get_new_task(self):
         with db_session:
-            port = Port.select(lambda p: not p.ssh).first()
-            if not port:
+            port = Port.select(lambda p: p.ssh is None).for_update().first()
+            if port is None:
                 return None
-            ssh = SSH.select(lambda s: s.is_live and not s.port).first()
-            if not ssh:
+            ssh = SSH \
+                .select(lambda s: s.is_live and s.port is None) \
+                .for_update().random(1)[0]
+            if ssh is None:
                 return None
             port.ssh = ssh
-            return connect_ssh_to_port(ssh, port)
+            return asyncio.ensure_future(connect_ssh_to_port(ssh, port))
 
 
 async def check_ssh_status(ssh: SSH):
@@ -123,7 +128,7 @@ async def check_ssh_status(ssh: SSH):
 
     with db_session:
         try:
-            ssh: SSH = SSH[ssh.id]
+            ssh: SSH = SSH.get_for_update(id=ssh.id)
         except ObjectNotFound:
             return
 
@@ -141,13 +146,14 @@ async def check_port_ip(port: Port):
 
     with db_session:
         try:
-            port: Port = Port[port.id]
+            port: Port = Port.get_for_update(id=port.id)
         except ObjectNotFound:
             return
 
         if not ip and port.is_connected_to_ssh:
             port.ssh = None
             port.is_connected_to_ssh = False
+            logger.info(f"Port {port.port} - {port.ip} died!")
 
         port.ip = ip
         port.last_checked = datetime.now()
@@ -171,8 +177,8 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
 
     with db_session:
         try:
-            port: Port = Port[port.id]
-            ssh: SSH = SSH[ssh.id]
+            port: Port = Port.get_for_update(id=port.id)
+            ssh: SSH = SSH.get_for_update(id=ssh.id)
         except ObjectNotFound:
             return
 
@@ -189,9 +195,9 @@ def reset_ssh_and_port_status():
     Reset attribute is_checking of Port and SSH to False on startup
     """
     with db_session:
-        for ssh in SSH.select():
+        for ssh in SSH.select().for_update():
             ssh.is_checking = False
-        for port in Port.select():
+        for port in Port.select().for_update():
             port.is_checking = False
             port.ip = ''
             port.ssh = None
