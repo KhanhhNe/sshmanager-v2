@@ -22,7 +22,7 @@ def update_websocket(data_func):
                     db_task = asyncio.create_task(utils.wait_for_db_update())
 
                 # Timeout so we don't wait infinitely
-                timeout_task = asyncio.create_task(asyncio.sleep(15))
+                timeout_task = asyncio.create_task(asyncio.sleep(5))
 
                 # Wait for next update call from client or next db update
                 done, pending = await asyncio.wait(
