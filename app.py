@@ -5,7 +5,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-import tasks
+from controllers import tasks
 from models.database import db
 from views import ports_api, settings_api, ssh_api
 
