@@ -32,10 +32,9 @@ def can_connect_to_socket(host, port):
     :return: True if connected successfully. False otherwise.
     """
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((host, port))
-            return True
-    except (ConnectionError, TimeoutError):
+        socket.create_connection((host, port), 10)
+        return True
+    except (ConnectionError, TimeoutError, socket.timeout):
         return False
 
 
