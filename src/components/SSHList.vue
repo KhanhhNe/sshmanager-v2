@@ -13,7 +13,7 @@
       </select>
       <button
           v-if="!readOnly"
-          @click="fileInput.click()"
+          v-on:click="$refs.fileInput.click()"
           data-tippy-content="Tải lên"><i class="fi fi-upload"></i></button>
       <button
           @click="downloadSSHList"
@@ -51,8 +51,8 @@
       </table>
       <input
           v-if="!readOnly"
-          :id="`${title}-upload`"
-          @change="getSSHListFromFile"
+          ref="fileInput"
+          @change="getSSHListFromFile($event.target.files[0])"
           type="file"
           accept="text/plain, text/csv"
           style="display: none">
@@ -96,8 +96,7 @@ export default {
     /**
      * Get SSH list from input#file-upload
      */
-    getSSHListFromFile() {
-      const file = this.fileInput.files[0]
+    getSSHListFromFile(file) {
       const reader = new FileReader()
       const self = this
 
@@ -149,7 +148,6 @@ export default {
     }
   },
   mounted() {
-    this.fileInput = document.getElementById(`${this.title}-upload`)
   }
 }
 </script>
