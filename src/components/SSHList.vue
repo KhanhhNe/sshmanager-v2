@@ -64,13 +64,7 @@
 <script>
 import ArticleTitle from "@/components/ArticleTitle";
 import {saveAs} from "file-saver";
-import {
-  getSshText,
-  getTimeDisplay,
-  isInList,
-  isSameSSH,
-  readFileAsText
-} from "@/utils";
+import {getSshText, getTimeDisplay, isInList, readFileAsText} from "@/utils";
 
 export default {
   name: 'SSHList',
@@ -96,7 +90,6 @@ export default {
   methods: {
     getTimeDisplay,
     getSshText,
-    isSameSSH,
 
     /**
      * Get SSH list from input#file-upload
@@ -108,7 +101,7 @@ export default {
       for (const line of (await readFileAsText(file)).split('\n')) {
         try {
           const [ip, username, password] = line
-              .match(new RegExp(/(\d+\.){3}\d+(\|[^|]*){2}/g))[0]
+              .match(new RegExp(/(?:\d+\.){3}\d+(?:\|[^|]*){2}/g))[0]
               .split('|')
           const ssh = {
             is_live: false,
@@ -139,8 +132,8 @@ export default {
      * Update SSH list to backend
      */
     async updateSSH(sshList) {
-      const added = sshList.filter(ssh => !this.isInList(ssh, this.sshList))
-      const removed = this.sshList.filter(ssh => !this.isInList(ssh, sshList))
+      const added = sshList.filter(ssh => !isInList(ssh, this.sshList))
+      const removed = this.sshList.filter(ssh => !isInList(ssh, sshList))
 
       this.$emit('delete-ssh', removed)
       this.$emit('add-ssh', added)

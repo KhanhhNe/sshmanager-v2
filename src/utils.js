@@ -43,7 +43,7 @@ function getSshText(ssh) {
  */
 function isInList(ssh, sshList) {
     for (const s of sshList) {
-        if (this.isSameSSH(s, ssh))
+        if (isSameSSH(s, ssh))
             return true
     }
     return false
