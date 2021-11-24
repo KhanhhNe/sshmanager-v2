@@ -1,7 +1,7 @@
 <template>
-  <article>
+  <article v-show="!hidden">
     <ArticleTitle>
-      <template v-slot:title>Settings</template>
+      <template v-slot:title>{{ title }}</template>
       <div
           class="warning"
           v-if="needRestart">Khởi động lại SSHManager để cập nhật cài đặt
@@ -52,8 +52,14 @@ export default {
     ArticleTitle
   },
   props: {
+    title: String,
     settings: Array,
     needRestart: Boolean
+  },
+  data() {
+    return {
+      hidden: false,
+    }
   },
   methods: {
     updateSettings() {

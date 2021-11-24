@@ -25,12 +25,17 @@
           @remove-port="portsRequest($event, 'delete')"
       />
     </Tabs>
-    <Settings
-        :settings="settings"
-        :needRestart="needRestart"
-        @update-settings="updateSettings($event)"
-        @reset-settings="resetSettings()"
-        class="settings"/>
+    <Tabs>
+      <Settings
+          title="Settings"
+          :settings="settings"
+          :needRestart="needRestart"
+          @update-settings="updateSettings($event)"
+          @reset-settings="resetSettings()"
+          class="settings"/>
+      <Plugins
+          title="Plugins"/>
+    </Tabs>
   </div>
 </template>
 
@@ -40,6 +45,7 @@ import SSHList from './components/SSHList.vue'
 import Tabs from './components/Tabs.vue'
 import Ports from './components/Ports.vue'
 import Settings from './components/Settings.vue'
+import Plugins from './components/Plugins.vue'
 import tippy from 'tippy.js'
 import '@picocss/pico'
 import 'fontisto'
@@ -50,7 +56,8 @@ export default {
     Tabs,
     SSHList,
     Ports,
-    Settings
+    Settings,
+    Plugins
   },
   data() {
     return {
@@ -187,7 +194,7 @@ export default {
       "live-die all"
       "settings all";
   grid-auto-columns: calc(50% - #{$used_space_vertical}) calc(50% - #{$used_space_vertical});
-  grid-auto-rows: calc(60% - #{$used_space_vertical}) calc(40% - #{$used_space_horizontal});
+  grid-auto-rows: calc(50% - #{$used_space_vertical}) calc(50% - #{$used_space_horizontal});
   gap: $gap;
   overflow: hidden;
 

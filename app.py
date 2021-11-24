@@ -1,13 +1,14 @@
 import asyncio
 import json
 import logging
+import os.path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from controllers import tasks
 from models.database import db
-from views import ports_api, settings_api, ssh_api
+from views import plugins_api, ports_api, settings_api, ssh_api
 
 logging.basicConfig(level=logging.INFO,
                     format="[%(asctime)s] %(name)s - %(message)s")
@@ -29,6 +30,10 @@ def startup_tasks():
     asyncio.ensure_future(asyncio.gather(*[
         runner.run_task() for runner in runners
     ]))
+    try:
+        os.makedirs('plugins')
+    except FileExistsError:
+        pass
 
 
 @app.on_event('shutdown')
@@ -39,4 +44,5 @@ def shutdown_tasks():
 app.include_router(ssh_api.router, prefix='/api/ssh')
 app.include_router(ports_api.router, prefix='/api/ports')
 app.include_router(settings_api.router, prefix='/api/settings')
-app.mount('/', StaticFiles(directory='dist', html=True))
+app.include_router(plugins_api.router, prefix='/api/plugins')
+app.mount('/', StaticFiles(directory='dist', html=True, check_dir=False))

@@ -46,3 +46,13 @@ class SettingsInOut(BaseModel):
 
 class SettingsUpdateResult(BaseModel):
     need_restart: bool
+
+
+class PluginIn(BaseModel):
+    code: str
+    name: str
+
+
+class PluginOut(BaseModel):
+    code: str
+    name: str
