@@ -36,3 +36,6 @@ app_dist/
 
 # Config file
 config.ini
+
+# Plugins
+plugins/
