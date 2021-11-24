@@ -33,6 +33,7 @@
 
 <script>
 import ArticleTitle from "@/components/ArticleTitle";
+import {readFileAsText} from "@/utils";
 
 export default {
   name: "Plugins",
@@ -53,26 +54,20 @@ export default {
     /**
      * Add a new plugin (send request to server)
      * @param file
+     * @returns {Promise<void>}
      */
-    addPlugin(file) {
-      const reader = new FileReader()
-      const self = this
-
-      reader.addEventListener('load', async function uploadPlugin(event) {
-        await fetch('/api/plugins/', {
-          method: 'post',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            name: file.name,
-            code: event.target.result
-          })
+    async addPlugin(file) {
+      await fetch('/api/plugins/', {
+        method: 'post',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: file.name,
+          code: await readFileAsText(file)
         })
-        await self.getPlugins()
       })
-
-      reader.readAsText(file)
+      await this.getPlugins()
     },
 
     /**

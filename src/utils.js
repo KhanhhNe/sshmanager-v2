@@ -50,9 +50,26 @@ function isInList(ssh, sshList) {
 }
 
 
+/**
+ * Read a file as text
+ * @param file File object
+ * @returns {Promise<String>}
+ */
+function readFileAsText(file) {
+    const reader = new FileReader()
+    return new Promise(resolve => {
+        reader.addEventListener('load', event => {
+            resolve(event.target.result)
+        })
+        reader.readAsText(file)
+    })
+}
+
+
 module.exports = {
     getTimeDisplay,
     isSameSSH,
     getSshText,
-    isInList
+    isInList,
+    readFileAsText
 }

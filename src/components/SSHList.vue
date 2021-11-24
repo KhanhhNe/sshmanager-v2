@@ -64,7 +64,13 @@
 <script>
 import ArticleTitle from "@/components/ArticleTitle";
 import {saveAs} from "file-saver";
-import {getSshText, getTimeDisplay, isInList, isSameSSH} from "@/utils";
+import {
+  getSshText,
+  getTimeDisplay,
+  isInList,
+  isSameSSH,
+  readFileAsText
+} from "@/utils";
 
 export default {
   name: 'SSHList',
@@ -91,39 +97,32 @@ export default {
     getTimeDisplay,
     getSshText,
     isSameSSH,
-    isInList,
 
     /**
      * Get SSH list from input#file-upload
+     * @param file
+     * @returns {Promise<void>}
      */
-    getSSHListFromFile(file) {
-      const reader = new FileReader()
-      const self = this
-
-      reader.addEventListener('load', function updateSSHList(event) {
-        // Store all parsed SSH in this
-        const sshList = []
-        for (const line of event.target.result.split('\n')) {
-          try {
-            const [ip, username, password] = line
-                .match(new RegExp(/(\d+\.){3}\d+(\|[^|]*){2}/g))[0]
-                .split('|')
-            const ssh = {
-              is_live: false,
-              ip, username, password
-            }
-            // Only add more if it's not added
-            if (!self.isInList(ssh, sshList)) {
-              sshList.push(ssh)
-            }
-          } catch (e) {
-            // Ignore parsing errors
+    async getSSHListFromFile(file) {
+      const sshList = []
+      for (const line of (await readFileAsText(file)).split('\n')) {
+        try {
+          const [ip, username, password] = line
+              .match(new RegExp(/(\d+\.){3}\d+(\|[^|]*){2}/g))[0]
+              .split('|')
+          const ssh = {
+            is_live: false,
+            ip, username, password
           }
+          // Only add more if it's not added
+          if (!isInList(ssh, sshList)) {
+            sshList.push(ssh)
+          }
+        } catch (e) {
+          // Ignore parsing errors
         }
-        self.updateSSH(sshList)
-      })
-
-      reader.readAsText(file)
+      }
+      await this.updateSSH(sshList)
     },
 
     /**
