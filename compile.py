@@ -1,11 +1,19 @@
 import os
 import shutil
+import subprocess
 import zipfile
 
 import PyInstaller.__main__
 
 app_name = os.path.basename(os.getcwd())
 dist_path = 'app_dist'
+
+shutil.rmtree('dist', ignore_errors=True)
+shutil.rmtree('app_dist', ignore_errors=True)
+completed = subprocess.run('npm run build', shell=True)
+if completed.returncode:
+    print("NPM build failed!")
+    exit()
 
 PyInstaller.__main__.run([
     'main.py', f'--name={app_name}', '--icon=public/favicon.ico',
@@ -25,7 +33,7 @@ shutil.copytree('dist', f"{dist_path}/{app_name}/dist", dirs_exist_ok=True)
 print("Zipping files...")
 built_file = zipfile.ZipFile(f'{app_name}.zip', 'w')
 
-os.chdir('app_dist')
+os.chdir(dist_path)
 for folder, _, filenames in os.walk(app_name):
     for filename in filenames:
         filepath = os.path.join(folder, filename)
