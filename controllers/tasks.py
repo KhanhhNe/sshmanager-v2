@@ -31,7 +31,7 @@ class TaskRunner(ABC):
 
     async def run_task(self):
         while True:
-            while len(self.tasks) < self.tasks_limit():
+            while len(self.tasks) < self.tasks_limit:
                 new_task = self.get_new_task()
                 if new_task is not None:
                     self.tasks.append(new_task)
@@ -47,11 +47,10 @@ class TaskRunner(ABC):
 
 
 class SSHCheckRunner(TaskRunner):
+    @property
     def tasks_limit(self):
         conf = config.get_config()
-        tasks_count = conf.getint('SSH', 'tasks_count')
-        workers_count = conf.getint('WEB', 'workers')
-        return tasks_count // workers_count
+        return conf.getint('SSH', 'tasks_count')
 
     def get_new_task(self):
         with db_session:
@@ -71,11 +70,10 @@ class SSHCheckRunner(TaskRunner):
 
 
 class PortCheckRunner(TaskRunner):
+    @property
     def tasks_limit(self):
         conf = config.get_config()
-        tasks_count = conf.getint('PORT', 'tasks_count')
-        workers_count = conf.getint('WEB', 'workers')
-        return tasks_count // workers_count
+        return conf.getint('PORT', 'tasks_count')
 
     def get_new_task(self):
         with db_session:
@@ -97,11 +95,10 @@ class PortCheckRunner(TaskRunner):
 
 
 class ConnectSSHToPortRunner(TaskRunner):
+    @property
     def tasks_limit(self):
         conf = config.get_config()
-        tasks_count = conf.getint('PORT', 'tasks_count')
-        workers_count = conf.getint('WEB', 'workers')
-        return tasks_count // workers_count
+        return conf.getint('PORT', 'tasks_count')
 
     def get_new_task(self):
         with db_session:
