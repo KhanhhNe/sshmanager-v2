@@ -39,3 +39,6 @@ config.ini
 
 # Plugins
 plugins/
+
+# Temp file
+current_thread.txt

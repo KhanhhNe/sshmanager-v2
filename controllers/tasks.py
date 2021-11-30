@@ -31,7 +31,7 @@ class TaskRunner(ABC):
 
     async def run_task(self):
         while True:
-            while len(self.tasks) < self.tasks_limit():
+            while len(self.tasks) < self.tasks_limit:
                 new_task = self.get_new_task()
                 if new_task is not None:
                     self.tasks.append(new_task)
@@ -47,11 +47,10 @@ class TaskRunner(ABC):
 
 
 class SSHCheckRunner(TaskRunner):
+    @property
     def tasks_limit(self):
         conf = config.get_config()
-        tasks_count = conf.getint('SSH', 'tasks_count')
-        workers_count = conf.getint('WEB', 'workers')
-        return tasks_count // workers_count
+        return conf.getint('SSH', 'tasks_count')
 
     def get_new_task(self):
         with db_session:
@@ -71,11 +70,10 @@ class SSHCheckRunner(TaskRunner):
 
 
 class PortCheckRunner(TaskRunner):
+    @property
     def tasks_limit(self):
         conf = config.get_config()
-        tasks_count = conf.getint('PORT', 'tasks_count')
-        workers_count = conf.getint('WEB', 'workers')
-        return tasks_count // workers_count
+        return conf.getint('PORT', 'tasks_count')
 
     def get_new_task(self):
         with db_session:
@@ -97,24 +95,28 @@ class PortCheckRunner(TaskRunner):
 
 
 class ConnectSSHToPortRunner(TaskRunner):
+    @property
     def tasks_limit(self):
         conf = config.get_config()
-        tasks_count = conf.getint('PORT', 'tasks_count')
-        workers_count = conf.getint('WEB', 'workers')
-        return tasks_count // workers_count
+        return conf.getint('PORT', 'tasks_count')
 
     def get_new_task(self):
         with db_session:
-            port = Port.select(lambda p: p.ssh is None).for_update().first()
-            if port is None:
-                return None
-            ssh = SSH \
-                .select(lambda s: s.is_live and s.port is None) \
-                .for_update().random(1)[0]
-            if ssh is None:
-                return None
-            port.ssh = ssh
-            return asyncio.ensure_future(connect_ssh_to_port(ssh, port))
+            try:
+                port = Port.select(lambda p: p.ssh is None) \
+                    .for_update(skip_locked=True).first()
+                if port is None:
+                    return None
+                ssh = SSH.select(lambda s: s.is_live and s.port is None) \
+                    .for_update(skip_locked=True).first()
+                if ssh is None:
+                    return None
+                port.ssh = ssh
+                return asyncio.ensure_future(connect_ssh_to_port(ssh, port))
+            except:
+                from traceback import print_exc
+                print("error")
+                print_exc()
 
 
 async def check_ssh_status(ssh: SSH):

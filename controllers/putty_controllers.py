@@ -60,7 +60,7 @@ async def connect_ssh(host: str, username: str, password: str,
     if not await loop.run_in_executor(None,
                                       utils.can_connect_to_socket,
                                       host, 21):
-        logger.info(
+        logger.debug(
             f"{log_message} ({run_time()}s) - Connection to SSH failed.")
         raise ProxyConnectionError
 
@@ -81,21 +81,21 @@ async def connect_ssh(host: str, username: str, password: str,
             if await get_proxy_ip(proxy_info.address):
                 if kill_after:
                     process.kill()
-                logger.info(
+                logger.debug(
                     f"{log_message} ({run_time()}s) - Connected successfully.")
                 return proxy_info
             else:
-                logger.info(
+                logger.debug(
                     f"{log_message} ({run_time()}s) - Cannot connect to proxy.")
                 raise ProxyConnectionError
         elif 'Password authentication failed' in output or \
                 'FATAL ERROR' in output:
-            logger.info(
+            logger.debug(
                 f"{log_message} ({run_time()}s) - {output}")
             raise ProxyConnectionError
 
     process.kill()
-    logger.info(
+    logger.debug(
         f"{log_message} ({run_time()}s) - Exit code {process.returncode}.")
     raise ProxyConnectionError
 
