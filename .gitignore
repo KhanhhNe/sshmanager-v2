@@ -42,3 +42,6 @@ plugins/
 
 # Temp file
 current_thread.txt
+
+# Log file
+*.log
