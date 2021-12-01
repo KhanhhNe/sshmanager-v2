@@ -11,8 +11,15 @@ from controllers import tasks
 from models.database import db
 from views import plugins_api, ports_api, settings_api, ssh_api
 
-logging.basicConfig(level=logging.INFO,
-                    format="[%(asctime)s] %(name)s - %(message)s")
+file_logging = logging.FileHandler('debug.log')
+file_logging.setLevel(logging.DEBUG)
+console_logging = logging.StreamHandler()
+console_logging.setLevel(logging.INFO)
+
+logging.basicConfig(level=logging.DEBUG,
+                    format="[%(asctime)s] %(name)s - %(message)s",
+                    handlers=[file_logging, console_logging])
+
 app = FastAPI(title="SSHManager by KhanhhNe",
               description="Quản lý SSH chuyên nghiệp và nhanh chóng",
               version=json.load(open('package.json'))['version'])

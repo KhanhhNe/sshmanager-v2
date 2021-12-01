@@ -50,7 +50,7 @@ async def connect_ssh(host: str, username: str, password: str,
     """
     if not port:
         port = utils.get_free_port()
-    log_message = f"{host}|{username}|{password}|{port}"
+    log_message = f"{host}|{username}|{'*' * len(password)}|{port}"
     start_time = time.perf_counter()
 
     def run_time():
