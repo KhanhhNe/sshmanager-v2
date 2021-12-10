@@ -68,7 +68,6 @@ function readFileAsText(file) {
 
 module.exports = {
     getTimeDisplay,
-    isSameSSH,
     getSshText,
     isInList,
     readFileAsText

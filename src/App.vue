@@ -71,10 +71,10 @@ export default {
   },
   computed: {
     liveList() {
-      return this.sshList.filter(ssh => ssh.is_checked && ssh.is_live)
+      return this.sshList.filter(ssh => ssh.last_checked !== null && ssh.is_live)
     },
     dieList() {
-      return this.sshList.filter(ssh => ssh.is_checked && !ssh.is_live)
+      return this.sshList.filter(ssh => ssh.last_checked !== null && !ssh.is_live)
     }
   },
   methods: {
@@ -124,10 +124,8 @@ export default {
       const settingsNames = await (await fetch('/api/settings/names/')).json()
       const settings = []
       for (const [name, value] of Object.entries(settingsValues)) {
-        settings.push({
-          name, value,
-          readable_name: settingsNames[name]
-        })
+        const readable_name = settingsNames[name]
+        settings.push({name, value, readable_name})
       }
       this.settings = settings
     },
@@ -166,9 +164,6 @@ export default {
     const self = this
     this.sshSocket.addEventListener('message', function (event) {
       self.sshList = JSON.parse(event.data)
-      for (const ssh of self.sshList) {
-        ssh.is_checked = ssh.last_checked !== null
-      }
     })
     this.portsSocket.addEventListener('message', function (event) {
       self.ports = JSON.parse(event.data)

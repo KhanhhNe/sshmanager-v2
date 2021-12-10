@@ -125,11 +125,12 @@ async def get_proxy_ip(proxy_address, tries=0) -> str:
     try:
         connector = ProxyConnector.from_url(proxy_address)
         async with aiohttp.ClientSession(connector=connector) as client:
+            # noinspection PyBroadException
             try:
                 async with client.get(
                         'https://api.ipify.org?format=text') as resp:
                     return await resp.text()
-            except:
+            except Exception:
                 async with client.get('https://ip.seeip.org') as resp:
                     return await resp.text()
     except (aiohttp.ClientError, python_socks.ProxyConnectionError,
