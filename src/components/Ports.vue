@@ -153,8 +153,11 @@ article {
       padding: 0.25rem 0.5rem;
     }
 
-    .proxy-ip:hover {
-      cursor: pointer;
+    .proxy-ip {
+      &:hover {
+        cursor: pointer;
+        text-decoration: underline;
+      }
     }
 
     .port-info > * {
