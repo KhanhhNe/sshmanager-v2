@@ -15,7 +15,7 @@ class Port(db.Entity):
     ssh = Optional(SSH)
     ip = Optional(str)  # External IP after proxying through port
     is_checking = Required(bool, default=False)
-    is_connected_to_ssh = Required(bool, default=False)
+    time_connected = Optional(datetime)
     last_checked = Optional(datetime)
 
     @property
