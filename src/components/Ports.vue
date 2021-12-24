@@ -34,12 +34,16 @@
         <tbody>
         <tr v-for="portInfo in ports" :key="portInfo.port">
           <td>{{ portInfo.port }}</td>
-          <td v-if="portInfo.ip">
+          <td class="port-info" v-if="portInfo.ssh">
+            <i class="fi fi-slightly-smile" style="color: green"></i>
             <span
                 :data-clipboard-text="proxyUrl(portInfo)"
-                class="proxy-ip">{{ portInfo.ip }}</span>
+                class="proxy-ip">{{ portInfo.ssh.ip }}</span>
           </td>
-          <td v-else class="no-proxy">Chưa kết nối</td>
+          <td v-else class="port-info">
+            <i class="fi fi-frowning" style="color: red"></i>
+            <span style="opacity: 0.3">Chưa kết nối</span>
+          </td>
           <td v-if="portInfo.last_checked">
             {{ getTimeDisplay(portInfo.last_checked) }}
           </td>
@@ -153,8 +157,10 @@ article {
       cursor: pointer;
     }
 
-    .no-proxy {
-      opacity: 0.3;
+    .port-info > * {
+      margin-top: auto;
+      margin-bottom: auto;
+      margin-right: 0.5rem;
     }
   }
 
