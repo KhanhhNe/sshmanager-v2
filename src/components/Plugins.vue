@@ -11,6 +11,7 @@
       <div
           v-for="plugin in plugins"
           :key="plugin.name"
+          :id="getIdString(plugin)"
           class="plugin">
         <div class="plugin-title">
           <h6 style="margin-bottom: 0">{{ plugin.name }}</h6>
@@ -19,7 +20,7 @@
               class="secondary outline"><i class="fi fi-trash"></i>
           </button>
         </div>
-        <div :ref="plugin.name"></div>
+        <div class="plugin-body"></div>
       </div>
       <input
           ref="fileInput"
@@ -84,13 +85,18 @@ export default {
       this.plugins = this.plugins.filter(p => p !== plugin)
     },
 
+    getIdString(plugin) {
+      return plugin.name.replace(".js", '').match(/\w+/g).join('-').toLowerCase()
+    },
+
     /**
      * Run a plugin and show its output
      * @param plugin
      */
     runPlugin(plugin) {
-      const output = eval(plugin.code)
-      this.$refs[plugin.name][0].append(output)
+      const script = document.createElement('script')
+      script.src = `/api/plugins/js/${plugin.name}`
+      document.head.append(script)
     },
 
     /**
