@@ -147,9 +147,9 @@ async def check_port_ip(port: Port):
         except ObjectNotFound:
             return
 
-        if not ip and port.is_connected_to_ssh:
+        if not ip and port.time_connected is not None:
             port.ssh = None
-            port.is_connected_to_ssh = False
+            port.time_connected = None
             logger.info(f"Port {port.port} - {port.ip} died!")
 
         port.ip = ip
@@ -180,7 +180,7 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
             return
 
         if is_connected:
-            port.is_connected_to_ssh = True
+            port.time_connected = datetime.now()
             port.ip = ssh.ip
         else:
             port.ssh = None
@@ -198,7 +198,7 @@ def reset_ssh_and_port_status():
             port.is_checking = False
             port.ip = ''
             port.ssh = None
-            port.is_connected_to_ssh = False
+            port.time_connected = None
 
 
 def kill_child_processes():

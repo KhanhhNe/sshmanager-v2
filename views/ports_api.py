@@ -61,5 +61,5 @@ def reset_ports_ssh(port_list: List[PortIn]):
     with db_session:
         for port in Port.select(lambda p: p.port in port_numbers):
             port.ssh = None
-            port.is_connected_to_ssh = False
+            port.time_connected = None
     return {}

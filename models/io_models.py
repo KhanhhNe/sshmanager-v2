@@ -32,7 +32,7 @@ class PortOut(BaseModel):
     ssh: SSHOut = None
     ip: str = ''
     is_checking: bool
-    is_connected_to_ssh: bool
+    time_connected: datetime = None
     last_checked: datetime = None
 
     class Config:
