@@ -57,7 +57,6 @@ except pony.orm.dbapiprovider.OperationalError:
 if not os.path.exists('current_thread.txt'):
     open('current_thread.txt', 'w+').write(str(threading.get_ident()))
 
-
     # Only register startup and shutdown handler if this thread is the first one
     @app.on_event('startup')
     def startup_tasks():
@@ -71,7 +70,6 @@ if not os.path.exists('current_thread.txt'):
             runner.run_task() for runner in runners
         ]))
         os.makedirs('plugins', exist_ok=True)
-
 
     @app.on_event('shutdown')
     def shutdown_tasks():
