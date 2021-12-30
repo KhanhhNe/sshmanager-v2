@@ -43,7 +43,7 @@ class TaskRunner(ABC):
 
             # Remove those tasks, keeping only pending ones
             self.tasks = [task for task in self.tasks if not task.done()]
-            await asyncio.sleep(1)
+            await asyncio.sleep(0)
 
 
 class SSHCheckRunner(TaskRunner):
