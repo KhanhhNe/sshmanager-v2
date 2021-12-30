@@ -4,12 +4,16 @@ import logging
 import os.path
 import threading
 
+import pony.orm
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from controllers import tasks
 from models.database import db
 from views import plugins_api, ports_api, settings_api, ssh_api
+
+DB_ENGINE = 'sqlite'
+DB_PATH = 'db.sqlite'
 
 
 def console_logging_filter(record: logging.LogRecord):
@@ -41,11 +45,18 @@ logging.basicConfig(level=logging.DEBUG,
 app = FastAPI(title="SSHManager by KhanhhNe",
               description="Quản lý SSH chuyên nghiệp và nhanh chóng",
               version=json.load(open('package.json'))['version'])
-db.bind('sqlite', 'db.sqlite', create_db=True)
-db.generate_mapping(create_tables=True)
+# noinspection PyUnresolvedReferences
+try:
+    db.bind(DB_ENGINE, DB_PATH, create_db=True)
+    db.generate_mapping(create_tables=True)
+except pony.orm.dbapiprovider.OperationalError:
+    os.remove(DB_PATH)
+    db.bind(DB_ENGINE, DB_PATH, create_db=True)
+    db.generate_mapping(create_tables=True)
 
 if not os.path.exists('current_thread.txt'):
     open('current_thread.txt', 'w+').write(str(threading.get_ident()))
+
 
     # Only register startup and shutdown handler if this thread is the first one
     @app.on_event('startup')
