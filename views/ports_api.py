@@ -1,9 +1,11 @@
 import json
 from typing import List
 
+from fastapi.responses import PlainTextResponse
 from fastapi.routing import APIRouter
 from pony.orm import db_session
 
+import utils
 from models.io_models import PortIn, PortOut
 from models.port_models import Port
 from views import update_websocket
@@ -63,3 +65,22 @@ def reset_ports_ssh(port_list: List[PortIn]):
             port.ssh = None
             port.time_connected = None
     return {}
+
+
+@router.get('/proxies/')
+def get_proxies_string(full_url: str = None):
+    """
+    Get proxies information (to integrate with other tools), one per line
+    :param full_url: If it is true, returns full proxy URL
+    (<protocol>://<ip>:<port>), otherwise returns only <ip>:<port>
+    :return:
+    """
+    results = []
+    with db_session:
+        for port in Port.select():
+            info_str = f"{utils.get_ipv4_address()}:{port.port}"
+            if full_url:
+                results.append(f"socks5://{info_str}")
+            else:
+                results.append(info_str)
+    return PlainTextResponse('\n'.join(results))
