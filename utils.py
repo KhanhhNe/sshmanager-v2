@@ -1,6 +1,7 @@
 import asyncio
 import socket
 
+import config
 from models.database import db
 
 
@@ -31,8 +32,10 @@ def can_connect_to_socket(host, port):
     :param port: Target port
     :return: True if connected successfully. False otherwise.
     """
+    conf = config.get_config()
     try:
-        socket.create_connection((host, port), 10)
+        connection_timeout = conf.getint('SSH', 'connection_timeout')
+        socket.create_connection((host, port), connection_timeout)
         return True
     except (ConnectionError, TimeoutError, socket.timeout):
         return False

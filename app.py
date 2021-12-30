@@ -11,10 +11,28 @@ from controllers import tasks
 from models.database import db
 from views import plugins_api, ports_api, settings_api, ssh_api
 
-file_logging = logging.FileHandler('debug.log')
-file_logging.setLevel(logging.DEBUG)
+
+def console_logging_filter(record: logging.LogRecord):
+    if record.name in ['uvicorn.error', 'asyncio']:
+        return False
+    return True
+
+
+def file_logging_filter(record: logging.LogRecord):
+    # Pre-filter some annoying logs shown on console
+    if not console_logging_filter(record):
+        return False
+    if record.name in ['websockets.protocol', 'websockets.server']:
+        return False
+    return True
+
+
 console_logging = logging.StreamHandler()
 console_logging.setLevel(logging.INFO)
+console_logging.addFilter(console_logging_filter)
+file_logging = logging.FileHandler('debug.log')
+file_logging.setLevel(logging.DEBUG)
+file_logging.addFilter(file_logging_filter)
 
 logging.basicConfig(level=logging.DEBUG,
                     format="[%(asctime)s] %(name)s - %(message)s",
@@ -41,10 +59,7 @@ if not os.path.exists('current_thread.txt'):
         asyncio.ensure_future(asyncio.gather(*[
             runner.run_task() for runner in runners
         ]))
-        try:
-            os.makedirs('plugins')
-        except FileExistsError:
-            pass
+        os.makedirs('plugins', exist_ok=True)
 
 
     @app.on_event('shutdown')

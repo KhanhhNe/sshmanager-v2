@@ -39,13 +39,19 @@
         <tr
             v-for="ssh in sshList.slice(0, maxToDisplay)"
             :key="getSshText(ssh)"
-            :class="[ssh.is_checked ? (ssh.is_live ? 'live' : 'die') : '']"
+            :class="[ssh.last_checked !== null ? (ssh.is_live ? 'live' : 'die') : '']"
             class="ssh">
-          <td>{{ ssh.is_checked ? (ssh.is_live ? 'Live' : 'Die') : '' }}</td>
+          <td>{{
+              ssh.last_checked !== null ? (ssh.is_live ? 'Live' : 'Die') : ''
+            }}
+          </td>
           <td>{{ ssh.ip }}</td>
           <td>{{ ssh.username }}</td>
           <td>{{ ssh.password }}</td>
-          <td>{{ ssh.is_checked ? getTimeDisplay(ssh.last_checked) : '' }}</td>
+          <td>{{
+              ssh.last_checked !== null ? getTimeDisplay(ssh.last_checked) : ''
+            }}
+          </td>
         </tr>
         </tbody>
       </table>

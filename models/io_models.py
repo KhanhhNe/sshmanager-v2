@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, create_model
+
+import config
 
 
 class SSHIn(BaseModel):
@@ -37,11 +39,7 @@ class PortOut(BaseModel):
         orm_mode = True
 
 
-class SettingsInOut(BaseModel):
-    ssh_tasks_count: int
-    port_tasks_count: int
-    web_workers_count: int
-    web_port: int
+SettingsInOut = create_model('SettingsInOut', **config.PYDANTIC_ARGS)
 
 
 class SettingsUpdateResult(BaseModel):

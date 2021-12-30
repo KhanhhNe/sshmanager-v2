@@ -126,6 +126,7 @@ export default {
   watch: {
     ports() {
       new ClipboardJS('.proxy-ip')
+      // noinspection JSUnusedGlobalSymbols
       delegate('.ports', {
         target: '.proxy-ip',
         content: 'Đã copy',
