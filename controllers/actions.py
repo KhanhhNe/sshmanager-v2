@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from typing import List
 
@@ -106,3 +107,37 @@ def kill_child_processes():
     for child in children:
         child.kill()
     psutil.wait_procs(children)
+
+
+async def reset_ports(port_numbers: List[int], delete_ssh=False):
+    """
+    Reset ports and auto reconnect to new SSH
+
+    :param port_numbers: Ports to reset
+    :param delete_ssh: Whether old SSH should be deleted or not
+    """
+    with db_session:
+        ports = Port.select(lambda p: p.port in port_numbers)[:]
+        # Get new unused SSH
+        new_ssh = (SSH
+                   .select(lambda s: s.is_usable)
+                   .limit(len(ports)))
+
+        # Remove old SSH if needed
+        used_ssh = [p.ssh for p in ports]
+        if delete_ssh:
+            for ssh in used_ssh:
+                ssh.delete()
+
+        # Reset ports information
+        for port in ports:
+            port.ssh = None
+            port.time_connected = None
+
+        # Reconnect as many as possible
+        tasks = []
+        for port, ssh in zip(ports, new_ssh):
+            port.ssh = ssh
+            tasks.append(connect_ssh_to_port(ssh, port))
+
+    await asyncio.gather(*tasks)

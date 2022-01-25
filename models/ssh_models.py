@@ -16,3 +16,7 @@ class SSH(db.Entity):
     port = Optional('Port')
     is_checking = Required(bool, default=False)
     last_checked = Optional(datetime)
+
+    @property
+    def is_usable(self):
+        return self.is_live and self.port is None
