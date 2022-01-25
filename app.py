@@ -8,7 +8,7 @@ import pony.orm
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from controllers import tasks
+from controllers import actions, tasks
 from models.database import db
 from views import plugins_api, ports_api, settings_api, ssh_api
 
@@ -60,7 +60,7 @@ if not os.path.exists('current_thread.txt'):
     # Only register startup and shutdown handler if this thread is the first one
     @app.on_event('startup')
     def startup_tasks():
-        tasks.reset_ssh_and_port_status()
+        actions.reset_ssh_and_port_status()
         runners = [
             tasks.SSHCheckRunner(),
             tasks.PortCheckRunner(),
@@ -73,7 +73,7 @@ if not os.path.exists('current_thread.txt'):
 
     @app.on_event('shutdown')
     def shutdown_tasks():
-        tasks.kill_child_processes()
+        actions.kill_child_processes()
         os.remove('current_thread.txt')
 
 app.include_router(ssh_api.router, prefix='/api/ssh')
