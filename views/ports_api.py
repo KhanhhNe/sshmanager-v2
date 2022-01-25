@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import List
 
@@ -6,6 +7,7 @@ from fastapi.routing import APIRouter
 from pony.orm import db_session
 
 import utils
+from controllers.actions import reset_ports
 from models.io_models import PortIn, PortOut
 from models.port_models import Port
 from views import update_websocket
@@ -55,15 +57,12 @@ def delete_ports(port_list: List[PortIn]):
 
 
 @router.put('/')
-def reset_ports_ssh(port_list: List[PortIn]):
+async def reset_ports_ssh(port_list: List[PortIn], delete_ssh=False):
     """
     Reset assigned SSH of ports
     """
     port_numbers = [port.port for port in port_list]
-    with db_session:
-        for port in Port.select(lambda p: p.port in port_numbers):
-            port.ssh = None
-            port.time_connected = None
+    asyncio.ensure_future(reset_ports(port_numbers, delete_ssh))
     return {}
 
 
