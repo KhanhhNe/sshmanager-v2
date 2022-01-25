@@ -56,6 +56,7 @@ except pony.orm.dbapiprovider.OperationalError:
 
 if not os.path.exists('current_thread.txt'):
     open('current_thread.txt', 'w+').write(str(threading.get_ident()))
+    task: asyncio.Task
 
     # Only register startup and shutdown handler if this thread is the first one
     @app.on_event('startup')
@@ -66,13 +67,16 @@ if not os.path.exists('current_thread.txt'):
             tasks.PortCheckRunner(),
             tasks.ConnectSSHToPortRunner()
         ]
-        asyncio.ensure_future(asyncio.gather(*[
+        global task
+        task = asyncio.ensure_future(asyncio.gather(*[
             runner.run_task() for runner in runners
         ]))
         os.makedirs('plugins', exist_ok=True)
 
+
     @app.on_event('shutdown')
-    def shutdown_tasks():
+    async def shutdown_tasks():
+        task.cancel()
         actions.kill_child_processes()
         os.remove('current_thread.txt')
 
