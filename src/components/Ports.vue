@@ -17,7 +17,6 @@
         <tr>
           <th>Port</th>
           <th>IP</th>
-          <th>Check</th>
           <th><a
               role="button"
               @click="$emit('reset-port', ports)"
