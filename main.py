@@ -1,4 +1,5 @@
 import os
+import subprocess
 import webbrowser
 from multiprocessing import freeze_support
 
@@ -15,6 +16,11 @@ if __name__ == '__main__':
         if os.path.exists('config.ini'):
             os.remove('config.ini')
 
+    process = None
+    if os.environ.get("DEVMODE"):
+        process = subprocess.Popen(["npm", "run", "build-watch"],
+                                   shell=True)
+
     conf = config.get_config()
     port = conf.getint('WEB', 'port')
     workers = conf.getint('WEB', 'workers')
@@ -29,3 +35,4 @@ if __name__ == '__main__':
     uvicorn.run('app:app',
                 host='0.0.0.0', port=port,
                 workers=workers, loop='none')
+    process.kill()
