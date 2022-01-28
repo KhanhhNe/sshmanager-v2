@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
+from datetime import datetime, timedelta
 from typing import List
 
 from pony.orm import db_session
@@ -28,11 +29,22 @@ class TaskRunner(ABC):
         raise NotImplementedError
 
     async def run_task(self):
+        last_logged = datetime.now() - timedelta(seconds=60)
         while True:
+            # Log information
+            if (datetime.now() - last_logged).total_seconds() >= 60:
+                logger.debug(f"{self.__class__.__name__} is running "
+                             f"(currently has {len(self.tasks)} tasks)")
+                last_logged = datetime.now()
+
+            # Get new tasks
             while len(self.tasks) < self.tasks_limit:
                 new_task = self.get_new_task()
-                if new_task is not None:
-                    self.tasks.append(new_task)
+                if new_task:
+                    if isinstance(new_task, list):
+                        self.tasks.extend(new_task)
+                    else:
+                        self.tasks.append(new_task)
                 else:
                     break
 
