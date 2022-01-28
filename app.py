@@ -39,8 +39,9 @@ file_logging.setLevel(logging.DEBUG)
 file_logging.addFilter(file_logging_filter)
 
 logging.basicConfig(level=logging.DEBUG,
-                    format="[%(asctime)s] %(name)s - %(message)s",
-                    handlers=[file_logging, console_logging])
+                    format="[%(asctime)s] %(name)s %(levelname)s - %(message)s",
+                    handlers=[file_logging, console_logging],
+                    force=True)
 
 app = FastAPI(title="SSHManager by KhanhhNe",
               description="Quản lý SSH chuyên nghiệp và nhanh chóng",

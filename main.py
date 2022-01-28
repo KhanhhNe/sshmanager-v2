@@ -19,6 +19,7 @@ if __name__ == '__main__':
     process = None
     if os.environ.get("DEVMODE"):
         process = subprocess.Popen(["npm", "run", "build-watch"],
+                                   stderr=subprocess.DEVNULL,
                                    shell=True)
 
     conf = config.get_config()
@@ -34,6 +35,7 @@ if __name__ == '__main__':
     # so we can use asyncio.create_subprocess_exec()
     uvicorn.run('app:app',
                 host='0.0.0.0', port=port,
-                workers=workers, loop='none')
+                workers=workers, loop='none',
+                log_level='critical')
     if process is not None:
         process.kill()
