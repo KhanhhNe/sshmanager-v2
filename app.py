@@ -31,10 +31,32 @@ def file_logging_filter(record: logging.LogRecord):
     return True
 
 
-console_logging = logging.StreamHandler()
+def is_main_child_thread():
+    return not os.path.exists('current_thread.txt')
+
+
+def register_main_child_thread():
+    open('current_thread.txt', 'w+').write(str(ident))
+
+
+def unregister_main_child_thread():
+    os.remove('current_thread.txt')
+
+
+app = FastAPI(title="SSHManager by KhanhhNe",
+              description="Quản lý SSH chuyên nghiệp và nhanh chóng",
+              version=json.load(open('package.json'))['version'])
+
+# Configure loggings
+if is_main_child_thread():
+    console_logging = logging.StreamHandler()
+    file_logging = logging.FileHandler('debug.log', mode='w')
+else:
+    console_logging = logging.StreamHandler()
+    file_logging = logging.FileHandler('debug.log', mode='a')
+
 console_logging.setLevel(logging.INFO)
 console_logging.addFilter(console_logging_filter)
-file_logging = logging.FileHandler('debug.log')
 file_logging.setLevel(logging.DEBUG)
 file_logging.addFilter(file_logging_filter)
 
@@ -43,23 +65,23 @@ logging.basicConfig(level=logging.DEBUG,
                     handlers=[file_logging, console_logging],
                     force=True)
 
-app = FastAPI(title="SSHManager by KhanhhNe",
-              description="Quản lý SSH chuyên nghiệp và nhanh chóng",
-              version=json.load(open('package.json'))['version'])
-# noinspection PyUnresolvedReferences
-try:
-    db.bind(DB_ENGINE, DB_PATH, create_db=True)
-    db.generate_mapping(create_tables=True)
-except pony.orm.dbapiprovider.OperationalError:
-    os.remove(DB_PATH)
-    db.bind(DB_ENGINE, DB_PATH, create_db=True)
-    db.generate_mapping(create_tables=True)
+# Only init for main child thread
+if is_main_child_thread():
+    # noinspection PyUnresolvedReferences
+    try:
+        db.bind(DB_ENGINE, DB_PATH, create_db=True)
+        db.generate_mapping(create_tables=True)
+    except pony.orm.dbapiprovider.OperationalError:
+        os.remove(DB_PATH)
+        db.bind(DB_ENGINE, DB_PATH, create_db=True)
+        db.generate_mapping(create_tables=True)
 
-if not os.path.exists('current_thread.txt'):
-    open('current_thread.txt', 'w+').write(str(threading.get_ident()))
+    ident = threading.get_ident()
+    register_main_child_thread()
     task: asyncio.Task
 
-    # Only register startup and shutdown handler if this thread is the first one
+
+    # Only register handlers if this is the main thread
     @app.on_event('startup')
     def startup_tasks():
         actions.reset_ssh_and_port_status()
@@ -79,8 +101,9 @@ if not os.path.exists('current_thread.txt'):
     async def shutdown_tasks():
         task.cancel()
         actions.kill_child_processes()
-        os.remove('current_thread.txt')
+        unregister_main_child_thread()
 
+# Routers
 app.include_router(ssh_api.router, prefix='/api/ssh')
 app.include_router(ports_api.router, prefix='/api/ports')
 app.include_router(settings_api.router, prefix='/api/settings')
