@@ -17,6 +17,7 @@
         <tr>
           <th>Port</th>
           <th>IP</th>
+          <th>Check</th>
           <th><a
               role="button"
               @click="$emit('reset-port', ports)"
@@ -34,7 +35,9 @@
         <tr v-for="portInfo in ports" :key="portInfo.port">
           <td>{{ portInfo.port }}</td>
           <td class="port-info" v-if="portInfo.ssh">
-            <i class="fi fi-slightly-smile" style="color: green"></i>
+            <i v-if="portInfo.ip" class="fi fi-slightly-smile"
+               style="color: green"></i>
+            <i v-else class="fi fi-frowning" style="color: red"></i>
             <span
                 :data-clipboard-text="proxyUrl(portInfo)"
                 class="proxy-ip">{{ portInfo.ssh.ip }}</span>
