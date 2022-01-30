@@ -17,7 +17,7 @@ DB_PATH = 'db.sqlite'
 
 
 def console_logging_filter(record: logging.LogRecord):
-    if record.name in ['uvicorn.error', 'asyncio']:
+    if 'Accept failed on a socket' in record.msg:
         return False
     return True
 
@@ -26,7 +26,10 @@ def file_logging_filter(record: logging.LogRecord):
     # Pre-filter some annoying logs shown on console
     if not console_logging_filter(record):
         return False
-    if record.name in ['websockets.protocol', 'websockets.server']:
+    if (
+            record.name in ['websockets.protocol', 'websockets.server'] and
+            'WARNING' not in record.msg
+    ):
         return False
     return True
 
@@ -65,17 +68,17 @@ logging.basicConfig(level=logging.DEBUG,
                     handlers=[file_logging, console_logging],
                     force=True)
 
+# noinspection PyUnresolvedReferences
+try:
+    db.bind(DB_ENGINE, DB_PATH, create_db=True)
+    db.generate_mapping(create_tables=True)
+except pony.orm.dbapiprovider.OperationalError:
+    os.remove(DB_PATH)
+    db.bind(DB_ENGINE, DB_PATH, create_db=True)
+    db.generate_mapping(create_tables=True)
+
 # Only init for main child thread
 if is_main_child_thread():
-    # noinspection PyUnresolvedReferences
-    try:
-        db.bind(DB_ENGINE, DB_PATH, create_db=True)
-        db.generate_mapping(create_tables=True)
-    except pony.orm.dbapiprovider.OperationalError:
-        os.remove(DB_PATH)
-        db.bind(DB_ENGINE, DB_PATH, create_db=True)
-        db.generate_mapping(create_tables=True)
-
     ident = threading.get_ident()
     register_main_child_thread()
     task: asyncio.Task

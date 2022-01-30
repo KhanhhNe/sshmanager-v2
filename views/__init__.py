@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import traceback
 
 from fastapi.websockets import WebSocket
 from websockets.exceptions import ConnectionClosedOK
@@ -32,6 +34,9 @@ def update_websocket(data_func):
                 if db_task in done:
                     db_task = None
             except (ConnectionClosedOK, RuntimeError):
+                break
+            except:
+                logging.getLogger().error(traceback.format_exc())
                 break
 
     return handle_websocket
