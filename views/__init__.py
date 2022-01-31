@@ -10,12 +10,12 @@ import utils
 
 def update_websocket(data_func):
     async def handle_websocket(websocket: WebSocket):
-        await websocket.accept()
-        message_task = None
-        db_task = None
+        try:
+            await websocket.accept()
+            message_task = None
+            db_task = None
 
-        while True:
-            try:
+            while True:
                 await websocket.send_json(data_func())
 
                 if message_task is None:
@@ -33,10 +33,9 @@ def update_websocket(data_func):
                     message_task = None
                 if db_task in done:
                     db_task = None
-            except (ConnectionClosedOK, RuntimeError):
-                break
-            except:
-                logging.getLogger().error(traceback.format_exc())
-                break
+        except (ConnectionClosedOK, RuntimeError):
+            pass
+        except:
+            logging.getLogger().error(traceback.format_exc())
 
     return handle_websocket

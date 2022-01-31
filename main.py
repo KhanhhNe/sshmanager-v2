@@ -36,6 +36,6 @@ if __name__ == '__main__':
     uvicorn.run('app:app',
                 host='0.0.0.0', port=port,
                 workers=workers, loop='none',
-                log_level='critical')
+                log_level='warning')
     if process is not None:
         process.kill()
