@@ -16,21 +16,15 @@ DB_ENGINE = 'sqlite'
 DB_PATH = 'db.sqlite'
 
 
-def console_logging_filter(record: logging.LogRecord):
+def logging_filter(record: logging.LogRecord):
+    # INFO level messages
     if 'Accept failed on a socket' in record.msg:
         return False
-    return True
 
+    # DEBUG level messages
+    if record.levelname == 'DEBUG':
+        return False
 
-def file_logging_filter(record: logging.LogRecord):
-    # Pre-filter some annoying logs shown on console
-    if not console_logging_filter(record):
-        return False
-    if (
-            record.name in ['websockets.protocol', 'websockets.server'] and
-            'WARNING' not in record.msg
-    ):
-        return False
     return True
 
 
@@ -58,10 +52,14 @@ else:
     console_logging = logging.StreamHandler()
     file_logging = logging.FileHandler('debug.log', mode='a')
 
-console_logging.setLevel(logging.INFO)
-console_logging.addFilter(console_logging_filter)
+if not os.environ.get('DEBUG'):
+    console_logging.setLevel(logging.INFO)
+else:
+    console_logging.setLevel(logging.DEBUG)
 file_logging.setLevel(logging.DEBUG)
-file_logging.addFilter(file_logging_filter)
+
+console_logging.addFilter(logging_filter)
+file_logging.addFilter(logging_filter)
 
 logging.basicConfig(level=logging.DEBUG,
                     format="[%(asctime)s] %(name)s %(levelname)s - %(message)s",
@@ -82,7 +80,6 @@ if is_main_child_thread():
     ident = threading.get_ident()
     register_main_child_thread()
     task: asyncio.Task
-
 
     # Only register handlers if this is the main thread
     @app.on_event('startup')
