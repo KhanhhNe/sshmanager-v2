@@ -1,6 +1,4 @@
 import asyncio
-import logging
-import traceback
 
 from fastapi.websockets import WebSocket
 from websockets.exceptions import ConnectionClosedOK
@@ -14,14 +12,16 @@ def update_websocket(data_func):
             await websocket.accept()
             message_task = None
             db_task = None
+            last_updated = None
 
             while True:
                 await websocket.send_json(data_func())
 
                 if message_task is None:
-                    message_task = asyncio.create_task(websocket.receive())
+                    message_task = asyncio.ensure_future(websocket.receive())
                 if db_task is None:
-                    db_task = asyncio.create_task(utils.wait_for_db_update())
+                    db_task = asyncio.ensure_future(
+                        utils.wait_for_db_update(last_updated))
 
                 # Wait for next update call from client or next db update
                 done, pending = await asyncio.wait(
@@ -32,10 +32,9 @@ def update_websocket(data_func):
                 if message_task in done:
                     message_task = None
                 if db_task in done:
+                    last_updated = await db_task
                     db_task = None
         except (ConnectionClosedOK, RuntimeError):
             pass
-        except:
-            logging.getLogger().error(traceback.format_exc())
 
     return handle_websocket
