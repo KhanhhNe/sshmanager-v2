@@ -26,6 +26,16 @@ DEFAULT_CONFIG = [
         'PORT', 'tasks_count', 'port_tasks_count', 20,
         "Số thread quản lý Port và kết nối SSH đến Port"),
     ConfigItem(
+        'PORT', 'use_unique_ssh', 'use_unique_ssh', True,
+        "Không dùng lại các SSH đã dùng ở mỗi Port"
+    ),
+    ConfigItem(
+        'PORT', 'auto_reset_ports', 'auto_reset_ports', True,
+        "Tự động đổi IP mỗi Port sau một thời gian nhất định"),
+    ConfigItem(
+        'PORT', 'reset_interval', 'port_reset_interval', 60,
+        "Thời gian reset IP từng port (đổi IP mỗi x giây)"),
+    ConfigItem(
         'WEB', 'workers', 'web_workers_count', 5,
         "Số workers chạy web (tăng tốc độ truy cập giao diện web)",
         need_restart=True),
