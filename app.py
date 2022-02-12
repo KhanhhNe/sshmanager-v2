@@ -4,11 +4,12 @@ import logging
 import os.path
 import threading
 
-import pony.orm
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from pony import orm
 
-from controllers import actions, tasks
+from controllers import actions
+from controllers.tasks import AllTasksRunner
 from models.database import db
 from views import plugins_api, ports_api, settings_api, ssh_api
 
@@ -22,7 +23,7 @@ def logging_filter(record: logging.LogRecord):
         return False
 
     # DEBUG level messages
-    if record.levelname == 'DEBUG':
+    if record.levelname == 'DEBUG' and 'websockets' in record.name:
         return False
 
     return True
@@ -67,39 +68,30 @@ logging.basicConfig(level=logging.DEBUG,
                     force=True)
 
 # noinspection PyUnresolvedReferences
+db.bind(DB_ENGINE, DB_PATH, create_db=True)
 try:
-    db.bind(DB_ENGINE, DB_PATH, create_db=True)
     db.generate_mapping(create_tables=True)
-except pony.orm.dbapiprovider.OperationalError:
+except orm.OperationalError:
     os.remove(DB_PATH)
-    db.bind(DB_ENGINE, DB_PATH, create_db=True)
     db.generate_mapping(create_tables=True)
 
 # Only init for main child thread
 if is_main_child_thread():
     ident = threading.get_ident()
     register_main_child_thread()
-    task: asyncio.Task
+    runner = AllTasksRunner()
 
     # Only register handlers if this is the main thread
     @app.on_event('startup')
     def startup_tasks():
-        actions.reset_ssh_and_port_status()
-        runners = [
-            tasks.SSHCheckRunner(),
-            tasks.PortCheckRunner(),
-            tasks.ConnectSSHToPortRunner()
-        ]
-        global task
-        task = asyncio.ensure_future(asyncio.gather(*[
-            runner.run_task() for runner in runners
-        ]))
+        actions.reset_old_status()
+        asyncio.ensure_future(runner.run_tasks())
         os.makedirs('plugins', exist_ok=True)
 
 
     @app.on_event('shutdown')
     async def shutdown_tasks():
-        task.cancel()
+        await runner.stop()
         actions.kill_child_processes()
         unregister_main_child_thread()
 
