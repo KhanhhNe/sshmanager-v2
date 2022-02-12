@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, create_model, validator
 
 import config
 
@@ -19,9 +19,18 @@ class SSHOut(BaseModel):
     is_live: bool
     is_checking: bool
     last_checked: datetime = None
+    status_text: str = None
 
     class Config:
         orm_mode = True
+
+    # noinspection PyMethodParameters
+    @validator('status_text', pre=True, always=True)
+    def default_status_text(cls, v, values):
+        if not v or values['last_checked']:
+            return 'live' if values['is_live'] else 'die'
+        else:
+            return v or ''
 
 
 class PortIn(BaseModel):

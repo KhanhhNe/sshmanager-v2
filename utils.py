@@ -4,7 +4,7 @@ import socket
 import psutil
 
 import config
-from models.database import db
+from models import db
 
 
 def get_ipv4_address():

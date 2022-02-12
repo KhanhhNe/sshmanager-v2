@@ -114,7 +114,7 @@ class Port(CheckingSupported):
     """
     Store port information.
     """
-    port_number = Required(int)
+    port_number = Required(int, unique=True)
     ssh = Optional(SSH)
     external_ip = Optional(str)  # External IP after proxying through port
     used_ssh_list = Set(SSH)

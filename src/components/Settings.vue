@@ -33,8 +33,10 @@
                 v-if="typeof setting.value === 'boolean'" type="checkbox">
             <input
                 v-model="setting.value"
-                v-if="typeof setting.value === 'number'" type="number">
-            <input v-model="setting.value" v-else type="text">
+                v-else-if="typeof setting.value === 'number'" type="number">
+            <input
+                v-model="setting.value"
+                v-else type="text">
           </td>
         </tr>
         </tbody>
@@ -94,6 +96,15 @@ export default {
     padding: 0.25rem !important;
     margin: 0 !important;
     width: 5rem !important;
+
+    &[type=checkbox] {
+      height: 2rem !important;
+      width: 2rem !important;
+
+      &:not(:checked):after {
+        content: "?";
+      }
+    }
   }
 }
 </style>

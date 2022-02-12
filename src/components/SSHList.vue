@@ -4,7 +4,7 @@
     <ArticleTitle>
       <template v-slot:title>{{ title }}</template>
       <label style="padding-right: 0">Hiển thị</label>
-      <select v-model="maxToDisplay" style="margin-right: 0.75rem">
+      <select v-model="displayLimit" style="margin-right: 0.75rem">
         <option :value="200" selected>200</option>
         <option :value="500">500</option>
         <option :value="1000">1000</option>
@@ -37,20 +37,16 @@
         </thead>
         <tbody>
         <tr
-            v-for="ssh in sshList.slice(0, maxToDisplay)"
+            v-for="ssh in sshList.slice(0, displayLimit)"
             :key="getSshText(ssh)"
-            :class="[ssh.last_checked !== null ? (ssh.is_live ? 'live' : 'die') : '']"
+            :class="ssh.status_text"
             class="ssh">
-          <td>{{
-              ssh.last_checked !== null ? (ssh.is_live ? 'Live' : 'Die') : ''
-            }}
+          <td>{{ ssh.status_text }}
           </td>
           <td>{{ ssh.ip }}</td>
           <td>{{ ssh.username }}</td>
           <td>{{ ssh.password }}</td>
-          <td>{{
-              ssh.last_checked !== null ? getTimeDisplay(ssh.last_checked) : ''
-            }}
+          <td>{{ getTimeDisplay(ssh.last_checked) }}
           </td>
         </tr>
         </tbody>
@@ -80,7 +76,7 @@ export default {
   data() {
     return {
       hidden: false,
-      maxToDisplay: 200
+      displayLimit: 200
     }
   },
   props: {
@@ -118,7 +114,7 @@ export default {
             sshList.push(ssh)
           }
         } catch (e) {
-          // Ignore parsing errors
+          console.error(`SSH file parsing error: ${e}`)
         }
       }
       await this.updateSSH(sshList)

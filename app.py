@@ -10,8 +10,8 @@ from pony import orm
 
 from controllers import actions
 from controllers.tasks import AllTasksRunner
-from models.database import db
-from views import plugins_api, ports_api, settings_api, ssh_api
+from models import db
+from views import ports_api, settings_api, ssh_api
 
 DB_ENGINE = 'sqlite'
 DB_PATH = 'db.sqlite'
@@ -99,6 +99,4 @@ if is_main_child_thread():
 app.include_router(ssh_api.router, prefix='/api/ssh')
 app.include_router(ports_api.router, prefix='/api/ports')
 app.include_router(settings_api.router, prefix='/api/settings')
-app.include_router(plugins_api.router, prefix='/api/plugins')
-app.mount('/api/plugins/js', StaticFiles(directory='plugins', check_dir=False))
 app.mount('/', StaticFiles(directory='dist', html=True, check_dir=False))
