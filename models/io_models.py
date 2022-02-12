@@ -12,6 +12,7 @@ class SSHIn(BaseModel):
 
 
 class SSHOut(BaseModel):
+    id: int
     ip: str
     username: str
     password: str
@@ -24,15 +25,16 @@ class SSHOut(BaseModel):
 
 
 class PortIn(BaseModel):
-    port: int
+    port_number: int
 
 
 class PortOut(BaseModel):
-    port: int
+    id = int
+    port_number: int
     ssh: SSHOut = None
-    ip: str = ''
-    is_checking: bool
+    external_ip: str = None
     time_connected: datetime = None
+    is_checking: bool
     last_checked: datetime = None
 
     class Config:
@@ -44,13 +46,3 @@ SettingsInOut = create_model('SettingsInOut', **config.PYDANTIC_ARGS)
 
 class SettingsUpdateResult(BaseModel):
     need_restart: bool
-
-
-class PluginIn(BaseModel):
-    code: str
-    name: str
-
-
-class PluginOut(BaseModel):
-    code: str
-    name: str
