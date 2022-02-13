@@ -3,8 +3,9 @@ import json
 import logging
 import os.path
 import threading
+import time
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 from pony import orm
 
@@ -18,15 +19,15 @@ DB_PATH = 'db.sqlite'
 
 
 def logging_filter(record: logging.LogRecord):
-    # INFO level messages
     if 'Accept failed on a socket' in record.msg:
+        # INFO level messages
         return False
-
-    # DEBUG level messages
-    if record.levelname == 'DEBUG' and 'websockets' in record.name:
+    elif record.levelname == 'DEBUG' and 'websockets' in record.name:
+        # DEBUG level messages
         return False
-
-    return True
+    else:
+        # Other cases
+        return True
 
 
 def is_main_child_thread():
@@ -85,7 +86,7 @@ if is_main_child_thread():
     @app.on_event('startup')
     def startup_tasks():
         actions.reset_old_status()
-        asyncio.ensure_future(runner.run_tasks())
+        asyncio.ensure_future(runner.run())
         os.makedirs('plugins', exist_ok=True)
 
 
@@ -94,6 +95,22 @@ if is_main_child_thread():
         await runner.stop()
         actions.kill_child_processes()
         unregister_main_child_thread()
+
+
+# Middlewares
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger = logging.getLogger('Request')
+    start_time = time.perf_counter()
+
+    response: Response = await call_next(request)
+
+    process_time = "{:7.2f}".format((time.perf_counter() - start_time) * 1000)
+    logger.info(f"{request.method} {response.status_code} ({process_time}ms) - "
+                f"{request.url.path}")
+
+    return response
+
 
 # Routers
 app.include_router(ssh_api.router, prefix='/api/ssh')

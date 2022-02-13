@@ -12,7 +12,7 @@ def update_websocket(data_func):
             await websocket.accept()
             message_task = None
             db_task = None
-            last_updated = None
+            last_updated = 0
 
             while True:
                 await websocket.send_json(data_func())

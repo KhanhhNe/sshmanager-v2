@@ -13,12 +13,6 @@ class CheckingSupported(db.Entity):
     is_checking = Required(bool, default=False)
     last_checked = Optional(datetime)
 
-    @property
-    def need_checking(self):
-        return (not self.is_checking and
-                (self.last_checked is None or
-                 self.last_checked == type(self).min(lambda o: o.last_checked)))
-
     # noinspection PyTypeChecker
     @classmethod
     def get_need_checking(cls, begin=True):
@@ -29,10 +23,10 @@ class CheckingSupported(db.Entity):
         :param begin: If it is True, call begin_checking() on received object
         :return: Object that need checking if any, None otherwise
         """
-        obj = (cls
-               .select(lambda o: o.need_checking)
-               .order_by(cls.last_checked)
-               .first())
+        query = select(o for o in cls if not o.is_checking)
+        obj = query.filter(lambda o: o.last_checked is None).first()
+        if obj is None:
+            obj = query.order_by(cls.last_checked).first()
         if begin and obj is not None:
             cls.begin_checking(obj)
         return obj
@@ -44,8 +38,7 @@ class CheckingSupported(db.Entity):
 
         :param obj: Object
         """
-        with db_session:
-            cls[obj.id].is_checking = True
+        cls[obj.id].is_checking = True
 
     @classmethod
     def end_checking(cls, obj, **kwargs):
@@ -56,16 +49,15 @@ class CheckingSupported(db.Entity):
         :param obj: Object
         :param kwargs: Updating values
         """
-        with db_session(retry=3):
-            try:
-                obj_by_id: 'CheckingSupported' = cls[obj.id]
-            except ObjectNotFound:
-                return
+        try:
+            obj_by_id: 'CheckingSupported' = cls[obj.id]
+        except ObjectNotFound:
+            return
 
-            for key, value in kwargs.items():
-                obj_by_id.__setattr__(key, value)
-            obj_by_id.is_checking = False
-            obj_by_id.last_checked = datetime.now()
+        for key, value in kwargs.items():
+            obj_by_id.__setattr__(key, value)
+        obj_by_id.is_checking = False
+        obj_by_id.last_checked = datetime.now()
 
     def reset_status(self):
         """
@@ -84,6 +76,7 @@ class SSH(CheckingSupported):
     password = Optional(str)
     is_live = Required(bool, default=False)
     port = Optional('Port')
+    used_ports = Set('Port')
 
     @property
     def is_usable(self):
@@ -117,7 +110,7 @@ class Port(CheckingSupported):
     port_number = Required(int, unique=True)
     ssh = Optional(SSH)
     external_ip = Optional(str)  # External IP after proxying through port
-    used_ssh_list = Set(SSH)
+    used_ssh_list = Set(SSH, reverse='used_ports')
     time_connected = Optional(datetime)
 
     @property

@@ -15,13 +15,13 @@ router = APIRouter()
 
 
 @router.get('/')
+@db_session
 def get_all_ports():
     """
     Get all ports from database.
     """
-    with db_session:
-        ports = Port.select().to_list()
-        return [PortOut.from_orm(port) for port in ports]
+    ports = Port.select()[:].to_list()
+    return [PortOut.from_orm(port) for port in ports]
 
 
 @router.websocket('/')
@@ -31,48 +31,49 @@ def get_ports_json():
 
 
 @router.post('/')
+@db_session
 def add_ports(port_list: List[PortIn]):
     """
     Add ports to database
     """
     results = []
-    with db_session:
-        for port in port_list:
-            if not Port.get(**port.dict()):
-                p = Port(**port.dict())
-                results.append(p)
+    for port in port_list:
+        if not Port.get(**port.dict()):
+            p = Port(**port.dict())
+            results.append(p)
     return [PortOut.from_orm(p) for p in results]
 
 
 # TODO change to requiring Port numbers only
 @router.delete('/')
+@db_session
 def delete_ports(port_list: List[PortIn]):
     """
     Remove a list of ports from the database.
     """
     deleted = 0
-    with db_session:
-        for port in port_list:
-            port_obj = Port.get(**port.dict())
-            if port_obj:
-                port_obj.delete()
-                deleted += 1
+    for port in port_list:
+        port_obj = Port.get(**port.dict())
+        if port_obj:
+            port_obj.delete()
+            deleted += 1
     return deleted
 
 
 # TODO change to requiring Port numbers only
 @router.put('/')
+@db_session
 async def reset_ports_ssh(port_list: List[PortIn], delete_ssh=False):
     """
     Reset assigned SSH of ports
     """
-    with db_session:
-        ports = [Port(port_number=port.port_number) for port in port_list]
-        asyncio.ensure_future(reset_ports(ports, delete_ssh))
+    ports = [Port(port_number=port.port_number) for port in port_list]
+    asyncio.ensure_future(reset_ports(ports, delete_ssh))
     return {}
 
 
 @router.get('/proxies/')
+@db_session
 def get_proxies_string(full_url: str = None):
     """
     Get proxies information (to integrate with other tools), one per line
@@ -82,11 +83,10 @@ def get_proxies_string(full_url: str = None):
     :return:
     """
     results = []
-    with db_session:
-        for port in Port.select():
-            info_str = port.proxy_address
-            if full_url:
-                results.append(f"socks5://{info_str}")
-            else:
-                results.append(info_str)
+    for port in Port.select():
+        info_str = port.proxy_address
+        if full_url:
+            results.append(f"socks5://{info_str}")
+        else:
+            results.append(info_str)
     return PlainTextResponse('\n'.join(results))

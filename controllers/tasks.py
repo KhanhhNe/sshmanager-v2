@@ -71,11 +71,9 @@ class ConcurrentTask(ABC):
             if new_task:
                 self.tasks.append(new_task)
 
+            await self.remove_done_tasks()
             while len(self.tasks) >= self.tasks_limit:
-                for task in self.tasks[:]:
-                    if task.done():
-                        await task
-                        self.tasks.remove(task)
+                await self.remove_done_tasks()
                 await asyncio.sleep(0)
 
             await asyncio.sleep(0)
@@ -85,6 +83,12 @@ class ConcurrentTask(ABC):
             with suppress(asyncio.CancelledError):
                 task.cancel()
                 await task
+
+    async def remove_done_tasks(self):
+        for task in self.tasks[:]:
+            if task.done():
+                await task
+                self.tasks.remove(task)
 
     async def stop(self):
         self.is_running = False
@@ -105,13 +109,13 @@ class SSHCheckTask(ConcurrentTask):
         conf = config.get_config()
         return conf.getint('SSH', 'tasks_count')
 
+    @db_session
     def get_new_task(self):
-        with db_session(retry=3):
-            ssh: SSH = SSH.get_need_checking()
-            if ssh is not None:
-                return asyncio.ensure_future(actions.check_ssh_status(ssh))
-            else:
-                return None
+        ssh: SSH = SSH.get_need_checking()
+        if ssh:
+            return asyncio.ensure_future(actions.check_ssh_status(ssh))
+        else:
+            return None
 
 
 class PortCheckTask(ConcurrentTask):
@@ -120,25 +124,31 @@ class PortCheckTask(ConcurrentTask):
         conf = config.get_config()
         return conf.getint('PORT', 'tasks_count')
 
+    @db_session
     def get_new_task(self):
-        with db_session:
-            port: Port = Port.get_need_checking()
-            if port is not None:
-                asyncio.ensure_future(actions.check_port_ip(port))
-            else:
-                return None
+        port: Port = Port.get_need_checking()
+        if port is not None:
+            asyncio.ensure_future(actions.check_port_ip(port))
+        else:
+            return None
 
 
 class ConnectSSHToPortTask(SyncTask):
+    @db_session
     def run(self):
         port: Port = Port.get_need_ssh()
-        ssh: SSH = SSH.select()
+        if not port:
+            return None
+
+        unique = config.get_config().getboolean('PORT', 'use_unique_ssh')
+        ssh: SSH = SSH.get_ssh_for_port(port, unique=unique)
         port.connect_to_ssh(ssh)
         logger.info(f"Connecting SSH {ssh.ip} to Port {port.port_number}")
         return asyncio.ensure_future(actions.connect_ssh_to_port(ssh, port))
 
 
 class ReconnectNewSSHTask(SyncTask):
+    @db_session
     def run(self):
         conf = config.get_config()
         if not conf.getboolean('PORT', 'auto_reset_ports'):

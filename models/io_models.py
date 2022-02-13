@@ -27,7 +27,7 @@ class SSHOut(BaseModel):
     # noinspection PyMethodParameters
     @validator('status_text', pre=True, always=True)
     def default_status_text(cls, v, values):
-        if not v or values['last_checked']:
+        if not v and values['last_checked']:
             return 'live' if values['is_live'] else 'die'
         else:
             return v or ''

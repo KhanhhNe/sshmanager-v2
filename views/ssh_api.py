@@ -12,20 +12,20 @@ router = APIRouter()
 
 
 @router.get('/')
+@db_session
 def get_all_ssh():
     """
     Get all SSH from database.
     """
-    with db_session:
-        checked_ssh_list = (SSH
-                            .select(lambda ssh: ssh.last_checked is not None)
-                            .order_by(desc(SSH.last_checked))
-                            .to_list())
-        unchecked_ssh_list = (SSH
-                              .select(lambda ssh: ssh.last_checked is None)
-                              .to_list())
-        ssh_list = checked_ssh_list + unchecked_ssh_list
-        return [SSHOut.from_orm(ssh) for ssh in ssh_list]
+    checked_ssh_list = (SSH
+                        .select(lambda ssh: ssh.last_checked is not None)
+                        .order_by(desc(SSH.last_checked))[:]
+                        .to_list())
+    unchecked_ssh_list = (SSH
+                          .select(lambda ssh: ssh.last_checked is None)[:]
+                          .to_list())
+    ssh_list = checked_ssh_list + unchecked_ssh_list
+    return [SSHOut.from_orm(ssh) for ssh in ssh_list]
 
 
 @router.websocket('/')
@@ -35,21 +35,22 @@ def get_ssh_json():
 
 
 @router.post('/')
+@db_session
 def add_ssh(ssh_list: List[SSHIn]):
     """
     Add new SSHs into the database.
     """
     results = []
-    with db_session:
-        for ssh in ssh_list:
-            if not SSH.get(**ssh.dict()):
-                s = SSH(**ssh.dict())
-                results.append(s)
+    for ssh in ssh_list:
+        if not SSH.get(**ssh.dict()):
+            s = SSH(**ssh.dict())
+            results.append(s)
     return [SSHOut.from_orm(s) for s in results]
 
 
 # TODO change to requiring SSH ids only
 @router.delete('/')
+@db_session
 def delete_ssh(ssh_list: List[SSHIn]):
     """
     Remove a list of SSH from the database.
@@ -57,9 +58,8 @@ def delete_ssh(ssh_list: List[SSHIn]):
     :return: Number of deleted objects
     """
     deleted = 0
-    with db_session:
-        for ssh in ssh_list:
-            ssh_obj = SSH.get(**ssh.dict())
-            if ssh_obj:
-                ssh_obj.delete()
+    for ssh in ssh_list:
+        ssh_obj = SSH.get(**ssh.dict())
+        if ssh_obj:
+            ssh_obj.delete()
     return deleted
