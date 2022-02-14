@@ -87,7 +87,7 @@ async def reset_ports(ports: List[Port], unique=True, delete_ssh=False):
     """
     with db_session:
         for port in ports:
-            port = Port[port.id]
+            port = Port[port.id]  # Load port.ssh
             used_ssh = port.ssh
             port.disconnect_ssh(used_ssh)
             if delete_ssh:

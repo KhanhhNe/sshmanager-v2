@@ -142,6 +142,9 @@ class ConnectSSHToPortTask(SyncTask):
 
         unique = config.get_config().getboolean('PORT', 'use_unique_ssh')
         ssh: SSH = SSH.get_ssh_for_port(port, unique=unique)
+        if not ssh:
+            return
+
         port.connect_to_ssh(ssh)
         logger.info(f"Connecting SSH {ssh.ip} to Port {port.port_number}")
         return asyncio.ensure_future(actions.connect_ssh_to_port(ssh, port))
