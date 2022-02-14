@@ -41,7 +41,7 @@
             :key="getSshText(ssh)"
             :class="ssh.status_text"
             class="ssh">
-          <td>{{ ssh.status_text }}
+          <td>{{ ssh.status_text || (ssh.is_checking ? 'checking' : '') }}
           </td>
           <td>{{ ssh.ip }}</td>
           <td>{{ ssh.username }}</td>
