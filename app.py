@@ -25,6 +25,9 @@ def logging_filter(record: logging.LogRecord):
     elif record.levelname == 'DEBUG' and 'websockets' in record.name:
         # DEBUG level messages
         return False
+    elif record.levelname == 'DEBUG' and 'charset_normalizer' in record.name:
+        # charset_normalizer messages
+        return False
     else:
         # Other cases
         return True
@@ -105,9 +108,12 @@ async def log_requests(request: Request, call_next):
 
     response: Response = await call_next(request)
 
-    process_time = "{:7.2f}".format((time.perf_counter() - start_time) * 1000)
+    process_time = "{:5.2f}".format((time.perf_counter() - start_time) * 1000)
+    query = request.url.query
+    if query:
+        query = '?' + query
     logger.info(f"{request.method} {response.status_code} ({process_time}ms) - "
-                f"{request.url.path}")
+                f"{request.url.path}{query}")
 
     return response
 

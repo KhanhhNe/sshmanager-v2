@@ -1,9 +1,33 @@
 from datetime import datetime
+from functools import wraps
+from typing import cast
 
 from pony.orm import *
 
 import utils
 from .database import db
+
+
+def auto_renew_object(func):
+    """
+    Decorator to ensure objects are got from current db_session before executing
+    the function.
+    """
+
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        args = list(args)
+        for ind, arg in enumerate(args):
+            if arg and issubclass(db.Entity, type(arg)):
+                args[ind] = type(arg)[arg.id]
+
+        for key, val in kwargs.items():
+            if val and issubclass(db.Entity, type(val)):
+                kwargs[key] = type(val)[val.id]
+
+        return func(*args, **kwargs)
+
+    return cast(func, wrapped)
 
 
 class CheckingSupported(db.Entity):
@@ -38,7 +62,11 @@ class CheckingSupported(db.Entity):
 
         :param obj: Object
         """
-        cls[obj.id].is_checking = True
+        try:
+            obj_by_id: 'CheckingSupported' = cls[obj.id]
+        except ObjectNotFound:
+            return
+        obj_by_id.is_checking = True
 
     @classmethod
     def end_checking(cls, obj, **kwargs):
@@ -59,6 +87,7 @@ class CheckingSupported(db.Entity):
         obj_by_id.is_checking = False
         obj_by_id.last_checked = datetime.now()
 
+    @auto_renew_object
     def reset_status(self):
         """
         Reset all object's status.
@@ -76,7 +105,7 @@ class SSH(CheckingSupported):
     password = Optional(str)
     is_live = Required(bool, default=False)
     port = Optional('Port')
-    used_ports = Set('Port')
+    used_ports: Set = Set('Port')
 
     @property
     def is_usable(self):
@@ -98,6 +127,7 @@ class SSH(CheckingSupported):
             query = query.filter(lambda s: s not in port.used_ssh_list)
         return query.first()
 
+    @auto_renew_object
     def reset_status(self):
         super().reset_status()
         self.port = None
@@ -110,7 +140,7 @@ class Port(CheckingSupported):
     port_number = Required(int, unique=True)
     ssh = Optional(SSH)
     external_ip = Optional(str)  # External IP after proxying through port
-    used_ssh_list = Set(SSH, reverse='used_ports')
+    used_ssh_list: Set = Set(SSH, reverse='used_ports')
     time_connected = Optional(datetime)
 
     @property
@@ -131,16 +161,19 @@ class Port(CheckingSupported):
     def get_need_ssh(cls):
         return cls.select(lambda s: s.need_ssh).first()
 
+    @auto_renew_object
     def connect_to_ssh(self, ssh: SSH):
         self.ssh = ssh
         self.time_connected = datetime.now()
-        self.used_ssh_list.append(ssh)
+        self.used_ssh_list.add(ssh)
 
+    @auto_renew_object
     def disconnect_ssh(self, ssh: SSH, remove_from_used=False):
         self.ssh = None
         if remove_from_used:
             self.used_ssh_list.remove(ssh)
 
+    @auto_renew_object
     def reset_status(self):
         super().reset_status()
         self.external_ip = ''

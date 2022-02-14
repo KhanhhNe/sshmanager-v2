@@ -4,8 +4,6 @@ import socket
 
 import psutil
 
-import config
-
 
 def get_ipv4_address():
     """
@@ -24,23 +22,6 @@ def get_free_port():
     sock = socket.socket()
     sock.bind(('', 0))
     return sock.getsockname()[1]
-
-
-def can_connect_to_socket(host, port):
-    """
-    Try to connect to host:port using socket. Returns whether the connection
-    succeed or not.
-
-    :param host: Target host
-    :param port: Target port
-    :return: True if connected successfully. False otherwise.
-    """
-    timeout = config.get_config().getint('SSH', 'connection_timeout')
-    with socket.socket() as s:
-        s.settimeout(timeout)
-        if s.connect_ex((host, port)):
-            return False
-    return True
 
 
 async def wait_for_db_update(last_updated=0):
@@ -66,14 +47,17 @@ async def kill_process_on_port(port_number: int):
         completed = await asyncio.create_subprocess_shell(
             command,
             stdout=asyncio.subprocess.PIPE)
-        return await completed.stdout.read()
+        return (await completed.stdout.read()).decode()
 
     netstat = await run_shell_command("netstat -ano")
     pids = []
 
     # Get all process pids
     for line in netstat.splitlines():
-        _, local_address, *_, pid = line.split()
+        try:
+            _, local_address, *_, pid = line.split()
+        except ValueError:
+            continue
         if local_address.endswith(f":{port_number}"):
             pids.append(int(pid))
 
@@ -84,9 +68,12 @@ async def kill_process_on_port(port_number: int):
         loop = asyncio.get_running_loop()
         for pid in pids:
             if pid in child_pids:
-                await loop.run_in_executor(
-                    None, lambda i: psutil.Process(i).kill(), pid
-                )
+                try:
+                    await loop.run_in_executor(
+                        None, lambda i: psutil.Process(i).kill(), pid
+                    )
+                except psutil.NoSuchProcess:
+                    pass
         return True
     else:
         return False

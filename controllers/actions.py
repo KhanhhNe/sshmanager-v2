@@ -37,8 +37,6 @@ async def check_port_ip(port: Port):
     with db_session:
         Port.end_checking(port,
                           external_ip=ip)
-        if not ip:
-            logger.info(f"Port {port.port_number} cannot connect")
 
 
 async def connect_ssh_to_port(ssh: SSH, port: Port):
