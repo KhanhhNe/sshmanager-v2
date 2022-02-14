@@ -1,6 +1,5 @@
 from datetime import datetime
 from functools import wraps
-from typing import cast
 
 from pony.orm import *
 
@@ -8,7 +7,7 @@ import utils
 from .database import db
 
 
-def auto_renew_object(func):
+def auto_renew_objects(func):
     """
     Decorator to ensure objects are got from current db_session before executing
     the function.
@@ -18,16 +17,16 @@ def auto_renew_object(func):
     def wrapped(*args, **kwargs):
         args = list(args)
         for ind, arg in enumerate(args):
-            if arg and issubclass(db.Entity, type(arg)):
+            if arg and issubclass(type(arg), db.Entity):
                 args[ind] = type(arg)[arg.id]
 
         for key, val in kwargs.items():
-            if val and issubclass(db.Entity, type(val)):
+            if val and issubclass(type(val), db.Entity):
                 kwargs[key] = type(val)[val.id]
 
         return func(*args, **kwargs)
 
-    return cast(func, wrapped)
+    return wrapped
 
 
 class CheckingSupported(db.Entity):
@@ -87,7 +86,7 @@ class CheckingSupported(db.Entity):
         obj_by_id.is_checking = False
         obj_by_id.last_checked = datetime.now()
 
-    @auto_renew_object
+    @auto_renew_objects
     def reset_status(self):
         """
         Reset all object's status.
@@ -127,7 +126,7 @@ class SSH(CheckingSupported):
             query = query.filter(lambda s: s not in port.used_ssh_list)
         return query.first()
 
-    @auto_renew_object
+    @auto_renew_objects
     def reset_status(self):
         super().reset_status()
         self.port = None
@@ -161,19 +160,19 @@ class Port(CheckingSupported):
     def get_need_ssh(cls):
         return cls.select(lambda s: s.need_ssh).first()
 
-    @auto_renew_object
+    @auto_renew_objects
     def connect_to_ssh(self, ssh: SSH):
         self.ssh = ssh
         self.time_connected = datetime.now()
         self.used_ssh_list.add(ssh)
 
-    @auto_renew_object
+    @auto_renew_objects
     def disconnect_ssh(self, ssh: SSH, remove_from_used=False):
         self.ssh = None
         if remove_from_used:
             self.used_ssh_list.remove(ssh)
 
-    @auto_renew_object
+    @auto_renew_objects
     def reset_status(self):
         super().reset_status()
         self.external_ip = ''
