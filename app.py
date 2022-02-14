@@ -3,29 +3,34 @@ import json
 import logging
 import os.path
 import threading
+import time
 
-import pony.orm
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
+from pony import orm
 
-from controllers import actions, tasks
-from models.database import db
-from views import plugins_api, ports_api, settings_api, ssh_api
+from controllers import actions
+from controllers.tasks import AllTasksRunner
+from models import db
+from views import ports_api, settings_api, ssh_api
 
 DB_ENGINE = 'sqlite'
 DB_PATH = 'db.sqlite'
 
 
 def logging_filter(record: logging.LogRecord):
-    # INFO level messages
     if 'Accept failed on a socket' in record.msg:
+        # INFO level messages
         return False
-
-    # DEBUG level messages
-    if record.levelname == 'DEBUG':
+    elif record.levelname == 'DEBUG' and 'websockets' in record.name:
+        # DEBUG level messages
         return False
-
-    return True
+    elif record.levelname == 'DEBUG' and 'charset_normalizer' in record.name:
+        # charset_normalizer messages
+        return False
+    else:
+        # Other cases
+        return True
 
 
 def is_main_child_thread():
@@ -67,46 +72,54 @@ logging.basicConfig(level=logging.DEBUG,
                     force=True)
 
 # noinspection PyUnresolvedReferences
+db.bind(DB_ENGINE, DB_PATH, create_db=True)
 try:
-    db.bind(DB_ENGINE, DB_PATH, create_db=True)
     db.generate_mapping(create_tables=True)
-except pony.orm.dbapiprovider.OperationalError:
+except orm.OperationalError:
     os.remove(DB_PATH)
-    db.bind(DB_ENGINE, DB_PATH, create_db=True)
     db.generate_mapping(create_tables=True)
 
 # Only init for main child thread
 if is_main_child_thread():
     ident = threading.get_ident()
     register_main_child_thread()
-    task: asyncio.Task
+    runner = AllTasksRunner()
 
     # Only register handlers if this is the main thread
     @app.on_event('startup')
     def startup_tasks():
-        actions.reset_ssh_and_port_status()
-        runners = [
-            tasks.SSHCheckRunner(),
-            tasks.PortCheckRunner(),
-            tasks.ConnectSSHToPortRunner()
-        ]
-        global task
-        task = asyncio.ensure_future(asyncio.gather(*[
-            runner.run_task() for runner in runners
-        ]))
+        actions.reset_old_status()
+        asyncio.ensure_future(runner.run())
         os.makedirs('plugins', exist_ok=True)
 
 
     @app.on_event('shutdown')
     async def shutdown_tasks():
-        task.cancel()
+        await runner.stop()
         actions.kill_child_processes()
         unregister_main_child_thread()
+
+
+# Middlewares
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger = logging.getLogger('Request')
+    start_time = time.perf_counter()
+
+    response: Response = await call_next(request)
+
+    process_time = "{:5.2f}".format((time.perf_counter() - start_time) * 1000)
+    query = request.url.query
+    if query:
+        query = '?' + query
+    logger.info(f"{request.method} {response.status_code} ({process_time}ms) - "
+                f"{request.url.path}{query}")
+
+    return response
+
 
 # Routers
 app.include_router(ssh_api.router, prefix='/api/ssh')
 app.include_router(ports_api.router, prefix='/api/ports')
 app.include_router(settings_api.router, prefix='/api/settings')
-app.include_router(plugins_api.router, prefix='/api/plugins')
-app.mount('/api/plugins/js', StaticFiles(directory='plugins', check_dir=False))
 app.mount('/', StaticFiles(directory='dist', html=True, check_dir=False))

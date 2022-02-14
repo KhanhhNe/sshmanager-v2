@@ -6,23 +6,22 @@ from fastapi.responses import PlainTextResponse
 from fastapi.routing import APIRouter
 from pony.orm import db_session
 
-import utils
 from controllers.actions import reset_ports
+from models import Port
 from models.io_models import PortIn, PortOut
-from models.port_models import Port
 from views import update_websocket
 
 router = APIRouter()
 
 
 @router.get('/')
+@db_session
 def get_all_ports():
     """
     Get all ports from database.
     """
-    with db_session:
-        ports = Port.select()[:].to_list()
-        return [PortOut.from_orm(port) for port in ports]
+    ports = Port.select()[:].to_list()
+    return [PortOut.from_orm(port) for port in ports]
 
 
 @router.websocket('/')
@@ -32,54 +31,62 @@ def get_ports_json():
 
 
 @router.post('/')
+@db_session
 def add_ports(port_list: List[PortIn]):
     """
     Add ports to database
     """
-    with db_session:
-        for port in port_list:
-            if not Port.get(**port.dict()):
-                Port(**port.dict())
-    return {}
+    results = []
+    for port in port_list:
+        if not Port.get(**port.dict()):
+            p = Port(**port.dict())
+            results.append(p)
+    return [PortOut.from_orm(p) for p in results]
 
 
+# TODO change to requiring Port numbers only
 @router.delete('/')
+@db_session
 def delete_ports(port_list: List[PortIn]):
     """
     Remove a list of ports from the database.
     """
-    with db_session:
-        for port in port_list:
-            port_obj = Port.get(**port.dict())
-            if port_obj:
-                port_obj.delete()
-    return {}
+    deleted = 0
+    for port in port_list:
+        port_obj = Port.get(**port.dict())
+        if port_obj:
+            port_obj.delete()
+            deleted += 1
+    return deleted
 
 
+# TODO change to requiring Port numbers only
 @router.put('/')
+@db_session
 async def reset_ports_ssh(port_list: List[PortIn], delete_ssh=False):
     """
     Reset assigned SSH of ports
     """
-    port_numbers = [port.port for port in port_list]
-    asyncio.ensure_future(reset_ports(port_numbers, delete_ssh))
+    ports = [Port(port_number=port.port_number) for port in port_list]
+    asyncio.ensure_future(reset_ports(ports, delete_ssh))
     return {}
 
 
 @router.get('/proxies/')
+@db_session
 def get_proxies_string(full_url: str = None):
     """
     Get proxies information (to integrate with other tools), one per line
+
     :param full_url: If it is true, returns full proxy URL
     (<protocol>://<ip>:<port>), otherwise returns only <ip>:<port>
     :return:
     """
     results = []
-    with db_session:
-        for port in Port.select():
-            info_str = f"{utils.get_ipv4_address()}:{port.port}"
-            if full_url:
-                results.append(f"socks5://{info_str}")
-            else:
-                results.append(info_str)
+    for port in Port.select():
+        info_str = port.proxy_address
+        if full_url:
+            results.append(f"socks5://{info_str}")
+        else:
+            results.append(info_str)
     return PlainTextResponse('\n'.join(results))

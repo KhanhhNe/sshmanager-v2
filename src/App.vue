@@ -33,8 +33,6 @@
           @update-settings="updateSettings($event)"
           @reset-settings="resetSettings()"
           class="settings"/>
-      <Plugins
-          title="Plugins"/>
     </Tabs>
   </div>
 </template>
@@ -45,7 +43,6 @@ import SSHList from './components/SSHList.vue'
 import Tabs from './components/Tabs.vue'
 import Ports from './components/Ports.vue'
 import Settings from './components/Settings.vue'
-import Plugins from './components/Plugins.vue'
 import tippy from 'tippy.js'
 import '@picocss/pico'
 import 'fontisto'
@@ -57,7 +54,6 @@ export default {
     SSHList,
     Ports,
     Settings,
-    Plugins
   },
   data() {
     return {
@@ -146,7 +142,7 @@ export default {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(settings)
-      })).json()
+      })).json().needRestart
       await this.getSettings()
     },
 

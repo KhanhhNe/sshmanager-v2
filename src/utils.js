@@ -7,7 +7,11 @@ const moment = require('moment')
  * @returns {string}
  */
 function getTimeDisplay(timeString) {
-    return new moment(timeString).fromNow(true)
+    if (timeString) {
+        return new moment(timeString).fromNow(true)
+    } else {
+        return ''
+    }
 }
 
 
@@ -23,15 +27,13 @@ function isSameSSH(ssh, otherSSH) {
         ssh.password === otherSSH.password)
 }
 
-
 /**
  * Get SSH display text, in format of status|ip|username|password
  * @param ssh SSH object
  * @returns {string} SSH display text
  */
 function getSshText(ssh) {
-    const liveStatus = ssh.is_live ? 'live' : 'die'
-    return `${liveStatus}|${ssh.ip}|${ssh.username}|${ssh.password}`
+    return `${ssh.status_text}|${ssh.ip}|${ssh.username}|${ssh.password}`
 }
 
 

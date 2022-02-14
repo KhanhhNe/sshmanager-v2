@@ -32,10 +32,10 @@
         </tr>
         </thead>
         <tbody>
-        <tr v-for="portInfo in ports" :key="portInfo.port">
-          <td>{{ portInfo.port }}</td>
+        <tr v-for="portInfo in ports" :key="portInfo.port_number">
+          <td>{{ portInfo.port_number }}</td>
           <td class="port-info" v-if="portInfo.ssh">
-            <i v-if="portInfo.ip" class="fi fi-slightly-smile"
+            <i v-if="portInfo.external_ip" class="fi fi-slightly-smile"
                style="color: green"></i>
             <i v-else class="fi fi-frowning" style="color: red"></i>
             <span
@@ -111,7 +111,7 @@ export default {
           // Filter out already added ports
           ports = ports.filter(port => !this.ports.includes(port))
           this.$emit('add-ports', ports.map(port => {
-            return {port: port}
+            return {port_number: port}
           }))
         } catch (e) {
           // Do nothing
@@ -126,7 +126,7 @@ export default {
      * @returns {string} Proxy string in format <scheme>://<host>:<port>
      */
     proxyUrl(portInfo) {
-      return `socks5://${new URL(location.href).hostname}:${portInfo.port}`
+      return `socks5://${new URL(location.href).hostname}:${portInfo.port_number}`
     }
   },
   watch: {
