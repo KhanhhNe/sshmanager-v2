@@ -85,6 +85,7 @@ async def reset_ports(ports: List[Port], unique=True, delete_ssh=False):
     for the same Port
     :param delete_ssh: Set to True to delete all used SSHs
     """
+    tasks = []
     with db_session:
         for port in ports:
             port = Port[port.id]  # Load port.ssh
@@ -95,7 +96,10 @@ async def reset_ports(ports: List[Port], unique=True, delete_ssh=False):
 
             ssh = SSH.get_ssh_for_port(port, unique=unique)
             port.connect_to_ssh(ssh)
-            asyncio.ensure_future(reconnect_port_using_ssh(port, ssh))
+        tasks.append(asyncio.ensure_future(reconnect_port_using_ssh(port, ssh)))
+
+    for task in tasks:
+        await task
 
 
 def reset_old_status():

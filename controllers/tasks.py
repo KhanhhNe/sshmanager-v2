@@ -192,6 +192,10 @@ class ReconnectNewSSHTask(SyncTask):
             return asyncio.ensure_future(actions.reset_ports(ports, ))
 
 
+class SSHStoreDownloadTask(SyncTask):
+    pass
+
+
 class AllTasksRunner(ConcurrentTask):
     """
     Task that run all other tasks in a proper order and manage them.
