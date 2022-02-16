@@ -17,6 +17,11 @@ logger = logging.getLogger('Tasks')
 
 
 class ConcurrentTask(ABC):
+    """
+    Run and manage a concurrent task (task that has multiple threads running
+    simultaneously).
+    """
+
     def __init__(self):
         self.tasks: List[asyncio.Task] = []
         self.is_running = False
@@ -95,6 +100,11 @@ class ConcurrentTask(ABC):
 
 
 class SyncTask(ABC):
+    """
+    Run single threaded task. Tasks that subclass this are meant to be used in
+    a same loop with all other SyncTasks.
+    """
+
     @abstractmethod
     def run(self) -> asyncio.Task:
         """
@@ -104,6 +114,10 @@ class SyncTask(ABC):
 
 
 class SSHCheckTask(ConcurrentTask):
+    """
+    Task to check all SSH status.
+    """
+
     @property
     def tasks_limit(self):
         conf = config.get_config()
@@ -119,6 +133,10 @@ class SSHCheckTask(ConcurrentTask):
 
 
 class PortCheckTask(ConcurrentTask):
+    """
+    Task to check all Port status.
+    """
+
     @property
     def tasks_limit(self):
         conf = config.get_config()
@@ -134,6 +152,10 @@ class PortCheckTask(ConcurrentTask):
 
 
 class ConnectSSHToPortTask(SyncTask):
+    """
+    Task to connect SSH to a Port.
+    """
+
     @db_session
     def run(self):
         port: Port = Port.get_need_ssh()
@@ -151,6 +173,10 @@ class ConnectSSHToPortTask(SyncTask):
 
 
 class ReconnectNewSSHTask(SyncTask):
+    """
+    Task to reconnect new SSH to a Port.
+    """
+
     @db_session
     def run(self):
         conf = config.get_config()
@@ -167,6 +193,10 @@ class ReconnectNewSSHTask(SyncTask):
 
 
 class AllTasksRunner(ConcurrentTask):
+    """
+    Task that run all other tasks in a proper order and manage them.
+    """
+
     def __init__(self):
         super().__init__()
         self.concurrent_tasks = [
