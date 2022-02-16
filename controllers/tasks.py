@@ -4,9 +4,10 @@ from abc import ABC, abstractmethod
 from collections import deque
 from contextlib import suppress
 from datetime import datetime, timedelta
-from inspect import isawaitable
-from typing import List
+from inspect import isawaitable, isclass
+from typing import Deque, List, Optional
 
+import aiohttp
 from pony.orm import db_session
 
 import config
@@ -192,8 +193,43 @@ class ReconnectNewSSHTask(SyncTask):
             return asyncio.ensure_future(actions.reset_ports(ports, ))
 
 
-class SSHStoreDownloadTask(SyncTask):
-    pass
+class SSHStoreDownloadTask(ConcurrentTask):
+    """
+    Task to automatically get SSH from SSHStore.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.last_run: Optional[datetime] = None
+
+    @property
+    def tasks_limit(self):
+        return 1
+
+    @staticmethod
+    async def run_get():
+        conf = config.get_config()
+        api_key = conf.get('SSHSTORE', 'api_key')
+        country = conf.get('SSHSTORE', 'country')
+        limit = conf.getint('SSHSTORE', 'limit')
+        interval = conf.getint('SSHSTORE', 'interval')
+
+        # noinspection PyBroadException
+        try:
+            async with aiohttp.ClientSession() as client:
+                resp = await client.get(
+                    f"http://autossh.top/api/txt/{api_key}/{country}/{limit}"
+                )
+                await actions.insert_ssh_from_file_content(await resp.text())
+        except Exception:
+            pass
+        await asyncio.sleep(interval)
+
+    def get_new_task(self):
+        conf = config.get_config()
+        if not conf.getboolean('SSHSTORE', 'enabled'):
+            return
+        return asyncio.ensure_future(self.run_get())
 
 
 class AllTasksRunner(ConcurrentTask):
@@ -203,14 +239,17 @@ class AllTasksRunner(ConcurrentTask):
 
     def __init__(self):
         super().__init__()
-        self.concurrent_tasks = [
-            SSHCheckTask(),
-            PortCheckTask()
-        ]
-        self.sync_tasks = deque([
-            ConnectSSHToPortTask(),
-            ReconnectNewSSHTask()
-        ])
+        self.concurrent_tasks: List[ConcurrentTask] = []
+        self.sync_tasks: Deque[SyncTask] = deque()
+
+        for name, cls in globals().items():
+            excluded_classes = [ConcurrentTask, SyncTask, AllTasksRunner]
+            if isclass(cls) and cls not in excluded_classes:
+                if issubclass(cls, ConcurrentTask):
+                    self.concurrent_tasks.append(cls())
+                elif issubclass(cls, SyncTask):
+                    self.sync_tasks.append(cls())
+
         self.tasks = [
             asyncio.ensure_future(task.run()) for task in self.concurrent_tasks
         ]

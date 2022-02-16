@@ -139,4 +139,5 @@ async def insert_ssh_from_file_content(file_content):
                 # Only create if it does not exist
                 s = SSH(**ssh_info)
                 created_ssh.append(s)
+        logger.info(f"Inserted {len(created_ssh)} SSH from file content")
     return created_ssh
