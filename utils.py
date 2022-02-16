@@ -1,5 +1,6 @@
 import asyncio
 import os.path
+import re
 import socket
 
 import psutil
@@ -77,3 +78,27 @@ async def kill_process_on_port(port_number: int):
         return True
     else:
         return False
+
+
+def parse_ssh_file(file_content):
+    """
+    Parse SSH from file content. Expects IP, username, password, delimiting by
+    some delimiter.
+
+    :param file_content: Parsing file content
+    :return: List of {ip: "...", username: "...", password: "..."}
+    """
+    results = []
+    for line in file_content.splitlines():
+        match = re.search(
+            r'((?:[0-9]{1,3}\.){3}(?:[0-9]{1,3}))[;,|]([^;,|]*)[;,|]([^;,|]*)',
+            line
+        )
+        if match:
+            ip, username, password = match.groups()
+            results.append({
+                'ip': ip,
+                'username': username,
+                'password': password
+            })
+    return results

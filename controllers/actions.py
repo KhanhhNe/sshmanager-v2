@@ -111,10 +111,28 @@ def reset_old_status():
 
 def kill_child_processes():
     """
-    Kill all child processes started by the application
+    Kill all child processes started by the application.
     """
     process = psutil.Process()
     children: List[psutil.Process] = process.children(recursive=True)
     for child in children:
         child.kill()
     psutil.wait_procs(children)
+
+
+async def insert_ssh_from_file_content(file_content):
+    """
+    Insert SSH into database from file content. Will skip SSH that are already
+    in the database.
+
+    :param file_content: SSH file content
+    :return: List of created SSH
+    """
+    created_ssh = []
+    with db_session:
+        for ssh_info in utils.parse_ssh_file(file_content):
+            if not SSH.exists(**ssh_info):
+                # Only create if it does not exist
+                s = SSH(**ssh_info)
+                created_ssh.append(s)
+    return created_ssh
