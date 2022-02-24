@@ -32,7 +32,7 @@ async def check_port_ip(port: Port):
 
     :param port: Target port
     """
-    ip = await putty_controllers.get_proxy_ip(port.proxy_address)
+    ip = await utils.get_proxy_ip(port.proxy_address)
 
     with db_session:
         Port.end_checking(port,
