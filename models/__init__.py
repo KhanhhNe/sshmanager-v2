@@ -129,7 +129,6 @@ class SSH(CheckingSupported):
     @auto_renew_objects
     def reset_status(self):
         super().reset_status()
-        self.port = None
 
 
 class Port(CheckingSupported):
@@ -178,4 +177,4 @@ class Port(CheckingSupported):
         self.external_ip = ''
         self.ssh = None
         self.time_connected = None
-        self.used_ssh_list = []
+        self.used_ssh_list.clear()

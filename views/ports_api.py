@@ -1,4 +1,3 @@
-import asyncio
 import json
 from typing import List
 
@@ -65,11 +64,18 @@ def delete_ports(port_list: List[PortIn]):
 @db_session
 async def reset_ports_ssh(port_list: List[PortIn], delete_ssh=False):
     """
-    Reset assigned SSH of ports
+    Reset assigned SSH of Ports.
+
+    :return: Reset Ports (excluding non-existing Ports)
     """
-    ports = [Port(port_number=port.port_number) for port in port_list]
-    asyncio.ensure_future(reset_ports(ports, delete_ssh))
-    return {}
+    ports = []
+    with db_session:
+        for port in port_list:
+            if Port.exists(port_number=port.port_number):
+                ports.append(Port.get(port_number=port.port_number))
+    await reset_ports(ports, delete_ssh)
+
+    return [PortOut.from_orm(p) for p in ports]
 
 
 @router.get('/proxies/')

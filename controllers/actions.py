@@ -85,6 +85,7 @@ async def reset_ports(ports: List[Port], unique=True, delete_ssh=False):
     for the same Port
     :param delete_ssh: Set to True to delete all used SSHs
     """
+    tasks = []
     with db_session:
         for port in ports:
             port = Port[port.id]  # Load port.ssh
@@ -95,7 +96,10 @@ async def reset_ports(ports: List[Port], unique=True, delete_ssh=False):
 
             ssh = SSH.get_ssh_for_port(port, unique=unique)
             port.connect_to_ssh(ssh)
-            asyncio.ensure_future(reconnect_port_using_ssh(port, ssh))
+        tasks.append(asyncio.ensure_future(reconnect_port_using_ssh(port, ssh)))
+
+    for task in tasks:
+        await task
 
 
 def reset_old_status():
@@ -111,10 +115,29 @@ def reset_old_status():
 
 def kill_child_processes():
     """
-    Kill all child processes started by the application
+    Kill all child processes started by the application.
     """
     process = psutil.Process()
     children: List[psutil.Process] = process.children(recursive=True)
     for child in children:
         child.kill()
     psutil.wait_procs(children)
+
+
+async def insert_ssh_from_file_content(file_content):
+    """
+    Insert SSH into database from file content. Will skip SSH that are already
+    in the database.
+
+    :param file_content: SSH file content
+    :return: List of created SSH
+    """
+    created_ssh = []
+    with db_session:
+        for ssh_info in utils.parse_ssh_file(file_content):
+            if not SSH.exists(**ssh_info):
+                # Only create if it does not exist
+                s = SSH(**ssh_info)
+                created_ssh.append(s)
+        logger.info(f"Inserted {len(created_ssh)} SSH from file content")
+    return created_ssh

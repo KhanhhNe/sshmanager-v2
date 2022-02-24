@@ -1,9 +1,11 @@
 import json
 from typing import List
 
+from fastapi import UploadFile
 from fastapi.routing import APIRouter
 from pony.orm import db_session, desc
 
+from controllers import actions
 from models import SSH
 from models.io_models import SSHIn, SSHOut
 from views import update_websocket
@@ -63,3 +65,18 @@ def delete_ssh(ssh_list: List[SSHIn]):
         if ssh_obj:
             ssh_obj.delete()
     return deleted
+
+
+@router.post('/upload')
+async def upload_ssh(ssh_file: UploadFile):
+    """
+    Upload a file containing SSH information.
+
+    :param ssh_file: SSH file
+    :return: Created SSH list
+    """
+    file_content = (await ssh_file.read()).decode()
+    created_ssh = await actions.insert_ssh_from_file_content(file_content)
+    with db_session:
+        # Re-query SSHs and format into output model
+        return [SSHOut.from_orm(SSH[s.id]) for s in created_ssh]

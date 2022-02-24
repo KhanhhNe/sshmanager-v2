@@ -14,6 +14,7 @@ psutil = "*"
 aiofiles = "*"
 jinja2 = "*"
 websockets = "*"
+python-multipart = "*"
 
 [dev-packages]
 pyinstaller = "*"

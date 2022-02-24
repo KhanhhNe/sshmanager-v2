@@ -43,6 +43,26 @@ DEFAULT_CONFIG = [
         'WEB', 'port', 'web_port', 6080,
         "Port chạy web (truy cập web bằng link http://<ip>:<port>)",
         need_restart=True),
+    ConfigItem(
+        'SSHSTORE', 'enabled', 'sshstore_enabled', False,
+        "Tự động lấy SSH từ SSHStore (cần tạo account)"
+    ),
+    ConfigItem(
+        'SSHSTORE', 'api_key', 'sshstore_api_key', '',
+        "API key của SSHStore"
+    ),
+    ConfigItem(
+        'SSHSTORE', 'country', 'sshstore_country', 'US',
+        "Quốc gia lấy SSH từ SSHSTORE"
+    ),
+    ConfigItem(
+        'SSHSTORE', 'limit', 'sshstore_limit', 100,
+        "Giới hạn số SSH mỗi lần lấy từ SSHStore"
+    ),
+    ConfigItem(
+        'SSHSTORE', 'interval', 'sshstore_interval', 60,
+        "Thời gian nghỉ giữa 2 lần lấy SSH từ SSHStore (phút)"
+    ),
 ]
 
 PYDANTIC_ARGS = {}
