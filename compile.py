@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import subprocess
@@ -5,7 +6,8 @@ import zipfile
 
 import PyInstaller.__main__
 
-app_name = os.path.basename(os.getcwd())
+app_name = os.path.basename(os.getcwd()).replace('-v2', '')
+version = json.load(open('package.json', encoding='utf-8'))['version']
 dist_path = 'app_dist'
 
 shutil.rmtree('dist', ignore_errors=True)
@@ -31,7 +33,7 @@ PyInstaller.__main__.run([
 shutil.copytree('dist', f"{dist_path}/{app_name}/dist", dirs_exist_ok=True)
 
 print("Zipping files...")
-built_file = zipfile.ZipFile(f'{app_name}.zip', 'w')
+built_file = zipfile.ZipFile(f'{app_name}-v{version}.zip', 'w')
 
 os.chdir(dist_path)
 for folder, _, filenames in os.walk(app_name):
