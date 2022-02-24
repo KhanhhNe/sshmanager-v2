@@ -4,11 +4,8 @@ import subprocess
 import time
 from dataclasses import dataclass
 
-import aiohttp
-import python_socks
-from aiohttp_socks import ProxyConnector
-
 import utils
+from utils import get_proxy_ip
 
 logger = logging.getLogger('Putty')
 
@@ -33,14 +30,15 @@ class PuttyError(Exception):
 
 class ProxyConnectionError(PuttyError):
     """
-    Cannot connect to specified SSH
+    Cannot connect to specified SSH.
     """
 
 
 async def connect_ssh(host: str, username: str, password: str,
                       port: int = None, kill_after=False) -> ProxyInfo:
     """
-    Connect an SSH to specified port
+    Connect an SSH to specified port.
+
     :param host: SSH IP
     :param username: SSH username
     :param password: SSH password
@@ -95,7 +93,8 @@ async def connect_ssh(host: str, username: str, password: str,
 
 async def verify_ssh(host: str, username: str, password: str) -> bool:
     """
-    Verify if SSH is usable
+    Verify if SSH is usable.
+
     :param host:
     :param username:
     :param password:
@@ -106,30 +105,3 @@ async def verify_ssh(host: str, username: str, password: str) -> bool:
         return True
     except ProxyConnectionError:
         return False
-
-
-async def get_proxy_ip(proxy_address, tries=0) -> str:
-    """
-    Retrieves proxy's real IP address. Returns empty string if failed
-    :param proxy_address: Proxy connection address in <protocol>://<ip>:<port>
-    :param tries: Total request tries
-    :return: Proxy real IP address on success connection, empty string otherwise
-    """
-    try:
-        connector = ProxyConnector.from_url(proxy_address)
-        async with aiohttp.ClientSession(connector=connector) as client:
-            # noinspection PyBroadException
-            try:
-                async with client.get(
-                        'https://api.ipify.org?format=text') as resp:
-                    return await resp.text()
-            except Exception:
-                async with client.get('https://ip.seeip.org') as resp:
-                    return await resp.text()
-    except (aiohttp.ClientError, python_socks.ProxyConnectionError,
-            python_socks.ProxyError, python_socks.ProxyTimeoutError,
-            ConnectionError, asyncio.exceptions.IncompleteReadError,
-            asyncio.exceptions.TimeoutError):
-        if not tries:
-            return ''
-        return await get_proxy_ip(proxy_address, tries=tries - 1)
