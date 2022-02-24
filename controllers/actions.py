@@ -95,8 +95,11 @@ async def reset_ports(ports: List[Port], unique=True, delete_ssh=False):
                 used_ssh.delete()
 
             ssh = SSH.get_ssh_for_port(port, unique=unique)
-            port.connect_to_ssh(ssh)
-        tasks.append(asyncio.ensure_future(reconnect_port_using_ssh(port, ssh)))
+            if ssh:
+                port.connect_to_ssh(ssh)
+                tasks.append(asyncio.ensure_future(
+                    reconnect_port_using_ssh(port, ssh))
+                )
 
     for task in tasks:
         await task
