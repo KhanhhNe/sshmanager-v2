@@ -32,7 +32,7 @@ async def check_port_ip(port: Port):
 
     :param port: Target port
     """
-    ip = await putty_controllers.get_proxy_ip(port.proxy_address)
+    ip = await utils.get_proxy_ip(port.proxy_address)
 
     with db_session:
         Port.end_checking(port,
@@ -95,8 +95,11 @@ async def reset_ports(ports: List[Port], unique=True, delete_ssh=False):
                 used_ssh.delete()
 
             ssh = SSH.get_ssh_for_port(port, unique=unique)
-            port.connect_to_ssh(ssh)
-        tasks.append(asyncio.ensure_future(reconnect_port_using_ssh(port, ssh)))
+            if ssh:
+                port.connect_to_ssh(ssh)
+                tasks.append(asyncio.ensure_future(
+                    reconnect_port_using_ssh(port, ssh))
+                )
 
     for task in tasks:
         await task

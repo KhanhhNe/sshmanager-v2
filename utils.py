@@ -3,7 +3,10 @@ import os.path
 import re
 import socket
 
+import aiohttp
 import psutil
+import python_socks
+from aiohttp_socks import ProxyConnector
 
 
 def get_ipv4_address():
@@ -30,7 +33,7 @@ async def wait_for_db_update(last_updated=0):
     Wait until there is a database query that is not SELECT
     """
     while True:
-        modified_time = os.path.getmtime('db.sqlite')
+        modified_time = os.path.getmtime('data/db.sqlite')
         if last_updated < modified_time:
             return modified_time
         await asyncio.sleep(1)
@@ -102,3 +105,32 @@ def parse_ssh_file(file_content):
                 'password': password
             })
     return results
+
+
+async def get_proxy_ip(proxy_address, tries=0) -> str:
+    """
+    Retrieves proxy's real IP address. Returns empty string if failed.
+
+    :param proxy_address: Proxy connection address in <protocol>://<ip>:<port>
+    :param tries: Total request tries
+    :return: Proxy real IP address on success connection, empty string otherwise
+    """
+    try:
+        connector = ProxyConnector.from_url(proxy_address)
+        async with aiohttp.ClientSession(connector=connector) as client:
+            # noinspection PyBroadException
+            try:
+                resp = await client.get('https://api.ipify.org?format=text',
+                                        verify_ssl=False)
+                return await resp.text()
+            except Exception:
+                resp = await client.get('https://ip.seeip.org',
+                                        verify_ssl=False)
+                return await resp.text()
+    except (aiohttp.ClientError, python_socks.ProxyConnectionError,
+            python_socks.ProxyError, python_socks.ProxyTimeoutError,
+            ConnectionError, asyncio.exceptions.IncompleteReadError,
+            asyncio.exceptions.TimeoutError):
+        if not tries:
+            return ''
+        return await get_proxy_ip(proxy_address, tries=tries - 1)

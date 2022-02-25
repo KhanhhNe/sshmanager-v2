@@ -1,3 +1,5 @@
+import json
+
 from fastapi.routing import APIRouter
 
 import config
@@ -31,7 +33,7 @@ def update_settings(settings: SettingsInOut):
         if new != old and item.need_restart:
             need_restart = True
 
-        conf[item.section][item.name] = str(new)
+        conf[item.section][item.name] = json.dumps(new)
 
     config.write_config(conf)
 

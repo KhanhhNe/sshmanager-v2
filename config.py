@@ -1,8 +1,9 @@
 import configparser
+import json
 from dataclasses import dataclass
 from typing import Any
 
-CONFIG_FILE = 'config.ini'
+CONFIG_FILE = 'data/config.ini'
 
 
 @dataclass
@@ -26,11 +27,11 @@ DEFAULT_CONFIG = [
         'PORT', 'tasks_count', 'port_tasks_count', 20,
         "Số thread quản lý Port và kết nối SSH đến Port"),
     ConfigItem(
-        'PORT', 'use_unique_ssh', 'use_unique_ssh', True,
+        'PORT', 'use_unique_ssh', 'use_unique_ssh', False,
         "Không dùng lại các SSH đã dùng ở mỗi Port"
     ),
     ConfigItem(
-        'PORT', 'auto_reset_ports', 'auto_reset_ports', True,
+        'PORT', 'auto_reset_ports', 'auto_reset_ports', False,
         "Tự động đổi IP mỗi Port sau một thời gian nhất định"),
     ConfigItem(
         'PORT', 'reset_interval', 'port_reset_interval', 60,
@@ -75,7 +76,7 @@ def get_default_config():
     for item in DEFAULT_CONFIG:
         if item.section not in config.sections():
             config.add_section(item.section)
-        config[item.section][item.name] = str(item.value)
+        config[item.section][item.name] = json.dumps(item.value)
     return config
 
 
@@ -90,9 +91,8 @@ def get_config():
 
 def get_config_value(item: ConfigItem):
     config = get_config()
-    t = type(item.value)
     value = config.get(item.section, item.name)
-    return t(value)
+    return json.loads(value)
 
 
 def write_config(config):

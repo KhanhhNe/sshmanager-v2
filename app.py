@@ -15,7 +15,8 @@ from models import db
 from views import ports_api, settings_api, ssh_api
 
 DB_ENGINE = 'sqlite'
-DB_PATH = 'db.sqlite'
+DB_PATH = 'data/db.sqlite'
+os.environ['PATH'] += ';executables'
 
 
 def logging_filter(record: logging.LogRecord):
@@ -38,11 +39,11 @@ def is_main_child_thread():
 
 
 def register_main_child_thread():
-    open('current_thread.txt', 'w+').write(str(ident))
+    open('data/current_thread.txt', 'w+').write(str(ident))
 
 
 def unregister_main_child_thread():
-    os.remove('current_thread.txt')
+    os.remove('data/current_thread.txt')
 
 
 app = FastAPI(title="SSHManager by KhanhhNe",
@@ -52,10 +53,10 @@ app = FastAPI(title="SSHManager by KhanhhNe",
 # Configure loggings
 if is_main_child_thread():
     console_logging = logging.StreamHandler()
-    file_logging = logging.FileHandler('debug.log', mode='w')
+    file_logging = logging.FileHandler('data/debug.log', mode='w')
 else:
     console_logging = logging.StreamHandler()
-    file_logging = logging.FileHandler('debug.log', mode='a')
+    file_logging = logging.FileHandler('data/debug.log', mode='a')
 
 if not os.environ.get('DEBUG'):
     console_logging.setLevel(logging.INFO)

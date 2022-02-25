@@ -25,17 +25,14 @@ pnpm-debug.log*
 # Python cache
 *.pyc
 
-# Database
-db.sqlite
+# User data
+data/
 
 # Built files
 build/
 app_dist/
 *.spec
 *.zip
-
-# Config file
-config.ini
 
 # Plugins
 plugins/

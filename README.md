@@ -4,7 +4,7 @@ An open source tool for managing, checking and connecting to your SSH proxy
 
 <div style="text-align: center;">
   <!--suppress CheckImageSize -->
-  <img src="logo.png" alt="sshmanager logo" width="200"/>
+  <img src="logo/logo.png" alt="sshmanager logo" width="200"/>
 </div>
 
 Features
