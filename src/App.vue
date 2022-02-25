@@ -157,6 +157,9 @@ export default {
     }
   },
   mounted() {
+    fetch('/openapi.json').then(resp => resp.json()).then(data => {
+      document.title = `SSHManager v${data.info.version}`
+    })
     const self = this
     this.sshSocket.addEventListener('message', function (event) {
       self.sshList = JSON.parse(event.data)
