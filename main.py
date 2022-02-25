@@ -13,8 +13,8 @@ if __name__ == '__main__':
 
     # noinspection HttpUrlsUsage
     if os.environ.get("DEBUG"):
-        if os.path.exists('config.ini'):
-            os.remove('config.ini')
+        if os.path.exists('data/config.ini'):
+            os.remove('data/config.ini')
 
     process = None
     if os.environ.get("DEVMODE"):

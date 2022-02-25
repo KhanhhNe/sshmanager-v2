@@ -41,5 +41,7 @@ for folder, _, filenames in os.walk(app_name):
         print(f"Zipping {filepath}")
         built_file.write(filepath)
 os.chdir('..')
+if os.path.exists(f"{app_name}.spec"):
+    os.remove(f"{app_name}.spec")
 
 print("Done!")

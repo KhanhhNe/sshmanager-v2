@@ -3,7 +3,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-CONFIG_FILE = 'config.ini'
+CONFIG_FILE = 'data/config.ini'
 
 
 @dataclass

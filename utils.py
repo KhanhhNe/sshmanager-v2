@@ -33,7 +33,7 @@ async def wait_for_db_update(last_updated=0):
     Wait until there is a database query that is not SELECT
     """
     while True:
-        modified_time = os.path.getmtime('db.sqlite')
+        modified_time = os.path.getmtime('data/db.sqlite')
         if last_updated < modified_time:
             return modified_time
         await asyncio.sleep(1)
