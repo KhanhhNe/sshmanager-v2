@@ -22,7 +22,6 @@ PyInstaller.__main__.run([
     f'--distpath={dist_path}', '--onedir', '--noconfirm',
     '--add-data=package.json;.',
     '--add-binary=executables/*;executables',
-    '--add-binary=api-ms-win-core-path-l1-1-0.dll;.',  # Win 7 compatibility
     '--hidden-import=app',
     '--hidden-import=pony.orm.dbproviders',
     '--hidden-import=pony.orm.dbproviders.sqlite',

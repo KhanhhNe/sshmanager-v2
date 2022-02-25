@@ -16,6 +16,7 @@ from views import ports_api, settings_api, ssh_api
 
 DB_ENGINE = 'sqlite'
 DB_PATH = 'db.sqlite'
+os.environ['PATH'] += ';executables'
 
 
 def logging_filter(record: logging.LogRecord):

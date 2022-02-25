@@ -56,7 +56,7 @@ async def connect_ssh(host: str, username: str, password: str,
         return '{:4.1f}'.format(time.perf_counter() - start_time)
 
     process = await asyncio.create_subprocess_exec(
-        'executables/PLINK.EXE', f'{username}@{host}', '-pw', password,
+        'PLINK.EXE', f'{username}@{host}', '-pw', password,
         '-D', f'0.0.0.0:{port}',
         '-v',
         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
