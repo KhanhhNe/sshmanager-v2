@@ -10,6 +10,7 @@ import utils
 
 if __name__ == '__main__':
     freeze_support()
+    os.makedirs('data', exist_ok=True)
 
     # noinspection HttpUrlsUsage
     if os.environ.get("DEBUG"):
