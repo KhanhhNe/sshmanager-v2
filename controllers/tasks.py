@@ -124,7 +124,6 @@ class SSHCheckTask(ConcurrentTask):
         conf = config.get_config()
         return conf.getint('SSH', 'tasks_count')
 
-    @db_session
     def get_new_task(self):
         ssh: SSH = SSH.get_need_checking()
         if ssh:
@@ -143,7 +142,6 @@ class PortCheckTask(ConcurrentTask):
         conf = config.get_config()
         return conf.getint('PORT', 'tasks_count')
 
-    @db_session
     def get_new_task(self):
         port: Port = Port.get_need_checking()
         if port is not None:
@@ -157,7 +155,7 @@ class ConnectSSHToPortTask(SyncTask):
     Task to connect SSH to a Port.
     """
 
-    @db_session
+    @db_session(optimistic=False)
     def run(self):
         port: Port = Port.get_need_ssh()
         if not port:
@@ -178,7 +176,7 @@ class ReconnectNewSSHTask(SyncTask):
     Task to reconnect new SSH to a Port.
     """
 
-    @db_session
+    @db_session(optimistic=False)
     def run(self):
         conf = config.get_config()
         if not conf.getboolean('PORT', 'auto_reset_ports'):

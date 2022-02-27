@@ -21,9 +21,7 @@ async def check_ssh_status(ssh: SSH):
     is_live = await putty_controllers.verify_ssh(ssh.ip,
                                                  ssh.username,
                                                  ssh.password)
-
-    with db_session:
-        SSH.end_checking(ssh, is_live=is_live)
+    SSH.end_checking(ssh, is_live=is_live)
 
 
 async def check_port_ip(port: Port):
@@ -33,10 +31,7 @@ async def check_port_ip(port: Port):
     :param port: Target port
     """
     ip = await utils.get_proxy_ip(port.proxy_address)
-
-    with db_session:
-        Port.end_checking(port,
-                          external_ip=ip)
+    Port.end_checking(port, external_ip=ip)
 
 
 async def connect_ssh_to_port(ssh: SSH, port: Port):
@@ -57,9 +52,8 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
         logger.info(f"Port {port.port_number} "
                     f"failed to connect to SSH {ssh.ip}")
 
-    with db_session:
-        if not is_connected:
-            port.disconnect_ssh(ssh, remove_from_used=True)
+    if not is_connected:
+        port.disconnect_ssh(ssh, remove_from_used=True)
 
 
 async def reconnect_port_using_ssh(port: Port, ssh: SSH):
