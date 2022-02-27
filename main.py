@@ -10,6 +10,7 @@ import utils
 
 if __name__ == '__main__':
     freeze_support()
+    os.makedirs('data', exist_ok=True)
 
     # noinspection HttpUrlsUsage
     if os.environ.get("DEBUG"):
@@ -22,15 +23,14 @@ if __name__ == '__main__':
                                    stderr=subprocess.DEVNULL,
                                    shell=True)
 
-    conf = config.get_config()
-    port = conf.getint('WEB', 'port')
-    workers = conf.getint('WEB', 'workers')
+    port = config.get('web_port')
+    workers = config.get('web_workers_count')
 
     if not os.environ.get("DEBUG"):
         webbrowser.open_new_tab(f"http://{utils.get_ipv4_address()}:{port}")
 
-    if os.path.exists('current_thread.txt'):
-        os.remove('current_thread.txt')
+    if os.path.exists('data/current_thread.txt'):
+        os.remove('data/current_thread.txt')
     # loop='none' to 'make' it use asyncio.ProactorEventLoop
     # so we can use asyncio.create_subprocess_exec()
     uvicorn.run('app:app',

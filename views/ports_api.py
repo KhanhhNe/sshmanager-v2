@@ -5,6 +5,7 @@ from fastapi.responses import PlainTextResponse
 from fastapi.routing import APIRouter
 from pony.orm import db_session
 
+import config
 from controllers.actions import reset_ports
 from models import Port
 from models.io_models import PortIn, PortOut
@@ -61,7 +62,6 @@ def delete_ports(port_list: List[PortIn]):
 
 # TODO change to requiring Port numbers only
 @router.put('/')
-@db_session
 async def reset_ports_ssh(port_list: List[PortIn], delete_ssh=False):
     """
     Reset assigned SSH of Ports.
@@ -73,9 +73,10 @@ async def reset_ports_ssh(port_list: List[PortIn], delete_ssh=False):
         for port in port_list:
             if Port.exists(port_number=port.port_number):
                 ports.append(Port.get(port_number=port.port_number))
-    await reset_ports(ports, delete_ssh)
-
-    return [PortOut.from_orm(p) for p in ports]
+    unique = config.get('use_unique_ssh')
+    await reset_ports(ports, unique=unique, delete_ssh=delete_ssh)
+    with db_session:
+        return [PortOut.from_orm(Port[p.id]) for p in ports]
 
 
 @router.get('/proxies/')

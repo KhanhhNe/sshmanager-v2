@@ -119,7 +119,7 @@ class SSH(CheckingSupported):
         """
         query = cls.select(lambda s: s.is_usable)
         if unique:
-            query = query.filter(lambda s: s not in port.used_ssh_list)
+            query = query.filter(lambda s: s.id not in port.used_ssh_list.id)
         return query.first()
 
     @auto_renew_objects

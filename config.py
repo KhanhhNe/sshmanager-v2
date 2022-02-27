@@ -89,7 +89,14 @@ def get_config():
     return config
 
 
-def get_config_value(item: ConfigItem):
+def get(full_name: str):
+    for item in DEFAULT_CONFIG:
+        if item.full_name == full_name:
+            return get_by_item(item)
+    raise RuntimeError(f"Config {repr(full_name)} not found")
+
+
+def get_by_item(item: ConfigItem):
     config = get_config()
     value = config.get(item.section, item.name)
     return json.loads(value)

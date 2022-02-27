@@ -121,8 +121,7 @@ class SSHCheckTask(ConcurrentTask):
 
     @property
     def tasks_limit(self):
-        conf = config.get_config()
-        return conf.getint('SSH', 'tasks_count')
+        return config.get('ssh_tasks_count')
 
     def get_new_task(self):
         ssh: SSH = SSH.get_need_checking()
@@ -139,8 +138,7 @@ class PortCheckTask(ConcurrentTask):
 
     @property
     def tasks_limit(self):
-        conf = config.get_config()
-        return conf.getint('PORT', 'tasks_count')
+        return config.get('port_tasks_count')
 
     def get_new_task(self):
         port: Port = Port.get_need_checking()
@@ -161,7 +159,7 @@ class ConnectSSHToPortTask(SyncTask):
         if not port:
             return None
 
-        unique = config.get_config().getboolean('PORT', 'use_unique_ssh')
+        unique = config.get('use_unique_ssh')
         ssh: SSH = SSH.get_ssh_for_port(port, unique=unique)
         if not ssh:
             return
@@ -178,11 +176,10 @@ class ReconnectNewSSHTask(SyncTask):
 
     @db_session(optimistic=False)
     def run(self):
-        conf = config.get_config()
-        if not conf.getboolean('PORT', 'auto_reset_ports'):
+        if not config.get('auto_reset_ports'):
             return
 
-        reset_interval = conf.getint('PORT', 'reset_interval')
+        reset_interval = config.get('port_reset_interval')
         time_expired = datetime.now() - timedelta(seconds=reset_interval)
         ports = Port.get_need_reset(time_expired)
         if ports:
@@ -206,11 +203,10 @@ class SSHStoreDownloadTask(ConcurrentTask):
 
     @staticmethod
     async def run_get():
-        conf = config.get_config()
-        api_key = conf.get('SSHSTORE', 'api_key')
-        country = conf.get('SSHSTORE', 'country')
-        limit = conf.getint('SSHSTORE', 'limit')
-        interval = conf.getint('SSHSTORE', 'interval')
+        api_key = config.get('sshstore_api_key')
+        country = config.get('sshstore_country')
+        limit = config.get('sshstore_limit')
+        interval = config.get('sshstore_interval')
 
         # noinspection PyBroadException
         try:
@@ -224,8 +220,7 @@ class SSHStoreDownloadTask(ConcurrentTask):
         await asyncio.sleep(interval)
 
     def get_new_task(self):
-        conf = config.get_config()
-        if not conf.getboolean('SSHSTORE', 'enabled'):
+        if not config.get('sshstore_enabled'):
             return
         return asyncio.ensure_future(self.run_get())
 
