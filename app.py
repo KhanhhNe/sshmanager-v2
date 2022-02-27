@@ -14,6 +14,7 @@ from controllers.tasks import AllTasksRunner
 from models import db
 from views import ports_api, settings_api, ssh_api
 
+os.makedirs('data', exist_ok=True)
 DB_ENGINE = 'sqlite'
 DB_PATH = 'data/db.sqlite'
 os.environ['PATH'] += ';executables'
