@@ -35,7 +35,7 @@ def logging_filter(record: logging.LogRecord):
 
 
 def is_main_child_thread():
-    return not os.path.exists('current_thread.txt')
+    return not os.path.exists('data/current_thread.txt')
 
 
 def register_main_child_thread():
@@ -91,7 +91,6 @@ if is_main_child_thread():
     def startup_tasks():
         actions.reset_old_status()
         asyncio.ensure_future(runner.run())
-        os.makedirs('plugins', exist_ok=True)
 
 
     @app.on_event('shutdown')
