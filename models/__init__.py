@@ -14,16 +14,19 @@ def auto_renew_objects(func):
     """
 
     @wraps(func)
+    @db_session(optimistic=False)
     def wrapped(*args, **kwargs):
         args = list(args)
-        for ind, arg in enumerate(args):
-            if arg and issubclass(type(arg), db.Entity):
-                args[ind] = type(arg)[arg.id]
+        try:
+            for ind, arg in enumerate(args):
+                if arg and issubclass(type(arg), db.Entity):
+                    args[ind] = type(arg)[arg.id]
 
-        for key, val in kwargs.items():
-            if val and issubclass(type(val), db.Entity):
-                kwargs[key] = type(val)[val.id]
-
+            for key, val in kwargs.items():
+                if val and issubclass(type(val), db.Entity):
+                    kwargs[key] = type(val)[val.id]
+        except ObjectNotFound:
+            return
         return func(*args, **kwargs)
 
     return wrapped
@@ -38,6 +41,7 @@ class CheckingSupported(db.Entity):
 
     # noinspection PyTypeChecker
     @classmethod
+    @auto_renew_objects
     def get_need_checking(cls, begin=True):
         """
         Get a new object that need checking. Will call begin_checking() if
@@ -55,19 +59,17 @@ class CheckingSupported(db.Entity):
         return obj
 
     @classmethod
+    @auto_renew_objects
     def begin_checking(cls, obj):
         """
         Start the checking process (set checking-related flags in database).
 
         :param obj: Object
         """
-        try:
-            obj_by_id: 'CheckingSupported' = cls[obj.id]
-        except ObjectNotFound:
-            return
-        obj_by_id.is_checking = True
+        obj.is_checking = True
 
     @classmethod
+    @auto_renew_objects
     def end_checking(cls, obj, **kwargs):
         """
         Stop checking and update object's values into database using the keyword
@@ -76,15 +78,10 @@ class CheckingSupported(db.Entity):
         :param obj: Object
         :param kwargs: Updating values
         """
-        try:
-            obj_by_id: 'CheckingSupported' = cls[obj.id]
-        except ObjectNotFound:
-            return
-
         for key, value in kwargs.items():
-            obj_by_id.__setattr__(key, value)
-        obj_by_id.is_checking = False
-        obj_by_id.last_checked = datetime.now()
+            obj.__setattr__(key, value)
+        obj.is_checking = False
+        obj.last_checked = datetime.now()
 
     @auto_renew_objects
     def reset_status(self):
@@ -120,7 +117,6 @@ class SSH(CheckingSupported):
         :param unique: True if the SSH cannot be used before by Port
         :return: Usable SSH for Port
         """
-        # TODO test this
         query = cls.select(lambda s: s.is_usable)
         if unique:
             query = query.filter(lambda s: s not in port.used_ssh_list)
