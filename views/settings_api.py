@@ -14,7 +14,7 @@ def get_all_settings():
     Get all settings
     """
     args = {
-        i.full_name: config.get_config_value(i) for i in config.DEFAULT_CONFIG
+        i.full_name: config.get_by_item(i) for i in config.DEFAULT_CONFIG
     }
     return SettingsInOut(**args)
 
@@ -28,7 +28,7 @@ def update_settings(settings: SettingsInOut):
     need_restart = False
 
     for item in config.DEFAULT_CONFIG:
-        old = config.get_config_value(item)
+        old = config.get_by_item(item)
         new = getattr(settings, item.full_name)
         if new != old and item.need_restart:
             need_restart = True
