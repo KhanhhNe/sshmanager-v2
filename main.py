@@ -23,9 +23,8 @@ if __name__ == '__main__':
                                    stderr=subprocess.DEVNULL,
                                    shell=True)
 
-    conf = config.get_config()
-    port = conf.getint('WEB', 'port')
-    workers = conf.getint('WEB', 'workers')
+    port = config.get('web_port')
+    workers = config.get('web_workers_count')
 
     if not os.environ.get("DEBUG"):
         webbrowser.open_new_tab(f"http://{utils.get_ipv4_address()}:{port}")
