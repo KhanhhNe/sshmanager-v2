@@ -1,5 +1,9 @@
 <template>
   <div id="app">
+    <span
+        v-if="newVersion && newVersion !== currentVersion"
+        class="update-available"
+    >Đã có phiên bản mới {{ newVersion }}!</span>
     <SSHList
         :sshList="sshList"
         :title="`SSH (${sshList.length})`"
@@ -62,6 +66,8 @@ export default {
       sshList: [],
       ports: [],
       settings: [],
+      currentVersion: "",
+      newVersion: "",
       needRestart: false
     }
   },
@@ -169,12 +175,30 @@ export default {
     })
     this.getSettings()
     tippy('[data-tippy-content]')
+
+    fetch('/openapi.json')
+        .then(resp => resp.json())
+        .then(json => {
+          self.currentVersion = json.info.version
+        })
+    fetch('https://raw.githubusercontent.com/KhanhhNe/sshmanager-v2/master/package.json')
+        .then(resp => resp.json())
+        .then(json => {
+          self.newVersion = json.version
+        })
   }
 }
 </script>
 
 <style lang="scss">
 @use "sass:math";
+
+.update-available {
+  position: absolute;
+  bottom: 0;
+  color: red;
+  font-size: 1rem;
+}
 
 #app {
   $padding: 1rem;
