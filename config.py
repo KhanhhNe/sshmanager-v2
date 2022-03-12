@@ -18,7 +18,7 @@ class ConfigItem:
 
 DEFAULT_CONFIG = [
     ConfigItem(
-        'SSH', 'tasks_count', 'ssh_tasks_count', 20,
+        'SSH', 'tasks_count', 'ssh_tasks_count', 100,
         "Số thread check SSH live/die"),
     ConfigItem(
         'SSH', 'connection_timeout', 'connection_timeout', 20,

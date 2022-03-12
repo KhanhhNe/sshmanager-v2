@@ -3,6 +3,7 @@
   <article v-show="!hidden">
     <ArticleTitle>
       <template v-slot:title>{{ title }}</template>
+      <small v-if="!readOnly">{{ checkSpeed }} <sub>SSH/phút</sub></small>
       <label style="padding-right: 0">Hiển thị</label>
       <select v-model="displayLimit" style="margin-right: 0.75rem">
         <option :value="200" selected>200</option>
@@ -67,6 +68,7 @@
 import ArticleTitle from "@/components/ArticleTitle";
 import {saveAs} from "file-saver";
 import {getSshText, getTimeDisplay, isInList} from "@/utils";
+import moment from "moment";
 
 export default {
   name: 'SSHList',
@@ -76,7 +78,8 @@ export default {
   data() {
     return {
       hidden: false,
-      displayLimit: 200
+      displayLimit: 200,
+      checkSpeed: 0
     }
   },
   props: {
@@ -133,9 +136,28 @@ export default {
 
       this.$emit('delete-ssh', removed)
       this.$emit('add-ssh', added)
+    },
+
+    /**
+     * Update SSH checking speed
+     */
+    updateCheckSpeed() {
+      this.checkSpeed = this.sshList
+          .map(s => {
+            return {
+              ...s,
+              last_checked: moment(s.last_checked)
+            }
+          })
+          .filter(s => !s.is_checking && s.last_checked.isValid())
+          .filter(s => s.last_checked.isSameOrAfter(moment().subtract(1, 'minutes')))
+          .length
     }
   },
   mounted() {
+    if (!this.readOnly) {
+      setInterval(this.updateCheckSpeed, 1000)
+    }
   }
 }
 </script>
