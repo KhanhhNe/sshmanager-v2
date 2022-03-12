@@ -55,13 +55,19 @@ async def connect_ssh(host: str, username: str, password: str,
     def run_time():
         return '{:4.1f}'.format(time.perf_counter() - start_time)
 
+    def kill(p):
+        try:
+            p.kill()
+        except ProcessLookupError:
+            pass
+
     process = await asyncio.create_subprocess_exec(
         'PLINK.EXE', f'{username}@{host}', '-pw', password,
         '-D', f'0.0.0.0:{port}',
         '-v',
         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
-    process.stdin.write(b'y\ny\ny\n')
+    process.stdin.write(b'y\n' * 50)
 
     while process.returncode is None:
         output = (await process.stdout.readline()) \
@@ -71,21 +77,25 @@ async def connect_ssh(host: str, username: str, password: str,
                                    port=port, pid=process.pid)
             if await get_proxy_ip(proxy_info.address):
                 if kill_after:
-                    process.kill()
+                    kill(process)
                 logger.debug(
                     f"{log_message} ({run_time()}s) - Connected successfully.")
                 return proxy_info
             else:
+                kill(process)
                 logger.debug(
                     f"{log_message} ({run_time()}s) - Cannot connect to proxy.")
                 raise ProxyConnectionError
-        elif 'Password authentication failed' in output or \
-                'FATAL ERROR' in output:
+        elif (
+                'Password authentication failed' in output or
+                'FATAL ERROR' in output or
+                'Access denied' in output
+        ):
+            kill(process)
             logger.debug(
                 f"{log_message} ({run_time()}s) - {output}")
             raise ProxyConnectionError
 
-    process.kill()
     logger.debug(
         f"{log_message} ({run_time()}s) - Exit code {process.returncode}.")
     raise ProxyConnectionError
