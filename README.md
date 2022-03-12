@@ -1,36 +1,54 @@
 # SSHManager
 
-An open source tool for managing, checking and connecting to your SSH proxy
+An open source tool for SSH managing, checking and setting up port forwarding.
 
-<div style="text-align: center;">
+Now you won't have to use `BitviseSSH` or `PuttySSH` to manually connect to an
+SSH, set up port forwarding and try until a usable SSH in your list is found;
+you can *click, *click, *click and `SSHManager` will do all of that hard work
+for you.
+
+<p align="center">
   <!--suppress CheckImageSize -->
-  <img src="logo/logo.png" alt="sshmanager logo" width="200"/>
-</div>
+  <img src="logo/logo.png" alt="sshmanager logo" width="150"/>
+</p>
 
 Features
 ----
 
-- **Multi-threaded SSH checking** using BitviseSSH with queued SSH check,
-  ensuring fastest checking speed with lowest system impact
-- **Multi-port SSH port forwarding** with simple and intuitive management
-  interface and real-time update on external IP of each port
-- **Multi-device support** (coming soon)
-- **Simple API** with HTTP API support for controlling all aspects of the tool,
-  with OpenAPI documentation at http://your-app.url/docs
+- **Multi-threaded SSH checking**: with the help of `PuttySSH`, `SSHManager`
+  ensures the best use of your system resources with optimized asynchronous
+  queueing techniques
+- **Multi-port SSH port forwarding**: port forwarding using SSH will be easier
+  than ever! `SSHManager` provides a simple and intuitive interface to manage
+  port forwarding, with live status report of each individual ones
+- **Easy API integration**: all application endpoints can be used with simple
+  arguments, supplied in `/docs` endpoint of the app with OpenAPI format
+- **Open source**: The source code is available for everyone to use and modify
+  as needed, and is open to contributions. The executable is, however, paid with
+  a small amount of fee to keep the project alive.
+
+Screenshots
+----
+<p align="center">
+  <!--suppress CheckImageSize -->
+  <img src="logo/screenshot-1.png" alt="screenshot" width="600"/>
+</p>
 
 Usage
 ----
-Download the latest release, run sshmanager-v2.exe and that's it! A browser tab
-will open with the app's URL, and it is accessible over LAN network from other
-devices too.
+Buy link (executable
+version): <a href="https://taphoammo.net/gian-hang/sshmanager-v2-1">
+Link</a> <br>
+Download the latest executable release and run `sshmanager-v2.exe`. A browser
+tab will open with the app's URL, which is accessible over LAN (local network)
+from other devices too.
 
-Building your own sshmanager
+Build your own SSHManager
 ----
-Requirements: `Windows 8.1+`, `Python 3.9.5`, `NodeJS v14.16.1` (not tested
-under other systems)
+Requirements: `Windows 11`, `Python 3.9.5`, `NodeJS v14.16.1` (not tested under
+other systems)
 
-Steps:
-
+### Steps:
 1. Clone the repository
 
 ```bash
@@ -48,12 +66,18 @@ npm install
 
 3. Run the build script
 
-Remember to remove dist/ and app_dist/ folder prior to running build commands to
-avoid permission bugs
+If possible, run the bellow command as Administrator (highest priviledge) to
+avoid directory permission problems.
 
 ```bash
-npm run build
 pipenv run compile.py
 ```
 
-A new file named `sshmanager-v2.zip` will be generated and is ready to use!
+A new zip file named `sshmanager-v2.*.*.zip` will be created in the folder and
+ready to be used!
+
+Follow me
+----
+Facebook: https://www.facebook.com/khanh.luong.6 <br>
+LinkedIn: https://www.linkedin.com/in/khanh-luong-quang <br>
+Linktree: https://linktr.ee/khanhhne
