@@ -1,6 +1,6 @@
 # SSHManager
 
-An open source tool for SSH managing, checking and setting up port forwarding.
+An open source tool for managing, checking and connecting to your SSH proxy
 
 Now you won't have to use `BitviseSSH` or `PuttySSH` to manually connect to an
 SSH, set up port forwarding and try until a usable SSH in your list is found;
