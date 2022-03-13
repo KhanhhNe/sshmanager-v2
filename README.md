@@ -1,16 +1,16 @@
 # SSHManager
 
-An open source tool for SSH managing, checking and setting up port forwarding.
+An open source tool for managing, checking and connecting to your SSH proxy
 
 Now you won't have to use `BitviseSSH` or `PuttySSH` to manually connect to an
 SSH, set up port forwarding and try until a usable SSH in your list is found;
 you can *click, *click, *click and `SSHManager` will do all of that hard work
 for you.
 
-<div style="text-align: center;">
+<p align="center">
   <!--suppress CheckImageSize -->
   <img src="logo/logo.png" alt="sshmanager logo" width="150"/>
-</div>
+</p>
 
 Features
 ----
@@ -29,17 +29,19 @@ Features
 
 Screenshots
 ----
-<div style="text-align: center;">
+<p align="center">
   <!--suppress CheckImageSize -->
   <img src="logo/screenshot-1.png" alt="screenshot" width="600"/>
-</div>
+</p>
 
 Usage
 ----
-Download the latest executable release (
-buy <a href="https://taphoammo.net/gian-hang/sshmanager-v2-1">here</a>)
-and run `sshmanager-v2.exe`. A browser tab will open with the app's URL, which
-is accessible over LAN (local network) from other devices too.
+Buy link (executable
+version): <a href="https://taphoammo.net/gian-hang/sshmanager-v2-1">
+Link</a> <br>
+Download the latest executable release and run `sshmanager-v2.exe`. A browser
+tab will open with the app's URL, which is accessible over LAN (local network)
+from other devices too.
 
 Build your own SSHManager
 ----
@@ -76,3 +78,6 @@ ready to be used!
 
 Follow me
 ----
+Facebook: https://www.facebook.com/khanh.luong.6 <br>
+LinkedIn: https://www.linkedin.com/in/khanh-luong-quang <br>
+Linktree: https://linktr.ee/khanhhne
