@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os.path
+import subprocess
 import threading
 import time
 
@@ -20,7 +21,9 @@ os.environ['PATH'] += ';executables'
 
 
 def logging_filter(record: logging.LogRecord):
-    if 'Accept failed on a socket' in record.msg:
+    if 'uvicorn.error' in record.name:
+        return False
+    elif 'Accept failed on a socket' in record.msg:
         # INFO level messages
         return False
     elif record.levelname == 'DEBUG' and 'websockets' in record.name:
@@ -67,8 +70,12 @@ file_logging.setLevel(logging.DEBUG)
 console_logging.addFilter(logging_filter)
 file_logging.addFilter(logging_filter)
 
+log_config = json.load(open('logging_config.json'))
+formatter_config = log_config['formatters']['standard']
+
 logging.basicConfig(level=logging.DEBUG,
-                    format="[%(asctime)s] %(name)s %(levelname)s - %(message)s",
+                    format=formatter_config['format'],
+                    datefmt=formatter_config['datefmt'],
                     handlers=[file_logging, console_logging],
                     force=True)
 
@@ -85,6 +92,14 @@ if is_main_child_thread():
     ident = threading.get_ident()
     register_main_child_thread()
     runner = AllTasksRunner()
+    process = None
+    if os.environ.get("DEVMODE"):
+        process = subprocess.Popen(["npm", "run", "build-watch"],
+                                   stdin=subprocess.PIPE,
+                                   stderr=subprocess.DEVNULL,
+                                   shell=True)
+        # process.stdin.write(b'y\n' * 10)
+
 
     # Only register handlers if this is the main thread
     @app.on_event('startup')
@@ -96,6 +111,9 @@ if is_main_child_thread():
     @app.on_event('shutdown')
     async def shutdown_tasks():
         await runner.stop()
+        if process is not None:
+            logging.getLogger('Main').info("Shutting down Vue build")
+            process.kill()
         actions.kill_child_processes()
         unregister_main_child_thread()
 
