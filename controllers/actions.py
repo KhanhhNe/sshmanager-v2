@@ -52,6 +52,7 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
         logger.info(f"Port {port.port_number} "
                     f"failed to connect to SSH {ssh.ip}")
 
+    port.is_connected = is_connected
     if not is_connected:
         port.disconnect_ssh(ssh, remove_from_used=True)
 
@@ -90,7 +91,7 @@ async def reset_ports(ports: List[Port], unique=True, delete_ssh=False):
 
             ssh = SSH.get_ssh_for_port(port, unique=unique)
             if ssh:
-                port.connect_to_ssh(ssh)
+                port.assign_ssh(ssh)
                 tasks.append(asyncio.ensure_future(
                     reconnect_port_using_ssh(port, ssh))
                 )

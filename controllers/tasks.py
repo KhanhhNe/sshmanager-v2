@@ -164,7 +164,7 @@ class ConnectSSHToPortTask(SyncTask):
         if not ssh:
             return
 
-        port.connect_to_ssh(ssh)
+        port.assign_ssh(ssh)
         logger.info(f"Connecting SSH {ssh.ip} to Port {port.port_number}")
         return asyncio.ensure_future(actions.connect_ssh_to_port(ssh, port))
 
@@ -185,7 +185,7 @@ class ReconnectNewSSHTask(SyncTask):
         if ports:
             port_numbers = [str(port.port_number) for port in ports]
             logger.info(f"Resetting ports [{','.join(port_numbers)}]")
-            return asyncio.ensure_future(actions.reset_ports(ports, ))
+            return asyncio.ensure_future(actions.reset_ports(ports))
 
 
 class SSHStoreDownloadTask(ConcurrentTask):
