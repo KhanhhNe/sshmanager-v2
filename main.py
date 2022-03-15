@@ -1,5 +1,4 @@
 import os
-import subprocess
 import webbrowser
 from multiprocessing import freeze_support
 
@@ -17,15 +16,7 @@ if __name__ == '__main__':
         if os.path.exists('data/config.ini'):
             os.remove('data/config.ini')
 
-    process = None
-    if os.environ.get("DEVMODE"):
-        process = subprocess.Popen(["npm", "run", "build-watch"],
-                                   stderr=subprocess.DEVNULL,
-                                   shell=True)
-
     port = config.get('web_port')
-    workers = config.get('web_workers_count')
-
     if not os.environ.get("DEBUG"):
         webbrowser.open_new_tab(f"http://{utils.get_ipv4_address()}:{port}")
 
@@ -35,7 +26,5 @@ if __name__ == '__main__':
     # so we can use asyncio.create_subprocess_exec()
     uvicorn.run('app:app',
                 host='0.0.0.0', port=port,
-                workers=workers, loop='none',
-                log_level='warning')
-    if process is not None:
-        process.kill()
+                workers=config.get('web_workers_count'), loop='none',
+                log_config='logging_config.json')
