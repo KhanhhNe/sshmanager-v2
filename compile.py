@@ -21,6 +21,7 @@ PyInstaller.__main__.run([
     'main.py', f'--name={app_name}', '--icon=public/favicon.ico',
     f'--distpath={dist_path}', '--onedir', '--noconfirm',
     '--add-data=package.json;.',
+    '--add-data=logging_config.json;.',
     '--add-binary=executables/*;executables',
     '--hidden-import=app',
     '--hidden-import=pony.orm.dbproviders',
