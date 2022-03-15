@@ -120,7 +120,11 @@ class SSH(CheckingSupported):
         query = cls.select(lambda s: s.is_usable)
         if unique:
             query = query.filter(lambda s: s.id not in port.used_ssh_list.id)
-        return query.first()
+        result = query.random(1)
+        if result:
+            return result[0]
+        else:
+            return None
 
     @auto_renew_objects
     def reset_status(self):
@@ -151,6 +155,19 @@ class Port(CheckingSupported):
     def need_ssh(self):
         return self.ssh is None
 
+    @property
+    def is_connected(self):
+        return self.time_connected is not None
+
+    @is_connected.setter
+    @auto_renew_objects
+    def is_connected(self, value: bool):
+        if value is True:
+            self.time_connected = datetime.now()
+            self.used_ssh_list.add(self.ssh)
+        else:
+            self.time_connected = None
+
     @classmethod
     def get_need_ssh(cls):
         return cls.select(lambda s: s.need_ssh).first()
@@ -160,21 +177,19 @@ class Port(CheckingSupported):
     def end_checking(cls, obj: 'Port', **kwargs):
         super().end_checking(obj, **kwargs)
         if (
-                obj.ssh is not None and
-                obj.time_connected is not None and
+                obj.is_connected and
                 obj.external_ip != obj.ssh.ip
         ):
             obj.disconnect_ssh(obj.ssh)
 
     @auto_renew_objects
-    def connect_to_ssh(self, ssh: SSH):
+    def assign_ssh(self, ssh: SSH):
         self.ssh = ssh
-        self.time_connected = datetime.now()
-        self.used_ssh_list.add(ssh)
+        self.is_connected = False
 
     @auto_renew_objects
     def disconnect_ssh(self, ssh: SSH, remove_from_used=False):
-        self.ssh = None
+        self.assign_ssh(None)
         if remove_from_used:
             self.used_ssh_list.remove(ssh)
 

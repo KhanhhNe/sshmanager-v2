@@ -35,7 +35,10 @@
         <tr v-for="portInfo in ports" :key="portInfo.port_number">
           <td>{{ portInfo.port_number }}</td>
           <td class="port-info" v-if="portInfo.ssh">
-            <i v-if="portInfo.external_ip === portInfo.ssh.ip"
+            <i v-if="!portInfo.time_connected"
+               class="fi fi-neutral"
+               style="color: darkgoldenrod"></i>
+            <i v-else-if="portInfo.external_ip === portInfo.ssh.ip"
                class="fi fi-slightly-smile"
                style="color: green"></i>
             <i v-else class="fi fi-frowning" style="color: red"></i>
@@ -47,9 +50,7 @@
             <i class="fi fi-frowning" style="color: red"></i>
             <span style="opacity: 0.3">Chưa kết nối</span>
           </td>
-          <td v-if="portInfo.last_checked">
-            {{ getTimeDisplay(portInfo.last_checked) }}
-          </td>
+          <td>{{ getTimeDisplay(portInfo.last_checked) || '' }}</td>
           <td><a
               role="button"
               @click="$emit('reset-port', [portInfo])"
