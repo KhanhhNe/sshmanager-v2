@@ -155,6 +155,17 @@ class Port(CheckingSupported):
     def get_need_ssh(cls):
         return cls.select(lambda s: s.need_ssh).first()
 
+    @classmethod
+    @auto_renew_objects
+    def end_checking(cls, obj: 'Port', **kwargs):
+        super().end_checking(obj, **kwargs)
+        if (
+                obj.ssh is not None and
+                obj.time_connected is not None and
+                obj.external_ip != obj.ssh.ip
+        ):
+            obj.disconnect_ssh(obj.ssh)
+
     @auto_renew_objects
     def connect_to_ssh(self, ssh: SSH):
         self.ssh = ssh
