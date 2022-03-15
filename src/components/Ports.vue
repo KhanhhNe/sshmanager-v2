@@ -35,7 +35,8 @@
         <tr v-for="portInfo in ports" :key="portInfo.port_number">
           <td>{{ portInfo.port_number }}</td>
           <td class="port-info" v-if="portInfo.ssh">
-            <i v-if="portInfo.external_ip" class="fi fi-slightly-smile"
+            <i v-if="portInfo.external_ip === portInfo.ssh.ip"
+               class="fi fi-slightly-smile"
                style="color: green"></i>
             <i v-else class="fi fi-frowning" style="color: red"></i>
             <span
