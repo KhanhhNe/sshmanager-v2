@@ -6,6 +6,7 @@ import subprocess
 import threading
 import time
 
+import psutil
 from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 from pony import orm
@@ -94,12 +95,12 @@ if is_main_child_thread():
     runner = AllTasksRunner()
     process = None
     if os.environ.get("DEVMODE"):
-        process = subprocess.Popen(["npm", "run", "build-watch"],
+        npm_paths = subprocess.run('where npm.cmd',
+                                   stdout=subprocess.PIPE).stdout.decode()
+        npm = npm_paths.splitlines()[0]
+        process = subprocess.Popen([npm, "run", "build-watch"],
                                    stdin=subprocess.PIPE,
-                                   stderr=subprocess.DEVNULL,
-                                   shell=True)
-        # process.stdin.write(b'y\n' * 10)
-
+                                   stderr=subprocess.DEVNULL)
 
     # Only register handlers if this is the main thread
     @app.on_event('startup')
@@ -107,13 +108,12 @@ if is_main_child_thread():
         actions.reset_old_status()
         asyncio.ensure_future(runner.run())
 
-
     @app.on_event('shutdown')
     async def shutdown_tasks():
         await runner.stop()
         if process is not None:
-            logging.getLogger('Main').info("Shutting down Vue build")
-            process.kill()
+            psutil.Process(process.pid).kill()
+            logging.getLogger('App').info("Shut down Vue build")
         actions.kill_child_processes()
         unregister_main_child_thread()
 

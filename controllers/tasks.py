@@ -89,6 +89,7 @@ class ConcurrentTask(ABC):
             with suppress(asyncio.CancelledError):
                 task.cancel()
                 await task
+        logger.info(f"Task killed: {type(self).__name__}")
 
     async def remove_done_tasks(self):
         for task in self.tasks[:]:
@@ -143,7 +144,7 @@ class PortCheckTask(ConcurrentTask):
     def get_new_task(self):
         port: Port = Port.get_need_checking()
         if port is not None:
-            asyncio.ensure_future(actions.check_port_ip(port))
+            return asyncio.ensure_future(actions.check_port_ip(port))
         else:
             return None
 
@@ -250,6 +251,11 @@ class AllTasksRunner(ConcurrentTask):
     @property
     def tasks_limit(self):
         return 50
+
+    async def stop(self):
+        await super().stop()
+        for task in self.concurrent_tasks:
+            await task.stop()
 
     def get_new_task(self) -> asyncio.Task:
         for task in self.sync_tasks:
