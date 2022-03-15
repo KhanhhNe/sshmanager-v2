@@ -18,13 +18,10 @@ class ConfigItem:
 
 DEFAULT_CONFIG = [
     ConfigItem(
-        'SSH', 'tasks_count', 'ssh_tasks_count', 100,
+        'SSH', 'tasks_count', 'ssh_tasks_count', 50,
         "Số thread check SSH live/die"),
     ConfigItem(
-        'SSH', 'connection_timeout', 'connection_timeout', 20,
-        "Thời gian kết nối tối đa SSH trước khi đánh dấu Die"),
-    ConfigItem(
-        'PORT', 'tasks_count', 'port_tasks_count', 20,
+        'PORT', 'tasks_count', 'port_tasks_count', 10,
         "Số thread quản lý Port và kết nối SSH đến Port"),
     ConfigItem(
         'PORT', 'use_unique_ssh', 'use_unique_ssh', False,
