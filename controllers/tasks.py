@@ -163,10 +163,10 @@ class ConnectSSHToPortTask(SyncTask):
         unique = config.get('use_unique_ssh')
         ssh: SSH = SSH.get_ssh_for_port(port, unique=unique)
         if not ssh:
-            return
+            return None
 
         port.assign_ssh(ssh)
-        logger.info(f"Connecting SSH {ssh.ip} to Port {port.port_number}")
+        logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTING")
         return asyncio.ensure_future(actions.connect_ssh_to_port(ssh, port))
 
 
@@ -178,7 +178,7 @@ class ReconnectNewSSHTask(SyncTask):
     @db_session(optimistic=False)
     def run(self):
         if not config.get('auto_reset_ports'):
-            return
+            return None
 
         reset_interval = config.get('port_reset_interval')
         time_expired = datetime.now() - timedelta(seconds=reset_interval)
@@ -187,6 +187,8 @@ class ReconnectNewSSHTask(SyncTask):
             port_numbers = [str(port.port_number) for port in ports]
             logger.info(f"Resetting ports [{','.join(port_numbers)}]")
             return asyncio.ensure_future(actions.reset_ports(ports))
+        else:
+            return None
 
 
 class SSHStoreDownloadTask(ConcurrentTask):
@@ -258,8 +260,11 @@ class AllTasksRunner(ConcurrentTask):
             await task.stop()
 
     def get_new_task(self) -> asyncio.Task:
-        for task in self.sync_tasks:
+        count = 0
+        while count < len(self.sync_tasks):
+            task = self.sync_tasks[0]
+            self.sync_tasks.rotate(-1)
             result = task.run()
             if isawaitable(result):
-                self.sync_tasks.rotate(-1)
                 return result
+            count += 1

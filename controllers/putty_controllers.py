@@ -34,8 +34,8 @@ class ProxyConnectionError(PuttyError):
     """
 
 
-async def connect_ssh(host: str, username: str, password: str,
-                      port: int = None, kill_after=False) -> ProxyInfo:
+async def connect_ssh(host: str, username: str, password: str, port: int = None,
+                      kill_after=False) -> ProxyInfo:
     """
     Connect an SSH to specified port.
 
@@ -48,12 +48,12 @@ async def connect_ssh(host: str, username: str, password: str,
     """
     if not port:
         port = utils.get_free_port()
-    port_str = '{0: <5}'.format(port)
-    log_message = f"{host.ljust(15)} | {port_str}"
     start_time = time.perf_counter()
 
-    def run_time():
-        return '{:4.1f}'.format(time.perf_counter() - start_time)
+    def log(msg):
+        log_message = f"{host:15} | {port:5}"
+        run_time = '{:4.1f}'.format(time.perf_counter() - start_time)
+        logger.debug(f"{log_message} ({run_time}s) - {msg}")
 
     def kill(p):
         try:
@@ -70,21 +70,17 @@ async def connect_ssh(host: str, username: str, password: str,
     process.stdin.write(b'y\n' * 50)
 
     while process.returncode is None:
-        output = (await process.stdout.readline()) \
-            .decode(errors='ignore').strip()
+        output = (await process.stdout.readline()).decode(errors='ignore').strip()
         if 'SOCKS dynamic forwarding' in output:
-            proxy_info = ProxyInfo(host=utils.get_ipv4_address(),
-                                   port=port, pid=process.pid)
+            proxy_info = ProxyInfo(host=utils.get_ipv4_address(), port=port, pid=process.pid)
             if await get_proxy_ip(proxy_info.address):
                 if kill_after:
                     kill(process)
-                logger.debug(
-                    f"{log_message} ({run_time()}s) - Connected successfully.")
+                log(f"Connected successfully.")
                 return proxy_info
             else:
                 kill(process)
-                logger.debug(
-                    f"{log_message} ({run_time()}s) - Cannot connect to proxy.")
+                log(f"Cannot connect to proxy.")
                 raise ProxyConnectionError
         elif (
                 'Password authentication failed' in output or
@@ -92,12 +88,10 @@ async def connect_ssh(host: str, username: str, password: str,
                 'Access denied' in output
         ):
             kill(process)
-            logger.debug(
-                f"{log_message} ({run_time()}s) - {output}")
+            log(f"{output}")
             raise ProxyConnectionError
 
-    logger.debug(
-        f"{log_message} ({run_time()}s) - Exit code {process.returncode}.")
+    log(f"Exit code {process.returncode}.")
     raise ProxyConnectionError
 
 
