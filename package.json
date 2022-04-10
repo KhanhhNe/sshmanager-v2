@@ -1,6 +1,6 @@
 {
   "name": "sshmanager",
-  "version": "2.1.7",
+  "version": "2.1.8",
   "private": false,
   "scripts": {
     "serve": "vue-cli-service serve",

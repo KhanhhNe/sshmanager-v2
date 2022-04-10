@@ -120,16 +120,13 @@ async def get_proxy_ip(proxy_address, tries=0) -> str:
         async with aiohttp.ClientSession(connector=connector) as client:
             # noinspection PyBroadException
             try:
-                resp = await client.get('https://api.ipify.org?format=text',
-                                        verify_ssl=False)
+                resp = await client.get('https://api.ipify.org?format=text')
                 return await resp.text()
             except Exception:
-                resp = await client.get('https://ip.seeip.org',
-                                        verify_ssl=False)
+                resp = await client.get('https://ip.seeip.org')
                 return await resp.text()
-    except (aiohttp.ClientError, python_socks.ProxyConnectionError,
-            python_socks.ProxyError, python_socks.ProxyTimeoutError,
-            ConnectionError, asyncio.exceptions.IncompleteReadError,
+    except (aiohttp.ClientError, python_socks.ProxyConnectionError, python_socks.ProxyError,
+            python_socks.ProxyTimeoutError, ConnectionError, asyncio.exceptions.IncompleteReadError,
             asyncio.exceptions.TimeoutError):
         if not tries:
             return ''
