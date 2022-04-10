@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import traceback
 from abc import ABC, abstractmethod
 from collections import deque
 from contextlib import suppress
@@ -72,17 +73,21 @@ class ConcurrentTask(ABC):
         self.is_running = True
         asyncio.ensure_future(self.log())
 
-        while self.is_running:
-            new_task = self.get_new_task()
-            if new_task:
-                self.tasks.append(new_task)
+        try:
+            while self.is_running:
+                new_task = self.get_new_task()
+                if new_task:
+                    self.tasks.append(new_task)
 
-            await self.remove_done_tasks()
-            while len(self.tasks) >= self.tasks_limit:
                 await self.remove_done_tasks()
-                await asyncio.sleep(0)
+                while len(self.tasks) >= self.tasks_limit:
+                    await self.remove_done_tasks()
+                    await asyncio.sleep(0)
 
-            await asyncio.sleep(0)
+                await asyncio.sleep(0)
+        except Exception:
+            logger.error(traceback.format_exc())
+            raise
 
         # Cancel running tasks
         for task in self.tasks:

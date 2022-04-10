@@ -18,9 +18,7 @@ async def check_ssh_status(ssh: SSH):
 
     :param ssh: Target SSH
     """
-    is_live = await putty_controllers.verify_ssh(ssh.ip,
-                                                 ssh.username,
-                                                 ssh.password)
+    is_live = await putty_controllers.verify_ssh(ssh.ip, ssh.username, ssh.password)
     SSH.end_checking(ssh, is_live=is_live)
 
 
@@ -45,12 +43,10 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
         await putty_controllers.connect_ssh(ssh.ip, ssh.username, ssh.password,
                                             port=port.port_number)
         is_connected = True
-        logger.info(f"Port {port.port_number} "
-                    f"connected to SSH {ssh.ip}")
+        logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTED SUCCESSFULLY")
     except putty_controllers.PuttyError:
         is_connected = False
-        logger.info(f"Port {port.port_number} "
-                    f"failed to connect to SSH {ssh.ip}")
+        logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTION FAILED")
 
     port.is_connected = is_connected
     if not is_connected:
@@ -64,11 +60,11 @@ async def reconnect_port_using_ssh(port: Port, ssh: SSH):
     :param port: Port
     :param ssh: SSH
     """
-    logger.debug(f"Killing processes on port {port.port_number}")
+    logger.debug(f"Port {port.port_number:<5} - KILLING PROCESS")
     await utils.kill_process_on_port(port.port_number)
-    logger.debug(f"Reconnecting port {port.port_number}")
+    logger.debug(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - RECONNECTING")
     await connect_ssh_to_port(ssh, port)
-    logger.info(f"Port {port.port_number} has been reset")
+    logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - RECONNECTED SUCCESSFULLY")
 
 
 async def reset_ports(ports: List[Port], unique=True, delete_ssh=False):
