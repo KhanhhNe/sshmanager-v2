@@ -6,6 +6,7 @@ import subprocess
 import threading
 import time
 
+import asyncssh
 import psutil
 from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
@@ -53,6 +54,7 @@ def unregister_main_child_thread():
 app = FastAPI(title="SSHManager by KhanhhNe",
               description="Quản lý SSH chuyên nghiệp và nhanh chóng",
               version=json.load(open('package.json'))['version'])
+asyncssh.set_log_level(logging.CRITICAL)
 
 # Configure loggings
 if is_main_child_thread():

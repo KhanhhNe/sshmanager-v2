@@ -6,7 +6,7 @@ import psutil
 from pony.orm import db_session
 
 import utils
-from controllers import putty_controllers
+from controllers import ssh_controllers
 from models import Port, SSH
 
 logger = logging.getLogger('Actions')
@@ -18,7 +18,7 @@ async def check_ssh_status(ssh: SSH):
 
     :param ssh: Target SSH
     """
-    is_live = await putty_controllers.verify_ssh(ssh.ip, ssh.username, ssh.password)
+    is_live = await ssh_controllers.verify_ssh(ssh.ip, ssh.username, ssh.password)
     SSH.end_checking(ssh, is_live=is_live)
 
 
@@ -40,11 +40,11 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
     :param ssh: Connecting SSH
     """
     try:
-        await putty_controllers.connect_ssh(ssh.ip, ssh.username, ssh.password,
-                                            port=port.port_number)
+        await ssh_controllers.connect_ssh(ssh.ip, ssh.username, ssh.password,
+                                          port=port.port_number)
         is_connected = True
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTED SUCCESSFULLY")
-    except putty_controllers.PuttyError:
+    except ssh_controllers.SSHError:
         is_connected = False
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTION FAILED")
 

@@ -4,6 +4,7 @@ import re
 import socket
 
 import aiohttp
+import asyncssh
 import psutil
 import python_socks
 from aiohttp_socks import ProxyConnector
@@ -131,3 +132,12 @@ async def get_proxy_ip(proxy_address, tries=0) -> str:
         if not tries:
             return ''
         return await get_proxy_ip(proxy_address, tries=tries - 1)
+
+
+async def kill_ssh_connection(connection: asyncssh.SSHClientConnection):
+    """
+    Kill the SSH connection.
+
+    :param connection: SSH connection
+    """
+    await connection.__aexit__(None, None, None)

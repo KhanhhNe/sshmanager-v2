@@ -15,6 +15,7 @@ aiofiles = "*"
 jinja2 = "*"
 websockets = "*"
 python-multipart = "*"
+asyncssh = "*"
 
 [dev-packages]
 pyinstaller = "*"
