@@ -16,6 +16,8 @@ jinja2 = "*"
 websockets = "*"
 python-multipart = "*"
 asyncssh = "*"
+hypercorn = "*"
+cryptography = "*"
 
 [dev-packages]
 pyinstaller = "*"

@@ -71,7 +71,7 @@ class ConcurrentTask(ABC):
         Run the task's loop (getting new tasks and execute them).
         """
         self.is_running = True
-        asyncio.ensure_future(self.log())
+        asyncio.create_task(self.log())
 
         try:
             while self.is_running:
@@ -132,7 +132,7 @@ class SSHCheckTask(ConcurrentTask):
     def get_new_task(self):
         ssh: SSH = SSH.get_need_checking()
         if ssh:
-            return asyncio.ensure_future(actions.check_ssh_status(ssh))
+            return asyncio.create_task(actions.check_ssh_status(ssh))
         else:
             return None
 
@@ -149,7 +149,7 @@ class PortCheckTask(ConcurrentTask):
     def get_new_task(self):
         port: Port = Port.get_need_checking()
         if port is not None:
-            return asyncio.ensure_future(actions.check_port_ip(port))
+            return asyncio.create_task(actions.check_port_ip(port))
         else:
             return None
 
@@ -172,7 +172,7 @@ class ConnectSSHToPortTask(SyncTask):
 
         port.assign_ssh(ssh)
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTING")
-        return asyncio.ensure_future(actions.connect_ssh_to_port(ssh, port))
+        return asyncio.create_task(actions.connect_ssh_to_port(ssh, port))
 
 
 class ReconnectNewSSHTask(SyncTask):
@@ -191,7 +191,7 @@ class ReconnectNewSSHTask(SyncTask):
         if ports:
             port_numbers = [str(port.port_number) for port in ports]
             logger.info(f"Resetting ports [{','.join(port_numbers)}]")
-            return asyncio.ensure_future(actions.reset_ports(ports))
+            return asyncio.create_task(actions.reset_ports(ports))
         else:
             return None
 
@@ -230,7 +230,7 @@ class SSHStoreDownloadTask(ConcurrentTask):
     def get_new_task(self):
         if not config.get('sshstore_enabled'):
             return
-        return asyncio.ensure_future(self.run_get())
+        return asyncio.create_task(self.run_get())
 
 
 class AllTasksRunner(ConcurrentTask):
@@ -252,7 +252,7 @@ class AllTasksRunner(ConcurrentTask):
                     self.sync_tasks.append(cls())
 
         self.tasks = [
-            asyncio.ensure_future(task.run()) for task in self.concurrent_tasks
+            asyncio.get_event_loop().create_task(task.run()) for task in self.concurrent_tasks
         ]
 
     @property

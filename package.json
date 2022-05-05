@@ -1,5 +1,6 @@
 {
   "name": "sshmanager",
+  "description": "Quản lý SSH chuyên nghiệp và nhanh chóng",
   "version": "2.1.8",
   "private": false,
   "scripts": {
