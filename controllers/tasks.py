@@ -5,8 +5,8 @@ from abc import ABC, abstractmethod
 from collections import deque
 from contextlib import suppress
 from datetime import datetime, timedelta
-from inspect import isawaitable, isclass
-from typing import Deque, List, Optional
+from inspect import isabstract, isawaitable, isclass
+from typing import Deque, Dict, List, Optional, Union
 
 import aiohttp
 from pony.orm import db_session
@@ -53,7 +53,7 @@ class ConcurrentTask(ABC):
         raise NotImplementedError
 
     async def log(self):
-        sleep_duration = 60  # Seconds
+        sleep_duration = 10 * 60  # Seconds
         sleep_interval = 0.5  # Seconds
 
         while self.is_running:
@@ -240,16 +240,18 @@ class AllTasksRunner(ConcurrentTask):
 
     def __init__(self):
         super().__init__()
-        self.concurrent_tasks: List[ConcurrentTask] = []
+        self.concurrent_tasks: List[Union[ConcurrentTask, CheckTask]] = []
         self.sync_tasks: Deque[SyncTask] = deque()
 
         for name, cls in globals().items():
-            excluded_classes = [ConcurrentTask, SyncTask, AllTasksRunner]
-            if isclass(cls) and cls not in excluded_classes:
-                if issubclass(cls, ConcurrentTask):
-                    self.concurrent_tasks.append(cls())
-                elif issubclass(cls, SyncTask):
-                    self.sync_tasks.append(cls())
+            # Ignore unwanted objects/classes
+            if not isclass(cls) or isabstract(cls) or cls is type(self):
+                continue
+
+            if issubclass(cls, (ConcurrentTask, CheckTask)):
+                self.concurrent_tasks.append(cls())
+            elif issubclass(cls, SyncTask):
+                self.sync_tasks.append(cls())
 
         self.tasks = [
             asyncio.get_event_loop().create_task(task.run()) for task in self.concurrent_tasks
