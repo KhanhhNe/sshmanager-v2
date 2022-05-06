@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import os
 import warnings
@@ -60,7 +59,7 @@ if __name__ == '__main__':
     # Hypercorn config
     config = hypercorn.config.Config()
     config.bind = [f'0.0.0.0:{port}']
-    config.logconfig_dict = json.load(open('logging_config.json'))
+    config.graceful_timeout = 0
 
     # Run the app
     asyncio.get_event_loop().run_until_complete(run_app(config))

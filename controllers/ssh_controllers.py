@@ -55,7 +55,7 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
                 await utils.kill_ssh_connection(connection)
                 raise SSHError("Cannot connect to forwarded proxy.")
         except (OSError, asyncssh.Error) as exc:
-            raise SSHError(f"SSH connection error - {exc}.")
+            raise SSHError(f"{exc}.")
 
     except SSHError as exc:
         run_time = '{:4.1f}'.format(time.perf_counter() - start_time)
