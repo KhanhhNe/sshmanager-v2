@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 import traceback
 from abc import ABC, abstractmethod
 from collections import deque
@@ -16,6 +17,104 @@ from controllers import actions
 from models import Port, SSH
 
 logger = logging.getLogger('Tasks')
+
+
+class DynamicSemaphore(asyncio.Semaphore):
+    def adjust_limit(self, value):
+        self._value = value
+
+
+class CheckTask(ABC):
+    def __init__(self):
+        self.semaphore = DynamicSemaphore(self.tasks_limit)
+        self.is_running = True
+        self.tasks: Dict[int, asyncio.Task] = {}
+
+    @property
+    @abstractmethod
+    def tasks_limit(self):
+        """
+        Maximum concurrent tasks.
+        """
+
+    @abstractmethod
+    def get_objects(self):
+        """
+        Get objects to run tasks on.
+
+        :return: Objects iterable
+        """
+
+    @abstractmethod
+    async def task_run(self, obj):
+        """
+        Run task with a given object until self.is_running is False.
+
+        :param obj: Target object
+        """
+
+    async def sleep(self, sleep_duration):
+        start = time.time()
+        while self.is_running:
+            await asyncio.sleep(1)
+            if time.time() - start >= sleep_duration:
+                break
+
+    async def run(self):
+        while self.is_running:
+            not_checked = list(self.tasks.keys())
+
+            # Try to add new tasks
+            with db_session:
+                for obj in self.get_objects():
+                    if obj.id in not_checked:
+                        not_checked.remove(obj.id)
+                        continue
+                    self.tasks[obj.id] = asyncio.create_task(self.task_run(obj))
+
+            # Cancel and remove tasks associated with deleted objects
+            for obj_id in not_checked:
+                task = self.tasks[obj_id]
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
+                del self.tasks[obj_id]
+
+            self.semaphore.adjust_limit(self.tasks_limit)
+            await self.sleep(10)
+
+    async def stop(self):
+        self.is_running = False
+
+
+class SSHCheckTask(CheckTask):
+    @property
+    def tasks_limit(self):
+        return config.get('ssh_tasks_count')
+
+    def get_objects(self):
+        return SSH.select()
+
+    async def task_run(self, obj):
+        while self.is_running:
+            async with self.semaphore:
+                await actions.check_ssh_status(obj)
+            await self.sleep(60)
+
+
+class PortCheckTask(CheckTask):
+    @property
+    def tasks_limit(self):
+        return 100
+
+    def get_objects(self):
+        return Port.select()
+
+    async def task_run(self, obj):
+        while self.is_running:
+            async with self.semaphore:
+                await actions.check_port_ip(obj)
+            await self.sleep(60)
 
 
 class ConcurrentTask(ABC):
@@ -118,40 +217,6 @@ class SyncTask(ABC):
         Run task sequentially (in same "thread" with other tasks).
         """
         pass
-
-
-class SSHCheckTask(ConcurrentTask):
-    """
-    Task to check all SSH status.
-    """
-
-    @property
-    def tasks_limit(self):
-        return config.get('ssh_tasks_count')
-
-    def get_new_task(self):
-        ssh: SSH = SSH.get_need_checking()
-        if ssh:
-            return asyncio.create_task(actions.check_ssh_status(ssh))
-        else:
-            return None
-
-
-class PortCheckTask(ConcurrentTask):
-    """
-    Task to check all Port status.
-    """
-
-    @property
-    def tasks_limit(self):
-        return config.get('port_tasks_count')
-
-    def get_new_task(self):
-        port: Port = Port.get_need_checking()
-        if port is not None:
-            return asyncio.create_task(actions.check_port_ip(port))
-        else:
-            return None
 
 
 class ConnectSSHToPortTask(SyncTask):
