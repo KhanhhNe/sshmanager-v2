@@ -1,10 +1,7 @@
 import asyncio
 import logging
-import time
 from abc import ABC, abstractmethod
-from contextlib import suppress
 from datetime import datetime, timedelta
-from typing import Dict
 
 import aiohttp
 import trio
@@ -18,16 +15,10 @@ from models import Port, SSH
 logger = logging.getLogger('Tasks')
 
 
-class DynamicSemaphore(asyncio.Semaphore):
-    def adjust_limit(self, value):
-        self._value = value
-
-
 class CheckTask(ABC):
     def __init__(self):
-        self.semaphore = DynamicSemaphore(self.tasks_limit)
-        self.is_running = True
-        self.tasks: Dict[int, asyncio.Task] = {}
+        self.limit = trio.CapacityLimiter(self.tasks_limit)
+        self.included_ids = []
 
     @property
     @abstractmethod
@@ -45,45 +36,44 @@ class CheckTask(ABC):
         """
 
     @abstractmethod
-    async def task_run(self, obj):
+    async def run_on_object(self, obj):
         """
         Run task with a given object until self.is_running is False.
 
         :param obj: Target object
         """
 
-    async def sleep(self, sleep_duration):
-        start = time.time()
-        while self.is_running:
-            await asyncio.sleep(1)
-            if time.time() - start >= sleep_duration:
-                break
+    async def run_task(self):
+        async def _auto_cancel(target_obj, cancel_scope: trio.CancelScope):
+            while True:
+                if target_obj.id not in self.included_ids:
+                    cancel_scope.cancel()
+                await trio.sleep(0)
 
-    async def run(self):
-        while self.is_running:
-            not_checked = list(self.tasks.keys())
+        async def _run_with_auto_cancel(target_obj):
+            async with trio.open_nursery() as task_nursery:
+                task_nursery.start_soon(_auto_cancel, target_obj, task_nursery.cancel_scope)
+                await self.run_on_object(target_obj)
 
-            # Try to add new tasks
-            with db_session:
-                for obj in self.get_objects():
-                    if obj.id in not_checked:
-                        not_checked.remove(obj.id)
-                        continue
-                    self.tasks[obj.id] = asyncio.create_task(self.task_run(obj))
+        async with trio.open_nursery() as nursery:
+            while True:
+                not_checked = self.included_ids.copy()
 
-            # Cancel and remove tasks associated with deleted objects
-            for obj_id in not_checked:
-                task = self.tasks[obj_id]
-                task.cancel()
-                with suppress(asyncio.CancelledError):
-                    await task
-                del self.tasks[obj_id]
+                # Try to add new tasks
+                with db_session:
+                    for obj in self.get_objects():
+                        if obj.id in not_checked:
+                            not_checked.remove(obj.id)
+                            continue
+                        self.included_ids.append(obj.id)
+                        nursery.start_soon(_run_with_auto_cancel, obj)
 
-            self.semaphore.adjust_limit(self.tasks_limit)
-            await self.sleep(10)
+                # Remove not checked objects
+                for obj_id in not_checked:
+                    self.included_ids.remove(obj_id)
 
-    async def stop(self):
-        self.is_running = False
+                self.limit.total_tokens = self.tasks_limit
+                await trio.sleep(1)
 
 
 class SSHCheckTask(CheckTask):
@@ -94,11 +84,11 @@ class SSHCheckTask(CheckTask):
     def get_objects(self):
         return SSH.select()
 
-    async def task_run(self, obj):
-        while self.is_running:
-            async with self.semaphore:
-                await actions.check_ssh_status(obj)
-            await self.sleep(60)
+    async def run_on_object(self, obj):
+        while True:
+            async with self.limit:
+                await trio_asyncio.aio_as_trio(actions.check_ssh_status)(obj)
+            await trio.sleep(60)
 
 
 class PortCheckTask(CheckTask):
@@ -109,33 +99,37 @@ class PortCheckTask(CheckTask):
     def get_objects(self):
         return Port.select()
 
-    async def task_run(self, port: Port):
-        while self.is_running:
-            async with self.semaphore:
-                await actions.check_port_ip(port)
+    async def run_on_object(self, port: Port):
+        while True:
+            # Sleep first to make the bellow continues easier
+            await trio.sleep(1)
 
-                with db_session:
-                    need_ssh = port.need_ssh
-                if need_ssh:
+            async with trio.open_nursery() as nursery:
+                async with self.limit:
+                    await trio_asyncio.aio_as_trio(actions.check_port_ip)(port)
+
                     with db_session:
-                        ssh = SSH.get_ssh_for_port(port, unique=config.get('use_unique_ssh'))
+                        # Connect SSH to port
+                        if port.need_ssh:
+                            ssh = SSH.get_ssh_for_port(port, unique=config.get('use_unique_ssh'))
+                            if ssh is None:
+                                continue
 
-                    if ssh is not None:
-                        with db_session:
                             port.assign_ssh(ssh)
-                        logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTING")
-                        await actions.connect_ssh_to_port(ssh, port)
-                else:
-                    if config.get('auto_reset_ports'):
-                        reset_interval = config.get('port_reset_interval')
-                        time_expired = datetime.now() - timedelta(seconds=reset_interval)
-                        with db_session:
-                            need_reset = port.need_reset(time_expired)
-                        if need_reset:
-                            logger.info(f"Resetting port {port.port_number}")
-                            await actions.reset_ports([port])
+                            logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTING")
+                            nursery.start_soon(trio_asyncio.aio_as_trio(actions.connect_ssh_to_port), ssh, port)
+                        # Reset port's SSH after a determined time
+                        else:
+                            if not config.get('auto_reset_ports'):
+                                continue
 
-            await self.sleep(1)
+                            reset_interval = config.get('port_reset_interval')
+                            time_expired = datetime.now() - timedelta(seconds=reset_interval)
+                            if not port.need_reset(time_expired):
+                                continue
+
+                            logger.info(f"Resetting port {port.port_number}")
+                            nursery.start_soon(trio_asyncio.aio_as_trio(actions.reset_ports), [port])
 
 
 async def download_sshstore_ssh():
@@ -153,9 +147,7 @@ async def download_sshstore_ssh():
         # noinspection PyBroadException
         try:
             async with aiohttp.ClientSession() as client:
-                resp = await client.get(
-                    f"http://autossh.top/api/txt/{api_key}/{country}/{limit}"
-                )
+                resp = await client.get(f"http://autossh.top/api/txt/{api_key}/{country}/{limit}")
                 await actions.insert_ssh_from_file_content(await resp.text())
         except Exception:
             pass
@@ -164,7 +156,7 @@ async def download_sshstore_ssh():
 async def run_all_tasks():
     async with trio.open_nursery() as nursery:
         ssh_check = SSHCheckTask()
-        nursery.start_soon(trio_asyncio.aio_as_trio(ssh_check.run))
         port_check = PortCheckTask()
-        nursery.start_soon(trio_asyncio.aio_as_trio(port_check.run))
+        nursery.start_soon(ssh_check.run_task)
+        nursery.start_soon(port_check.run_task)
         nursery.start_soon(trio_asyncio.aio_as_trio(download_sshstore_ssh))

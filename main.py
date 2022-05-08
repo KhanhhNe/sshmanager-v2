@@ -28,7 +28,8 @@ async def run_app(conf):
     # Run the web app
     async with trio.open_nursery() as nursery:
         nursery.start_soon(tasks.run_all_tasks)
-        nursery.start_soon(hypercorn.trio.worker_serve, app, conf)
+        # noinspection PyTypeChecker
+        await hypercorn.trio.serve(app, conf)
 
 
 if __name__ == '__main__':
@@ -55,6 +56,11 @@ if __name__ == '__main__':
     config = hypercorn.config.Config()
     config.bind = [f'0.0.0.0:{port}']
     config.graceful_timeout = 0
+    config.accesslog = '-'
+    config.errorlog = '-'
 
     # Run the app
-    trio_asyncio.run(run_app, config)
+    try:
+        trio_asyncio.run(run_app, config)
+    except KeyboardInterrupt:
+        print("Exited")
