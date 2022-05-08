@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 import warnings
@@ -7,7 +6,9 @@ from multiprocessing import freeze_support
 
 import cryptography
 import hypercorn
-from hypercorn.asyncio import serve
+import hypercorn.trio
+import trio
+import trio_asyncio
 
 with warnings.catch_warnings():
     # Ignore the warnings of using deprecated cryptography libraries in asyncssh
@@ -26,14 +27,14 @@ async def run_app(conf):
 
     # Run background tasks
     runner = tasks.AllTasksRunner()
-    asyncio.create_task(runner.run())
 
     # Run the web app
-    # noinspection PyTypeChecker
-    await hypercorn.asyncio.worker_serve(app, conf)
+    async with trio.open_nursery() as nursery:
+        nursery.start_soon(trio_asyncio.aio_as_trio(runner.run))
+        nursery.start_soon(hypercorn.trio.worker_serve, app, conf)
 
     # Stop background tasks
-    await runner.stop()
+    await trio_asyncio.aio_as_trio(runner.stop)
 
 
 if __name__ == '__main__':
@@ -62,4 +63,4 @@ if __name__ == '__main__':
     config.graceful_timeout = 0
 
     # Run the app
-    asyncio.get_event_loop().run_until_complete(run_app(config))
+    trio_asyncio.run(run_app, config)

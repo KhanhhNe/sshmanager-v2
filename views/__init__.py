@@ -1,5 +1,6 @@
 import asyncio
 
+import trio
 from fastapi.websockets import WebSocket
 from websockets.exceptions import ConnectionClosedOK
 
@@ -16,6 +17,8 @@ def update_websocket(data_func):
 
             while True:
                 await websocket.send_json(data_func())
+                await trio.sleep(1)
+                continue
 
                 if message_task is None:
                     message_task = asyncio.ensure_future(websocket.receive())
