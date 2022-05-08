@@ -25,16 +25,10 @@ from models.database import init_db
 async def run_app(conf):
     asyncssh.set_log_level(logging.CRITICAL)
 
-    # Run background tasks
-    runner = tasks.AllTasksRunner()
-
     # Run the web app
     async with trio.open_nursery() as nursery:
-        nursery.start_soon(trio_asyncio.aio_as_trio(runner.run))
+        nursery.start_soon(tasks.run_all_tasks)
         nursery.start_soon(hypercorn.trio.worker_serve, app, conf)
-
-    # Stop background tasks
-    await trio_asyncio.aio_as_trio(runner.stop)
 
 
 if __name__ == '__main__':

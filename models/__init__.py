@@ -145,13 +145,16 @@ class Port(CheckingSupported):
     def proxy_address(self):
         return f"socks5://{utils.get_ipv4_address()}:{self.port_number}"
 
+    @auto_renew_objects
+    def need_reset(self, time_expired: datetime):
+        return self.ssh is not None and self.time_connected < time_expired
+
     @classmethod
     def get_need_reset(cls, time_expired: datetime):
-        # noinspection PyTypeChecker
-        return (cls.select(lambda p: (p.ssh is not None
-                                      and p.time_connected < time_expired))[:])
+        return cls.select(lambda p: p.need_reset(time_expired))[:]
 
     @property
+    @auto_renew_objects
     def need_ssh(self):
         return self.ssh is None
 
