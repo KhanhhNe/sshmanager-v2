@@ -153,13 +153,9 @@ def configure_logging():
     def logging_filter(record: logging.LogRecord):
         if any([
             record.name in ['charset_normalizer'],
-            record.exc_info and record.exc_info[0] in [BrokenPipeError]
+            record.exc_info and record.exc_info[0] in [BrokenPipeError],
+            record.name == 'Ssh'
         ]):
-            return False
-        return True
-
-    def ssh_info_filter(record: logging.LogRecord):
-        if record.name == 'Ssh':
             return False
         return True
 
@@ -169,18 +165,16 @@ def configure_logging():
                              if not os.environ.get('DEBUG')
                              else logging.DEBUG)
     console_logging.addFilter(logging_filter)
-    console_logging.addFilter(ssh_info_filter)
 
     # File logging handler
     file_logging = logging.FileHandler('data/debug.log', mode='w')
     file_logging.setLevel(logging.DEBUG)
     file_logging.addFilter(logging_filter)
-    file_logging.addFilter(ssh_info_filter)
 
     # SSH debug logging handler
     ssh_logging = logging.FileHandler('data/ssh-debug.log', mode='w')
     ssh_logging.setLevel(logging.DEBUG)
-    ssh_logging.addFilter(logging_filter)
+    ssh_logging.addFilter(lambda rec: rec.name == 'Ssh')
 
     # Config the logging module
     log_config = json.load(open('logging_config.json'))
