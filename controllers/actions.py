@@ -1,9 +1,10 @@
-import asyncio
 import logging
 from typing import List
 
 import psutil
+import trio
 from pony.orm import db_session
+from trio_asyncio import aio_as_trio
 
 import utils
 from controllers import ssh_controllers
@@ -18,7 +19,7 @@ async def check_ssh_status(ssh: SSH):
 
     :param ssh: Target SSH
     """
-    is_live = await ssh_controllers.verify_ssh(ssh.ip, ssh.username, ssh.password)
+    is_live = await aio_as_trio(ssh_controllers.verify_ssh)(ssh.ip, ssh.username, ssh.password)
     SSH.end_checking(ssh, is_live=is_live)
 
 
@@ -28,7 +29,7 @@ async def check_port_ip(port: Port):
 
     :param port: Target port
     """
-    ip = await utils.get_proxy_ip(port.proxy_address)
+    ip = await aio_as_trio(utils.get_proxy_ip)(port.proxy_address)
     Port.end_checking(port, external_ip=ip)
 
 
@@ -40,8 +41,9 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
     :param ssh: Connecting SSH
     """
     try:
-        await ssh_controllers.connect_ssh(ssh.ip, ssh.username, ssh.password,
-                                          port=port.port_number)
+        await aio_as_trio(ssh_controllers.connect_ssh)(
+            ssh.ip, ssh.username, ssh.password, port=port.port_number
+        )
         is_connected = True
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTED SUCCESSFULLY")
     except ssh_controllers.SSHError:
@@ -61,7 +63,7 @@ async def reconnect_port_using_ssh(port: Port, ssh: SSH):
     :param ssh: SSH
     """
     logger.debug(f"Port {port.port_number:<5} - KILLING PROCESS")
-    await utils.kill_process_on_port(port.port_number)
+    await aio_as_trio(ssh_controllers.kill_proxy_on_port)(port.port_number)
     logger.debug(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - RECONNECTING")
     await connect_ssh_to_port(ssh, port)
     logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - RECONNECTED SUCCESSFULLY")
@@ -76,24 +78,21 @@ async def reset_ports(ports: List[Port], unique=True, delete_ssh=False):
     for the same Port
     :param delete_ssh: Set to True to delete all used SSHs
     """
-    tasks = []
-    with db_session:
-        for port in ports:
-            port = Port[port.id]  # Load port.ssh
-            used_ssh = port.ssh
-            port.disconnect_ssh(used_ssh)
-            if delete_ssh:
-                used_ssh.delete()
+    async with trio.open_nursery() as nursery:
+        with db_session:
+            for port in ports:
+                # Disconnect SSH from port
+                port = Port[port.id]  # Load port.ssh
+                used_ssh = port.ssh
+                port.disconnect_ssh(used_ssh)
+                if delete_ssh:
+                    used_ssh.delete()
 
-            ssh = SSH.get_ssh_for_port(port, unique=unique)
-            if ssh:
-                port.assign_ssh(ssh)
-                tasks.append(asyncio.ensure_future(
-                    reconnect_port_using_ssh(port, ssh))
-                )
-
-    for task in tasks:
-        await task
+                # Reconnect new SSH to port
+                ssh = SSH.get_ssh_for_port(port, unique=unique)
+                if ssh:
+                    port.assign_ssh(ssh)
+                    nursery.start_soon(reconnect_port_using_ssh, port, ssh)
 
 
 def reset_old_status():
@@ -118,7 +117,7 @@ def kill_child_processes():
     psutil.wait_procs(children)
 
 
-async def insert_ssh_from_file_content(file_content):
+def insert_ssh_from_file_content(file_content):
     """
     Insert SSH into database from file content. Will skip SSH that are already
     in the database.

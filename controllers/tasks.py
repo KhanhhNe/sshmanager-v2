@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 
 import aiohttp
 import trio
-import trio_asyncio
 from pony.orm import db_session
+from trio_asyncio import aio_as_trio
 
 import config
 from controllers import actions
@@ -87,7 +87,7 @@ class SSHCheckTask(CheckTask):
     async def run_on_object(self, obj):
         while True:
             async with self.limit:
-                await trio_asyncio.aio_as_trio(actions.check_ssh_status)(obj)
+                await actions.check_ssh_status(obj)
             await trio.sleep(60)
 
 
@@ -106,7 +106,7 @@ class PortCheckTask(CheckTask):
 
             async with trio.open_nursery() as nursery:
                 async with self.limit:
-                    await trio_asyncio.aio_as_trio(actions.check_port_ip)(port)
+                    await actions.check_port_ip(port)
 
                     with db_session:
                         # Connect SSH to port
@@ -117,7 +117,7 @@ class PortCheckTask(CheckTask):
 
                             port.assign_ssh(ssh)
                             logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTING")
-                            nursery.start_soon(trio_asyncio.aio_as_trio(actions.connect_ssh_to_port), ssh, port)
+                            await actions.connect_ssh_to_port(ssh, port)
                         # Reset port's SSH after a determined time
                         else:
                             if not config.get('auto_reset_ports'):
@@ -129,7 +129,7 @@ class PortCheckTask(CheckTask):
                                 continue
 
                             logger.info(f"Resetting port {port.port_number}")
-                            nursery.start_soon(trio_asyncio.aio_as_trio(actions.reset_ports), [port])
+                            nursery.start_soon(actions.reset_ports, [port])
 
 
 async def download_sshstore_ssh():
@@ -146,9 +146,9 @@ async def download_sshstore_ssh():
 
         # noinspection PyBroadException
         try:
-            async with aiohttp.ClientSession() as client:
-                resp = await client.get(f"http://autossh.top/api/txt/{api_key}/{country}/{limit}")
-                await actions.insert_ssh_from_file_content(await resp.text())
+            async with aio_as_trio(aiohttp.ClientSession()) as client:
+                resp = await aio_as_trio(client.get)(f"http://autossh.top/api/txt/{api_key}/{country}/{limit}")
+                actions.insert_ssh_from_file_content(await aio_as_trio(resp.text)())
         except Exception:
             pass
 
@@ -159,4 +159,4 @@ async def run_all_tasks():
         port_check = PortCheckTask()
         nursery.start_soon(ssh_check.run_task)
         nursery.start_soon(port_check.run_task)
-        nursery.start_soon(trio_asyncio.aio_as_trio(download_sshstore_ssh))
+        nursery.start_soon(aio_as_trio(download_sshstore_ssh))

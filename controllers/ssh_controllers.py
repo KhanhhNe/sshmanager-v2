@@ -1,6 +1,7 @@
 import logging
 import time
 from dataclasses import dataclass
+from typing import List
 
 import asyncssh
 
@@ -20,6 +21,9 @@ class ProxyInfo:
     @property
     def address(self):
         return f"{self.proxy_type}://{self.host}:{self.port}"
+
+
+proxies: List[ProxyInfo] = []
 
 
 class SSHError(Exception):
@@ -66,6 +70,7 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
         run_time = '{:4.1f}'.format(time.perf_counter() - start_time)
         logger.debug(f"{ssh_info} ({run_time}s) - Connected successfully.")
 
+    proxies.append(proxy_info)
     return proxy_info
 
 
@@ -84,3 +89,18 @@ async def verify_ssh(host: str, username: str, password: str) -> bool:
         return True
     except SSHError:
         return False
+
+
+async def kill_proxy_on_port(port: int):
+    """
+    Kill proxy on specified port number.
+
+    :param port: Target port number
+    """
+    for proxy in proxies:
+        if proxy.port == port:
+            proxies.remove(proxy)
+            await utils.kill_ssh_connection(proxy.connection)
+            break
+    else:
+        raise SSHError(f"No proxy on port {port} found.")
