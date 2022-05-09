@@ -102,7 +102,7 @@ class PortCheckTask(CheckTask):
     async def run_on_object(self, port: Port):
         while True:
             # Sleep first to make the bellow continues easier
-            await trio.sleep(1)
+            await trio.sleep(0)
 
             async with trio.open_nursery() as nursery:
                 async with self.limit:
