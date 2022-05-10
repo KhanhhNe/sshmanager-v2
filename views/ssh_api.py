@@ -76,7 +76,7 @@ async def upload_ssh(ssh_file: UploadFile):
     :return: Created SSH list
     """
     file_content = (await ssh_file.read()).decode()
-    created_ssh = await actions.insert_ssh_from_file_content(file_content)
+    created_ssh = actions.insert_ssh_from_file_content(file_content)
     with db_session:
         # Re-query SSHs and format into output model
         return [SSHOut.from_orm(SSH[s.id]) for s in created_ssh]

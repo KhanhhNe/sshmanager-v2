@@ -106,30 +106,35 @@ class PortCheckTask(CheckTask):
 
             async with trio.open_nursery() as nursery:
                 async with self.limit:
-                    await actions.check_port_ip(port)
-
                     with db_session:
-                        # Connect SSH to port
-                        if port.need_ssh:
-                            ssh = SSH.get_ssh_for_port(port, unique=config.get('use_unique_ssh'))
-                            if ssh is None:
-                                continue
+                        port: Port = Port[port.id].load_object()
 
-                            port.assign_ssh(ssh)
-                            logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTING")
-                            await actions.connect_ssh_to_port(ssh, port)
-                        # Reset port's SSH after a determined time
-                        else:
-                            if not config.get('auto_reset_ports'):
-                                continue
+                    if port.is_connected:
+                        ip = await actions.check_port_ip(port)
+                        if ip != port.ssh.ip:
+                            port.disconnect_ssh()
 
-                            reset_interval = config.get('port_reset_interval')
-                            time_expired = datetime.now() - timedelta(seconds=reset_interval)
-                            if not port.need_reset(time_expired):
-                                continue
+                    # Connect SSH to port
+                    if port.need_ssh:
+                        ssh = SSH.get_ssh_for_port(port, unique=config.get('use_unique_ssh'))
+                        if ssh is None:
+                            continue
 
-                            logger.info(f"Resetting port {port.port_number}")
-                            nursery.start_soon(actions.reset_ports, [port])
+                        port.assign_ssh(ssh)
+                        logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTING")
+                        await actions.connect_ssh_to_port(ssh, port)
+                    # Reset port's SSH after a determined time
+                    else:
+                        if not config.get('auto_reset_ports'):
+                            continue
+
+                        reset_interval = config.get('port_reset_interval')
+                        time_expired = datetime.now() - timedelta(seconds=reset_interval)
+                        if not port.need_reset(time_expired):
+                            continue
+
+                        logger.info(f"Resetting port {port.port_number}")
+                        nursery.start_soon(actions.reset_ports, [port])
 
 
 async def download_sshstore_ssh():

@@ -10,8 +10,6 @@ import hypercorn.trio
 import trio
 import trio_asyncio
 
-import controllers.actions
-
 with warnings.catch_warnings():
     # Ignore the warnings of using deprecated cryptography libraries in asyncssh
     warnings.filterwarnings('ignore', category=cryptography.CryptographyDeprecationWarning)
@@ -20,7 +18,7 @@ with warnings.catch_warnings():
 
 import config
 import utils
-from controllers import tasks
+from controllers import tasks, actions
 from models.database import init_db
 
 
@@ -29,7 +27,7 @@ async def run_app(conf):
 
     # Run the web app
     async with trio.open_nursery() as nursery:
-        controllers.actions.reset_old_status()
+        actions.reset_old_status()
         nursery.start_soon(tasks.run_all_tasks)
         # noinspection PyTypeChecker
         await hypercorn.trio.serve(app, conf)

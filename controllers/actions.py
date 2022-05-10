@@ -15,22 +15,26 @@ logger = logging.getLogger('Actions')
 
 async def check_ssh_status(ssh: SSH):
     """
-    Check for SSH live/die status and save to db
+    Check for SSH live/die status.
 
     :param ssh: Target SSH
     """
+    SSH.begin_checking(ssh)
     is_live = await aio_as_trio(ssh_controllers.verify_ssh)(ssh.ip, ssh.username, ssh.password)
     SSH.end_checking(ssh, is_live=is_live)
 
 
 async def check_port_ip(port: Port):
     """
-    Check for port's external IP and save to db
+    Check for port's external IP.
 
     :param port: Target port
+    :return:
     """
+    Port.begin_checking(port)
     ip = await aio_as_trio(utils.get_proxy_ip)(port.proxy_address)
     Port.end_checking(port, external_ip=ip)
+    return ip
 
 
 async def connect_ssh_to_port(ssh: SSH, port: Port):
@@ -52,7 +56,7 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
 
     port.is_connected = is_connected
     if not is_connected:
-        port.disconnect_ssh(ssh, remove_from_used=True)
+        port.disconnect_ssh(remove_from_used=True)
 
 
 async def reconnect_port_using_ssh(port: Port, ssh: SSH):
