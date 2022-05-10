@@ -7,8 +7,8 @@ import config
 
 class SSHIn(BaseModel):
     ip: str
-    username: str
-    password: str
+    username: str = None
+    password: str = None
 
 
 class SSHOut(BaseModel):

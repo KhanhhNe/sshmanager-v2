@@ -45,6 +45,11 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
     if not port:
         port = utils.get_free_port()
 
+    try:
+        await kill_proxy_on_port(port)
+    except SSHError:
+        pass
+
     start_time = time.perf_counter()
     ssh_info = f"{host:15} | {port:5}"
 

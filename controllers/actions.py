@@ -54,9 +54,11 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
         is_connected = False
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTION FAILED")
 
-    port.is_connected = is_connected
-    if not is_connected:
-        port.disconnect_ssh(remove_from_used=True)
+    with db_session:
+        port = Port[port.id]
+        port.is_connected = is_connected
+        if not is_connected:
+            port.disconnect_ssh(remove_from_used=True)
 
 
 async def reconnect_port_using_ssh(port: Port, ssh: SSH):
@@ -66,8 +68,6 @@ async def reconnect_port_using_ssh(port: Port, ssh: SSH):
     :param port: Port
     :param ssh: SSH
     """
-    logger.debug(f"Port {port.port_number:<5} - KILLING PROCESS")
-    await aio_as_trio(ssh_controllers.kill_proxy_on_port)(port.port_number)
     logger.debug(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - RECONNECTING")
     await connect_ssh_to_port(ssh, port)
     logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - RECONNECTED SUCCESSFULLY")

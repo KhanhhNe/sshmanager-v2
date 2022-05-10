@@ -76,21 +76,19 @@ class SSH(Model):
             self.used_ports.add(self.port)
 
     @classmethod
-    def get_ssh_for_port(cls, port: 'Port', unique=True, unique_between_ports=True):
+    @auto_renew_objects
+    def get_ssh_for_port(cls, port: 'Port', unique=True):
         """
         Get a usable SSH for provided Port. Will not get one that was used by
         that Port before if unique=True.
 
         :param port: Port
         :param unique: True if the SSH cannot be used before by Port
-        :param unique_between_ports: True if the SSH can only be used by 1 Port
         :return: Usable SSH for Port
         """
         query = cls.select(lambda s: s.is_live)
         if unique:
             query = query.filter(lambda s: s.id not in port.used_ssh_list.id)
-        if unique_between_ports:
-            query = query.filter(lambda s: s.count() == 0)
 
         if result := query.random(1):
             return result[0]
@@ -111,6 +109,7 @@ class Port(Model):
 
     time_connected = Optional(datetime)
     used_ssh_list: Set = Set(SSH, reverse='used_ports')
+    proxy_address = Optional(str)
 
     def before_update(self):
         super().before_update()
@@ -126,10 +125,7 @@ class Port(Model):
             if self.ssh is not None and self.ssh not in self.used_ssh_list:
                 self.used_ssh_list.add(self.ssh)
 
-    @property
-    @auto_renew_objects
-    def proxy_address(self):
-        return f"socks5://{utils.get_ipv4_address()}:{self.port_number}"
+        self.proxy_address = f"socks5://{utils.get_ipv4_address()}:{self.port_number}"
 
     @auto_renew_objects
     def need_reset(self, time_expired: datetime):
@@ -156,5 +152,5 @@ class Port(Model):
         super().reset_status()
         self.external_ip = ''
         self.ssh = None
-        self.time_connected = None
+        self.is_connected = False
         self.used_ssh_list.clear()

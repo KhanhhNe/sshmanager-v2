@@ -108,10 +108,13 @@ class PortCheckTask(CheckTask):
                 async with self.limit:
                     with db_session:
                         port: Port = Port[port.id].load_object()
+                        if port.ssh is not None:
+                            port.ssh.load()
 
                     if port.is_connected:
                         ip = await actions.check_port_ip(port)
                         if ip != port.ssh.ip:
+                            logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - PROXY DIED")
                             port.disconnect_ssh()
 
                     # Connect SSH to port
@@ -133,7 +136,7 @@ class PortCheckTask(CheckTask):
                         if not port.need_reset(time_expired):
                             continue
 
-                        logger.info(f"Resetting port {port.port_number}")
+                        logger.info(f"Port {port.port_number:<5} -> RESETTING")
                         nursery.start_soon(actions.reset_ports, [port])
 
 
