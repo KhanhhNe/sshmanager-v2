@@ -105,7 +105,7 @@ class Port(Model):
 
     ssh = Optional(SSH)
     is_connected = Required(bool, default=False)
-    external_ip = Optional(str)  # Proxy's external IP
+    public_ip = Optional(str)  # Proxy's public IP
 
     time_connected = Optional(datetime)
     used_ssh_list: Set = Set(SSH, reverse='used_ports')
@@ -150,7 +150,7 @@ class Port(Model):
     @auto_renew_objects
     def reset_status(self):
         super().reset_status()
-        self.external_ip = ''
+        self.public_ip = ''
         self.ssh = None
         self.is_connected = False
         self.used_ssh_list.clear()
