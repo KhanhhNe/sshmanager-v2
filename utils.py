@@ -8,7 +8,6 @@ import socket
 import aiohttp
 import asyncssh
 import psutil
-import python_socks
 from aiohttp_socks import ProxyConnector
 
 
@@ -118,6 +117,7 @@ async def get_proxy_ip(proxy_address, tries=0) -> str:
     :param tries: Total request tries
     :return: Proxy real IP address on success connection, empty string otherwise
     """
+    # noinspection PyBroadException
     try:
         connector = ProxyConnector.from_url(proxy_address)
         async with aiohttp.ClientSession(connector=connector) as client:
@@ -128,9 +128,7 @@ async def get_proxy_ip(proxy_address, tries=0) -> str:
             except Exception:
                 resp = await client.get('https://ip.seeip.org')
                 return await resp.text()
-    except (aiohttp.ClientError, python_socks.ProxyConnectionError, python_socks.ProxyError,
-            python_socks.ProxyTimeoutError, ConnectionError, asyncio.exceptions.IncompleteReadError,
-            asyncio.exceptions.TimeoutError):
+    except Exception:
         if not tries:
             return ''
         return await get_proxy_ip(proxy_address, tries=tries - 1)
