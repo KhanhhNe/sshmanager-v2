@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
@@ -143,7 +142,7 @@ class PortCheckTask(CheckTask):
 async def download_sshstore_ssh():
     while True:
         interval = config.get('sshstore_interval')
-        await asyncio.sleep(interval)
+        await trio.sleep(interval)
 
         if not config.get('sshstore_enabled'):
             continue
@@ -167,4 +166,4 @@ async def run_all_tasks():
         port_check = PortCheckTask()
         nursery.start_soon(ssh_check.run_task)
         nursery.start_soon(port_check.run_task)
-        nursery.start_soon(aio_as_trio(download_sshstore_ssh))
+        nursery.start_soon(download_sshstore_ssh)

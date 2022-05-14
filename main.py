@@ -31,6 +31,7 @@ async def run_app(conf):
         nursery.start_soon(tasks.run_all_tasks)
         # noinspection PyTypeChecker
         await hypercorn.trio.serve(app, conf)
+        nursery.cancel_scope.cancel()
 
 
 if __name__ == '__main__':
@@ -64,4 +65,6 @@ if __name__ == '__main__':
     try:
         trio_asyncio.run(run_app, config)
     except KeyboardInterrupt:
+        pass
+    finally:
         print("Exited")
