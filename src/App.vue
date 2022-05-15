@@ -83,8 +83,7 @@ export default {
   },
   methods: {
     /**
-     * Send request to /api/ssh with SSH list and specified method, then
-     * request an update from server via WebSocket
+     * Send request to /api/ssh with SSH list and specified method
      * @param sshList
      * @param method
      * @returns {Promise<void>}
@@ -103,8 +102,7 @@ export default {
     },
 
     /**
-     * Send request to /api/ports with ports and specified method, then request
-     * an update from server via WebSocket
+     * Send request to /api/ports with ports and specified method
      * @param ports
      * @param method
      * @returns {Promise<void>}
@@ -204,7 +202,7 @@ export default {
         s.addEventListener('open', function () {
           requestUpdate()
           clearInterval(updateInterval)
-          updateInterval = setInterval(requestUpdate, 1000)
+          updateInterval = setInterval(requestUpdate, 200)
         })
 
         s.addEventListener('message', function (event) {
@@ -222,7 +220,12 @@ export default {
           }
 
           // Remove objects that no longer in the database
-          _.remove(objectsList, item => data.removed.includes(item.id))
+          for (const itemId of data.removed) {
+            const itemIndex = _.findIndex(objectsList, item => item.id === itemId)
+            if (itemIndex !== -1) {
+              objectsList.splice(itemIndex, 1)
+            }
+          }
         })
 
         s.addEventListener('close', () => setTimeout(connect, 1000))
