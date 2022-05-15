@@ -3,7 +3,7 @@ from typing import List
 
 import psutil
 import trio
-from pony.orm import db_session
+from pony.orm import TransactionIntegrityError, commit, db_session
 from trio_asyncio import aio_as_trio
 
 import utils
@@ -132,9 +132,12 @@ def insert_ssh_from_file_content(file_content):
     created_ssh = []
     with db_session:
         for ssh_info in utils.parse_ssh_file(file_content):
-            if not SSH.exists(**ssh_info):
-                # Only create if it does not exist
+            try:
                 s = SSH(**ssh_info)
+                commit()
                 created_ssh.append(s)
+            except TransactionIntegrityError:
+                continue
         logger.info(f"Inserted {len(created_ssh)} SSH from file content")
+
     return created_ssh

@@ -37,9 +37,13 @@ def add_ssh(ssh_list: List[SSHIn]):
     """
     results = []
     for ssh in ssh_list:
-        if not SSH.get(**ssh.dict()):
+        try:
             s = SSH(**ssh.dict())
+            commit()
             results.append(s)
+        except TransactionIntegrityError:
+            continue
+
     return [SSHOut.from_orm(s) for s in results]
 
 

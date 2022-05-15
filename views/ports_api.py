@@ -31,9 +31,12 @@ def add_ports(port_list: List[PortIn]):
     """
     results = []
     for port in port_list:
-        if not Port.get(**port.dict()):
+        try:
             p = Port(**port.dict())
+            commit()
             results.append(p)
+        except TransactionIntegrityError:
+            continue
 
     return [PortOut.from_orm(p) for p in results]
 
