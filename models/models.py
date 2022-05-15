@@ -143,7 +143,7 @@ class Port(Model):
 
     @auto_renew_objects
     def disconnect_ssh(self, remove_from_used=False):
-        if remove_from_used:
+        if remove_from_used and self.ssh is not None:
             self.used_ssh_list.remove(self.ssh)
         self.assign_ssh(None)
 
