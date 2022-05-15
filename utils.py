@@ -150,7 +150,6 @@ def configure_logging():
 
     def logging_filter(record: logging.LogRecord):
         if any([
-            record.name in ['charset_normalizer'],
             record.exc_info and record.exc_info[0] in [BrokenPipeError],
             record.name == 'Ssh'
         ]):
@@ -182,3 +181,6 @@ def configure_logging():
                         datefmt=formatter_config['datefmt'],
                         handlers=[file_logging, console_logging, ssh_logging],
                         force=True)
+
+    for logger in ['multipart.multipart', 'charset_normalizer', 'asyncio']:
+        logging.getLogger(logger).setLevel(logging.WARNING)
