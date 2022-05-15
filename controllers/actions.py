@@ -33,7 +33,7 @@ async def check_port_ip(port: Port):
     """
     Port.begin_checking(port)
     ip = await aio_as_trio(utils.get_proxy_ip)(port.proxy_address)
-    Port.end_checking(port, external_ip=ip)
+    Port.end_checking(port, public_ip=ip)
     return ip
 
 

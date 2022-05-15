@@ -1,4 +1,3 @@
-import json
 from typing import List
 
 from fastapi.responses import PlainTextResponse
@@ -9,7 +8,7 @@ import config
 from controllers.actions import reset_ports
 from models import Port
 from models.io_models import PortIn, PortOut
-from views import update_websocket
+from views.websockets import websocket_auto_update_endpoint
 
 router = APIRouter()
 
@@ -24,12 +23,6 @@ def get_all_ports():
     return [PortOut.from_orm(port) for port in ports]
 
 
-@router.websocket('/')
-@update_websocket
-def get_ports_json():
-    return [json.loads(p.json()) for p in get_all_ports()]
-
-
 @router.post('/')
 @db_session
 def add_ports(port_list: List[PortIn]):
@@ -41,6 +34,7 @@ def add_ports(port_list: List[PortIn]):
         if not Port.get(**port.dict()):
             p = Port(**port.dict())
             results.append(p)
+
     return [PortOut.from_orm(p) for p in results]
 
 
@@ -97,3 +91,6 @@ def get_proxies_string(full_url: str = None):
         else:
             results.append(info_str)
     return PlainTextResponse('\n'.join(results))
+
+
+router.add_websocket_route('/', websocket_auto_update_endpoint(Port, PortOut))

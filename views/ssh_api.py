@@ -1,4 +1,3 @@
-import json
 from typing import List
 
 from fastapi import UploadFile
@@ -8,7 +7,7 @@ from pony.orm import db_session, desc
 from controllers import actions
 from models import SSH
 from models.io_models import SSHIn, SSHOut
-from views import update_websocket
+from views.websockets import websocket_auto_update_endpoint
 
 router = APIRouter()
 
@@ -28,12 +27,6 @@ def get_all_ssh():
                           .to_list())
     ssh_list = checked_ssh_list + unchecked_ssh_list
     return [SSHOut.from_orm(ssh) for ssh in ssh_list]
-
-
-@router.websocket('/')
-@update_websocket
-def get_ssh_json():
-    return [json.loads(s.json()) for s in get_all_ssh()]
 
 
 @router.post('/')
@@ -80,3 +73,6 @@ async def upload_ssh(ssh_file: UploadFile):
     with db_session:
         # Re-query SSHs and format into output model
         return [SSHOut.from_orm(SSH[s.id]) for s in created_ssh]
+
+
+router.add_websocket_route('/', websocket_auto_update_endpoint(SSH, SSHOut))

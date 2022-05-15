@@ -20,6 +20,7 @@ cryptography = "*"
 trio = "*"
 trio-asyncio = "*"
 hypercorn = {extras = ["trio"], version = "*"}
+pendulum = "*"
 
 [dev-packages]
 pyinstaller = "*"

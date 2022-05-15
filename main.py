@@ -19,7 +19,7 @@ with warnings.catch_warnings():
 import config
 import utils
 from controllers import tasks, actions
-from models.database import init_db
+from models import init_db
 
 
 async def run_app(conf):

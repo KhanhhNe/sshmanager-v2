@@ -68,9 +68,26 @@ function readFileAsText(file) {
 }
 
 
+/**
+ * Search in a list to find an object with given id.
+ * @param list The list to search from
+ * @param id Object Id to search for
+ * @returns The item with given id, null if none found.
+ */
+function findItemById(list, id) {
+    for (const item of list) {
+        if (item.id === id) {
+            return item
+        }
+    }
+    return null
+}
+
+
 module.exports = {
     getTimeDisplay,
     getSshText,
     isInList,
-    readFileAsText
+    readFileAsText,
+    findItemById
 }

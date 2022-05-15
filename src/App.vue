@@ -5,8 +5,8 @@
         class="update-available"
     >Đã có phiên bản mới {{ newVersion }}!</span>
     <SSHList
-        :sshList="sshList"
-        :title="`SSH (${sshList.length})`"
+        :sshList="sortedList"
+        :title="`SSH (${sortedList.length})`"
         @add-ssh="sshRequest($event, 'post')"
         @delete-ssh="sshRequest($event, 'delete')"
         class="all-ssh"/>
@@ -50,6 +50,7 @@ import Settings from './components/Settings.vue'
 import tippy from 'tippy.js'
 import '@picocss/pico'
 import 'fontisto'
+import _ from 'lodash';
 
 export default {
   name: 'App',
@@ -61,8 +62,6 @@ export default {
   },
   data() {
     return {
-      sshSocket: new WebSocket(`ws://${location.host}/api/ssh/`),
-      portsSocket: new WebSocket(`ws://${location.host}/api/ports/`),
       sshList: [],
       ports: [],
       settings: [],
@@ -77,6 +76,9 @@ export default {
     },
     dieList() {
       return this.sshList.filter(ssh => ssh.last_checked !== null && !ssh.is_live)
+    },
+    sortedList() {
+      return _.orderBy(this.sshList, ({last_checked}) => last_checked || '', ['desc'])
     }
   },
   methods: {
@@ -95,7 +97,6 @@ export default {
         },
         body: JSON.stringify(sshList)
       })
-      this.sshSocket.send('update')
     },
 
     /**
@@ -113,7 +114,6 @@ export default {
         },
         body: JSON.stringify(ports)
       })
-      this.portsSocket.send('update')
     },
 
     /**
@@ -162,17 +162,70 @@ export default {
       await this.getSettings()
     }
   },
+  beforeCreate() {
+  },
   mounted() {
     fetch('/openapi.json').then(resp => resp.json()).then(data => {
       document.title = `SSHManager v${data.info.version}`
     })
+
+    function setupWebsocket(objectsList, endpoint) {
+      let socket, updateInterval
+      let lastModified = null
+      connect()
+
+      function connect() {
+        try {
+          socket = new WebSocket(endpoint)
+          addListeners(socket)
+        } catch (e) {
+          console.error(e)
+          setTimeout(connect, 1000)
+        }
+      }
+
+      function requestUpdate() {
+        socket.send(JSON.stringify({
+          last_modified: lastModified,
+          ids: _.map(objectsList, item => item.id)
+        }))
+      }
+
+      function addListeners(s) {
+        s.addEventListener('open', function () {
+          requestUpdate()
+          clearInterval(updateInterval)
+          updateInterval = setInterval(requestUpdate, 1000)
+        })
+
+        s.addEventListener('message', function (event) {
+          const data = JSON.parse(event.data)
+          lastModified = data.last_modified || lastModified
+
+          // Update/Insert objects from database
+          for (const item of data.objects) {
+            const itemInList = _.find(objectsList, val => val.id === item.id)
+            if (itemInList) {
+              Object.assign(itemInList, item)
+            } else {
+              objectsList.push(item)
+            }
+          }
+
+          // Remove objects that no longer in the database
+          _.remove(objectsList, item => data.removed.includes(item.id))
+        })
+
+        s.addEventListener('close', () => setTimeout(connect, 1000))
+        s.addEventListener('error', () => setTimeout(connect, 1000))
+      }
+    }
+
+    setupWebsocket(this.sshList, `ws://${location.host}/api/ssh/`)
+    setupWebsocket(this.ports, `ws://${location.host}/api/ports/`)
+
     const self = this
-    this.sshSocket.addEventListener('message', function (event) {
-      self.sshList = JSON.parse(event.data)
-    })
-    this.portsSocket.addEventListener('message', function (event) {
-      self.ports = JSON.parse(event.data)
-    })
+
     this.getSettings()
     tippy('[data-tippy-content]')
 
