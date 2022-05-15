@@ -13,21 +13,27 @@ from views.websockets import websocket_auto_update_endpoint
 router = APIRouter()
 
 
-@router.get('')
+@router.get('', response_model=List[PortOut])
 @db_session
 def get_all_ports():
     """
-    Get all ports from database.
+    Lấy thông tin các Port có trong dữ liệu.
+
+    :return: Danh sách thông tin SSH
     """
     ports = Port.select()[:].to_list()
     return [PortOut.from_orm(port) for port in ports]
 
 
-@router.post('')
+@router.post('', response_model=List[PortOut])
 @db_session
 def add_ports(port_list: List[PortIn]):
     """
-    Add ports to database.
+    Tạo Port.
+
+    :param port_list: Danh sách thông tin Port muốn tạo
+
+    :return: Thông tin Port sau khi tạo
     """
     results = []
     for port in port_list:
@@ -41,11 +47,15 @@ def add_ports(port_list: List[PortIn]):
     return [PortOut.from_orm(p) for p in results]
 
 
-@router.delete('')
+@router.delete('', response_model=int)
 @db_session
 def delete_ports(port_numbers: List[int]):
     """
-    Remove a list of ports from the database.
+    Xoá SSH.
+
+    :param port_numbers: Số port local của các Port muốn xoá (1024-65353)
+
+    :return: Số lượng Port đã xoá
     """
     deleted = 0
     for port_number in port_numbers:
@@ -57,12 +67,16 @@ def delete_ports(port_numbers: List[int]):
     return deleted
 
 
-@router.put('')
+@router.put('', response_model=int)
 async def reset_ports_ssh(port_numbers: List[int], delete_ssh=False):
     """
-    Reset assigned SSH of Ports.
+    Đổi IP (SSH) cho Port.
 
-    :return: Number of resetting ports
+    :param port_numbers: Số port local của các Port muốn xoá (1024-65353)
+
+    :param delete_ssh: Xoá SSH hiện tại của các Port ra khỏi dữ liệu
+
+    :return: Số Port với số port local hợp lệ
     """
     ports = []
     with db_session:
@@ -76,23 +90,22 @@ async def reset_ports_ssh(port_numbers: List[int], delete_ssh=False):
     return len(ports)
 
 
-@router.get('/proxies')
+@router.get('/proxies', response_model=str)
 @db_session
 def get_proxies_string(full_url: str = None):
     """
-    Get proxies information (to integrate with other tools), one per line
+    Lấy thông tin proxy (chủ yếu dùng để tích hợp với các tool khác). Thông tin sẽ hiển thị theo dạng đã chọn, với mỗi
+    dòng là một proxy
 
-    :param full_url: If it is true, returns full proxy URL
-    (<protocol>://<ip>:<port>), otherwise returns only <ip>:<port>
-    :return:
+    :param full_url: Trả về thông tin proxy dạng full (<protocol://<ip>:<port>) nếu True, trả về <ip>:<port> nếu False
+
+    :return: Thông tin các proxy
     """
     results = []
     for port in Port.select():
-        info_str = port.proxy_address
-        if full_url:
-            results.append(f"socks5://{info_str}")
-        else:
-            results.append(info_str)
+        proxy_info = port.proxy_address
+        results.append(f"socks5://{proxy_info}" if full_url else proxy_info)
+
     return PlainTextResponse('\n'.join(results))
 
 
