@@ -1,8 +1,8 @@
 import json
 from typing import Dict, Type
 
-from pony.orm.core import EntityMeta
-from pydantic import BaseConfig, BaseModel, Field, create_model, validator
+from pony.orm.core import Attribute, EntityMeta
+from pydantic import BaseConfig, BaseModel, Field, Json, create_model, validator
 
 import config
 from models import Port, SSH
@@ -14,12 +14,15 @@ def generate_pydantic_model(entity: Type[EntityMeta], model_name, field_descript
 
     entity_name = repr(entity.__name__)
     result = {}
+    relationship_fields = []
 
     description_missing = []
+    attr: Attribute
     # noinspection PyProtectedMember,PyArgumentList
     for attr in entity._get_attrs_(exclude=['classtype']):
         if attr.is_relation:
-            attr_type = int
+            attr_type = Json
+            relationship_fields.append(attr.name)
         else:
             attr_type = attr.py_type
 
@@ -46,7 +49,15 @@ def generate_pydantic_model(entity: Type[EntityMeta], model_name, field_descript
         redundant_display = ', '.join(map(repr, redundant_fields))
         raise KeyError(f"Redundant description found of entity {entity_name} for attributes: {redundant_display}")
 
-    return create_model(model_name, __config__=Config, **result)
+    @validator(*relationship_fields, pre=True, always=True, allow_reuse=True)
+    def relationship_validator(cls, v):
+        if v:
+            return json.dumps(v.to_dict(), default=str)
+
+    return create_model(model_name,
+                        __config__=Config,
+                        __validators__={'relationship_validator': relationship_validator},
+                        **result)
 
 
 class SSHIn(BaseModel):
@@ -69,6 +80,8 @@ SSHOutBase = generate_pydantic_model(SSH, 'SSHOutBase', {
 
 
 class SSHOut(SSHOutBase):
+    status_text: str = None
+
     # noinspection PyMethodParameters
     @validator('status_text', pre=True, always=True, check_fields=False)
     def default_status_text(cls, v, values):
@@ -97,7 +110,6 @@ PortOut = generate_pydantic_model(Port, 'PortOut', {
     "time_connected": "Thời điểm Port kết nối đến SSH",
     "proxy_address": "Địa chỉ proxy của Port"
 })
-
 
 SettingsInOut = create_model('SettingsInOut', **config.PYDANTIC_ARGS)
 

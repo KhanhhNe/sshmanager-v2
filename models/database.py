@@ -16,3 +16,10 @@ def init_db():
     except orm.OperationalError:
         os.remove(DB_PATH)
         db.generate_mapping(create_tables=True)
+
+    from .models import SSH, Port
+
+    with db.set_perms_for(SSH):
+        orm.perm('view', group='anybody')
+    with db.set_perms_for(Port):
+        orm.perm('view', group='anybody')
