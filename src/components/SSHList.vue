@@ -55,7 +55,7 @@
       <input
           v-if="!readOnly"
           ref="fileInput"
-          @change="getSSHListFromFile($event.target.files[0])"
+          @change="uploadSSHFile($event.target.files[0])"
           type="file"
           accept="text/plain, text/csv"
           style="display: none">
@@ -67,7 +67,7 @@
 <script>
 import ArticleTitle from "@/components/ArticleTitle";
 import {saveAs} from "file-saver";
-import {getSshText, getTimeDisplay, isInList} from "@/utils";
+import {getSshText, getTimeDisplay} from "@/utils";
 import moment from "moment";
 
 export default {
@@ -101,20 +101,13 @@ export default {
      * @param file
      * @returns {Promise<void>}
      */
-    async getSSHListFromFile(file) {
+    async uploadSSHFile(file) {
       const form = new FormData()
       form.append('ssh_file', file)
-      const sshList = await (await fetch('/api/ssh/upload', {
+      await fetch('/api/ssh/upload', {
         method: 'post',
         body: form
-      })).json()
-
-      for (const ssh in sshList) {
-        if (!isInList(ssh, sshList)) {
-          sshList.push(ssh)
-        }
-      }
-      await this.updateSSH(sshList)
+      })
     },
 
     /**
@@ -125,17 +118,6 @@ export default {
         type: 'text/plain;charset=utf-8'
       })
       saveAs(data, `${this.title}.txt`)
-    },
-
-    /**
-     * Update SSH list to backend
-     */
-    async updateSSH(sshList) {
-      const added = sshList.filter(ssh => !isInList(ssh, this.sshList))
-      const removed = this.sshList.filter(ssh => !isInList(ssh, sshList))
-
-      this.$emit('delete-ssh', removed)
-      this.$emit('add-ssh', added)
     },
 
     /**

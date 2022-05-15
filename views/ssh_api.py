@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import UploadFile
 from fastapi.routing import APIRouter
-from pony.orm import db_session, desc
+from pony.orm import ObjectNotFound, TransactionIntegrityError, commit, db_session, desc
 
 from controllers import actions
 from models import SSH
@@ -12,7 +12,7 @@ from views.websockets import websocket_auto_update_endpoint
 router = APIRouter()
 
 
-@router.get('/')
+@router.get('')
 @db_session
 def get_all_ssh():
     """
@@ -29,7 +29,7 @@ def get_all_ssh():
     return [SSHOut.from_orm(ssh) for ssh in ssh_list]
 
 
-@router.post('/')
+@router.post('')
 @db_session
 def add_ssh(ssh_list: List[SSHIn]):
     """
@@ -43,20 +43,25 @@ def add_ssh(ssh_list: List[SSHIn]):
     return [SSHOut.from_orm(s) for s in results]
 
 
-# TODO change to requiring SSH ids only
-@router.delete('/')
+@router.delete('')
 @db_session
-def delete_ssh(ssh_list: List[SSHIn]):
+def delete_ssh(ssh_ids: List[int]):
     """
     Remove a list of SSH from the database.
 
-    :return: Number of deleted objects
+    :param ssh_ids: IDs of the deleting SSHs
+    :return: Number of deleted SSHs
     """
     deleted = 0
-    for ssh in ssh_list:
-        ssh_obj = SSH.get(**ssh.dict())
-        if ssh_obj:
-            ssh_obj.delete()
+
+    for ssh_id in ssh_ids:
+        try:
+            ssh = SSH[ssh_id]
+            ssh.delete()
+            deleted += 1
+        except ObjectNotFound:
+            continue
+
     return deleted
 
 
@@ -75,4 +80,4 @@ async def upload_ssh(ssh_file: UploadFile):
         return [SSHOut.from_orm(SSH[s.id]) for s in created_ssh]
 
 
-router.add_websocket_route('/', websocket_auto_update_endpoint(SSH, SSHOut))
+router.add_api_websocket_route('', websocket_auto_update_endpoint(SSH, SSHOut))

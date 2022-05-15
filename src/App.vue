@@ -83,14 +83,17 @@ export default {
   },
   methods: {
     /**
-     * Send request to /api/ssh/ with SSH list and specified method, then
+     * Send request to /api/ssh with SSH list and specified method, then
      * request an update from server via WebSocket
      * @param sshList
      * @param method
      * @returns {Promise<void>}
      */
     async sshRequest(sshList, method) {
-      await fetch('/api/ssh/', {
+      if (method === 'delete') {
+        sshList = _.map(sshList, ssh => ssh.id)
+      }
+      await fetch('/api/ssh', {
         method,
         headers: {
           'Content-Type': 'application/json'
@@ -100,14 +103,17 @@ export default {
     },
 
     /**
-     * Send request to /api/ports/ with ports and specified method, then request
+     * Send request to /api/ports with ports and specified method, then request
      * an update from server via WebSocket
      * @param ports
      * @param method
      * @returns {Promise<void>}
      */
     async portsRequest(ports, method) {
-      await fetch('/api/ports/', {
+      if (['put', 'delete'].includes(method)) {
+        ports = _.map(ports, port => port.port_number)
+      }
+      await fetch('/api/ports', {
         method,
         headers: {
           'Content-Type': 'application/json'
@@ -122,8 +128,8 @@ export default {
      * @returns {Promise<void>}
      */
     async getSettings() {
-      const settingsValues = await (await fetch('/api/settings/')).json()
-      const settingsNames = await (await fetch('/api/settings/names/')).json()
+      const settingsValues = await (await fetch('/api/settings')).json()
+      const settingsNames = await (await fetch('/api/settings/names')).json()
       const settings = []
       for (const [name, value] of Object.entries(settingsValues)) {
         const readable_name = settingsNames[name]
@@ -142,7 +148,7 @@ export default {
       for (const setting of newSettings) {
         settings[setting.name] = setting.value
       }
-      this.needRestart = await (await fetch('/api/settings/', {
+      this.needRestart = await (await fetch('/api/settings', {
         method: 'post',
         headers: {
           'Content-Type': 'application/json'
@@ -157,7 +163,7 @@ export default {
      * @returns {Promise<void>}
      */
     async resetSettings() {
-      await fetch('/api/settings/', {method: 'delete'})
+      await fetch('/api/settings', {method: 'delete'})
       this.needRestart = false
       await this.getSettings()
     }
@@ -186,6 +192,8 @@ export default {
       }
 
       function requestUpdate() {
+        if (socket.readyState !== WebSocket.OPEN) return
+
         socket.send(JSON.stringify({
           last_modified: lastModified,
           ids: _.map(objectsList, item => item.id)
@@ -221,8 +229,8 @@ export default {
       }
     }
 
-    setupWebsocket(this.sshList, `ws://${location.host}/api/ssh/`)
-    setupWebsocket(this.ports, `ws://${location.host}/api/ports/`)
+    setupWebsocket(this.sshList, `ws://${location.host}/api/ssh`)
+    setupWebsocket(this.ports, `ws://${location.host}/api/ports`)
 
     const self = this
 

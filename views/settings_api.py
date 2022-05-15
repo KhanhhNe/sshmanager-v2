@@ -8,7 +8,7 @@ from models.io_models import SettingsInOut, SettingsUpdateResult
 router = APIRouter()
 
 
-@router.get('/')
+@router.get('')
 def get_all_settings():
     """
     Get all settings
@@ -19,7 +19,7 @@ def get_all_settings():
     return SettingsInOut(**args)
 
 
-@router.post('/')
+@router.post('')
 def update_settings(settings: SettingsInOut):
     """
     Update settings
@@ -40,7 +40,7 @@ def update_settings(settings: SettingsInOut):
     return SettingsUpdateResult(need_restart=need_restart)
 
 
-@router.delete('/')
+@router.delete('')
 def reset_all_settings():
     """
     Resset all settings to default values
@@ -48,7 +48,7 @@ def reset_all_settings():
     config.reset_config()
 
 
-@router.get('/names/')
+@router.get('/names')
 def get_settings_names():
     """
     Get settings display names

@@ -112,7 +112,7 @@ class PortCheckTask(CheckTask):
 
                     if port.is_connected:
                         ip = await actions.check_port_ip(port)
-                        if ip != port.ssh.ip:
+                        if port.ssh and ip != port.ssh.ip:
                             logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - PROXY DIED")
                             port.disconnect_ssh()
 

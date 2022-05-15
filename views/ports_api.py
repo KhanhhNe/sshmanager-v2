@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi.responses import PlainTextResponse
 from fastapi.routing import APIRouter
-from pony.orm import db_session
+from pony.orm import TransactionIntegrityError, commit, db_session
 
 import config
 from controllers.actions import reset_ports
@@ -13,7 +13,7 @@ from views.websockets import websocket_auto_update_endpoint
 router = APIRouter()
 
 
-@router.get('/')
+@router.get('')
 @db_session
 def get_all_ports():
     """
@@ -23,11 +23,11 @@ def get_all_ports():
     return [PortOut.from_orm(port) for port in ports]
 
 
-@router.post('/')
+@router.post('')
 @db_session
 def add_ports(port_list: List[PortIn]):
     """
-    Add ports to database
+    Add ports to database.
     """
     results = []
     for port in port_list:
@@ -38,42 +38,42 @@ def add_ports(port_list: List[PortIn]):
     return [PortOut.from_orm(p) for p in results]
 
 
-# TODO change to requiring Port numbers only
-@router.delete('/')
+@router.delete('')
 @db_session
-def delete_ports(port_list: List[PortIn]):
+def delete_ports(port_numbers: List[int]):
     """
     Remove a list of ports from the database.
     """
     deleted = 0
-    for port in port_list:
-        port_obj = Port.get(**port.dict())
-        if port_obj:
-            port_obj.delete()
+    for port_number in port_numbers:
+        port = Port.get(port_number=port_number)
+        if port:
+            port.delete()
             deleted += 1
+
     return deleted
 
 
-# TODO change to requiring Port numbers only
-@router.put('/')
-async def reset_ports_ssh(port_list: List[PortIn], delete_ssh=False):
+@router.put('')
+async def reset_ports_ssh(port_numbers: List[int], delete_ssh=False):
     """
     Reset assigned SSH of Ports.
 
-    :return: Reset Ports (excluding non-existing Ports)
+    :return: Number of resetting ports
     """
     ports = []
     with db_session:
-        for port in port_list:
-            if Port.exists(port_number=port.port_number):
-                ports.append(Port.get(port_number=port.port_number))
+        for port_number in port_numbers:
+            if port := Port.get(port_number=port_number):
+                ports.append(port)
     unique = config.get('use_unique_ssh')
+
     await reset_ports(ports, unique=unique, delete_ssh=delete_ssh)
-    with db_session:
-        return [PortOut.from_orm(Port[p.id]) for p in ports]
+
+    return len(ports)
 
 
-@router.get('/proxies/')
+@router.get('/proxies')
 @db_session
 def get_proxies_string(full_url: str = None):
     """
@@ -93,4 +93,4 @@ def get_proxies_string(full_url: str = None):
     return PlainTextResponse('\n'.join(results))
 
 
-router.add_websocket_route('/', websocket_auto_update_endpoint(Port, PortOut))
+router.add_api_websocket_route('', websocket_auto_update_endpoint(Port, PortOut))
