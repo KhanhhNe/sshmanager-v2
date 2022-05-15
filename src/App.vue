@@ -176,6 +176,7 @@ export default {
 
       function connect() {
         try {
+          if (socket) socket.close()
           socket = new WebSocket(endpoint)
           addListeners(socket)
         } catch (e) {
@@ -217,7 +218,6 @@ export default {
         })
 
         s.addEventListener('close', () => setTimeout(connect, 1000))
-        s.addEventListener('error', () => setTimeout(connect, 1000))
       }
     }
 
