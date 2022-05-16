@@ -36,8 +36,8 @@ async def run_app(conf):
 
 if __name__ == '__main__':
     freeze_support()
-    port = config.get('web_port')
     os.makedirs('data', exist_ok=True)
+    port = config.get('web_port')
 
     # Remove config.ini file by default when debugging
     if os.environ.get("DEBUG"):
