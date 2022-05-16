@@ -32,9 +32,6 @@ data/
 
 # Built files
 build/
-app_dist/
-*.spec
-*.zip
 
 # Plugins
 plugins/

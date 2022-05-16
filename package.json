@@ -5,8 +5,8 @@
   "private": false,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "build-watch": "vue-cli-service build --mode=development --watch --no-clean",
+    "build": "vue-cli-service build --dest=build/web_dist",
+    "build-watch": "vue-cli-service build --dest=build/web_dist --mode=development --watch --no-clean",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {

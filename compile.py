@@ -8,10 +8,11 @@ import PyInstaller.__main__
 
 app_name = os.path.basename(os.getcwd()).replace('-v2', '')
 version = json.load(open('package.json', encoding='utf-8'))['version']
-dist_path = 'app_dist'
+web_dist = 'build/web_dist'
+work_path = 'build/pyinstaller'
+dist_path = 'build/dist'
 
-shutil.rmtree('dist', ignore_errors=True)
-shutil.rmtree('app_dist', ignore_errors=True)
+shutil.rmtree(dist_path, ignore_errors=True)
 completed = subprocess.run('npm run build', shell=True)
 if completed.returncode:
     print("NPM build failed!")
@@ -19,29 +20,36 @@ if completed.returncode:
 
 PyInstaller.__main__.run([
     'main.py', f'--name={app_name}', '--icon=public/favicon.ico',
-    f'--distpath={dist_path}', '--onedir', '--noconfirm',
+    f'--distpath={dist_path}', f'--workpath={work_path}', '--onedir', '--noconfirm',
     '--add-data=package.json;.',
     '--add-data=logging_config.json;.',
     '--add-binary=executables/*;executables',
-    '--hidden-import=app',
+
+    # PonyORM and SQLite
     '--hidden-import=pony.orm.dbproviders',
     '--hidden-import=pony.orm.dbproviders.sqlite',
+
+    # Websockets
     '--hidden-import=websockets.legacy',
     '--hidden-import=websockets.legacy.server',
 ])
 
-shutil.copytree('dist', f"{dist_path}/{app_name}/dist", dirs_exist_ok=True)
+shutil.copytree(web_dist, f"{dist_path}/{app_name}/web", dirs_exist_ok=True)
 
 print("Zipping files...")
-built_file = zipfile.ZipFile(f'{app_name}-v{version}.zip', 'w')
 
+current_dir = os.getcwd()
 os.chdir(dist_path)
+dist_file = zipfile.ZipFile(f'{app_name}-v{version}.zip', 'w')
+
 for folder, _, filenames in os.walk(app_name):
     for filename in filenames:
         filepath = os.path.join(folder, filename)
         print(f"Zipping {filepath}")
-        built_file.write(filepath)
-os.chdir('..')
+        dist_file.write(filepath)
+
+os.chdir(current_dir)
+
 if os.path.exists(f"{app_name}.spec"):
     os.remove(f"{app_name}.spec")
 
