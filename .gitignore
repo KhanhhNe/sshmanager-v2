@@ -2,6 +2,7 @@
 node_modules
 /dist
 Pipfile.lock
+package-lock.json
 
 
 # local env files
@@ -31,9 +32,6 @@ data/
 
 # Built files
 build/
-app_dist/
-*.spec
-*.zip
 
 # Plugins
 plugins/

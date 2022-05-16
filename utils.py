@@ -1,11 +1,13 @@
 import asyncio
+import json
+import logging
 import os.path
 import re
 import socket
 
 import aiohttp
+import asyncssh
 import psutil
-import python_socks
 from aiohttp_socks import ProxyConnector
 
 
@@ -115,6 +117,7 @@ async def get_proxy_ip(proxy_address, tries=0) -> str:
     :param tries: Total request tries
     :return: Proxy real IP address on success connection, empty string otherwise
     """
+    # noinspection PyBroadException
     try:
         connector = ProxyConnector.from_url(proxy_address)
         async with aiohttp.ClientSession(connector=connector) as client:
@@ -125,9 +128,59 @@ async def get_proxy_ip(proxy_address, tries=0) -> str:
             except Exception:
                 resp = await client.get('https://ip.seeip.org')
                 return await resp.text()
-    except (aiohttp.ClientError, python_socks.ProxyConnectionError, python_socks.ProxyError,
-            python_socks.ProxyTimeoutError, ConnectionError, asyncio.exceptions.IncompleteReadError,
-            asyncio.exceptions.TimeoutError):
+    except Exception:
         if not tries:
             return ''
         return await get_proxy_ip(proxy_address, tries=tries - 1)
+
+
+async def kill_ssh_connection(connection: asyncssh.SSHClientConnection):
+    """
+    Kill the SSH connection.
+
+    :param connection: SSH connection
+    """
+    await connection.__aexit__(None, None, None)
+
+
+def configure_logging():
+    """
+    Configure console logging and file logging.
+    """
+
+    def logging_filter(record: logging.LogRecord):
+        if any([
+            record.exc_info and record.exc_info[0] in [BrokenPipeError],
+            record.name == 'Ssh'
+        ]):
+            return False
+        return True
+
+    # Console logging handler
+    console_logging = logging.StreamHandler()
+    console_logging.setLevel(logging.INFO
+                             if not os.environ.get('DEBUG')
+                             else logging.DEBUG)
+    console_logging.addFilter(logging_filter)
+
+    # File logging handler
+    file_logging = logging.FileHandler('data/debug.log', mode='w')
+    file_logging.setLevel(logging.DEBUG)
+    file_logging.addFilter(logging_filter)
+
+    # SSH debug logging handler
+    ssh_logging = logging.FileHandler('data/ssh-debug.log', mode='w')
+    ssh_logging.setLevel(logging.DEBUG)
+    ssh_logging.addFilter(lambda rec: rec.name == 'Ssh')
+
+    # Config the logging module
+    log_config = json.load(open('logging_config.json'))
+    formatter_config = log_config['formatters']['standard']
+    logging.basicConfig(level=logging.DEBUG,
+                        format=formatter_config['format'],
+                        datefmt=formatter_config['datefmt'],
+                        handlers=[file_logging, console_logging, ssh_logging],
+                        force=True)
+
+    for logger in ['multipart.multipart', 'charset_normalizer', 'asyncio']:
+        logging.getLogger(logger).setLevel(logging.WARNING)

@@ -1,15 +1,11 @@
-import asyncio
 import logging
-import traceback
 from abc import ABC, abstractmethod
-from collections import deque
-from contextlib import suppress
 from datetime import datetime, timedelta
-from inspect import isawaitable, isclass
-from typing import Deque, List, Optional
 
 import aiohttp
+import trio
 from pony.orm import db_session
+from trio_asyncio import aio_as_trio
 
 import config
 from controllers import actions
@@ -18,258 +14,156 @@ from models import Port, SSH
 logger = logging.getLogger('Tasks')
 
 
-class ConcurrentTask(ABC):
-    """
-    Run and manage a concurrent task (task that has multiple threads running
-    simultaneously).
-    """
-
+class CheckTask(ABC):
     def __init__(self):
-        self.tasks: List[asyncio.Task] = []
-        self.is_running = False
-        self._lock = asyncio.Lock()
-
-    @property
-    def task_name(self):
-        return type(self).__name__
+        self.limit = trio.CapacityLimiter(self.tasks_limit)
+        self.included_ids = []
 
     @property
     @abstractmethod
     def tasks_limit(self):
         """
-        Get maximum tasks allowed for the Task.
-
-        :return: Maximum tasks allowed
+        Maximum concurrent tasks.
         """
-        raise NotImplementedError
 
     @abstractmethod
-    def get_new_task(self) -> asyncio.Task:
+    def get_objects(self):
         """
-        Get a task to add to the Task.
+        Get objects to run tasks on.
 
-        :return: New task
+        :return: Objects iterable
         """
-        raise NotImplementedError
-
-    async def log(self):
-        sleep_duration = 60  # Seconds
-        sleep_interval = 0.5  # Seconds
-
-        while self.is_running:
-            logger.debug(f"{self.task_name} is running "
-                         f"(currently has {len(self.tasks)} tasks)")
-
-            # Use small sleeping intervals to stop sooner when the Task is
-            # stopped (e.g. self.running = False)
-            for _ in range(int(sleep_duration / sleep_interval)):
-                if self.is_running:
-                    await asyncio.sleep(sleep_interval)
-
-    async def run(self):
-        """
-        Run the task's loop (getting new tasks and execute them).
-        """
-        self.is_running = True
-        asyncio.ensure_future(self.log())
-
-        try:
-            while self.is_running:
-                new_task = self.get_new_task()
-                if new_task:
-                    self.tasks.append(new_task)
-
-                await self.remove_done_tasks()
-                while len(self.tasks) >= self.tasks_limit:
-                    await self.remove_done_tasks()
-                    await asyncio.sleep(0)
-
-                await asyncio.sleep(0)
-        except Exception:
-            logger.error(traceback.format_exc())
-            raise
-
-        # Cancel running tasks
-        for task in self.tasks:
-            with suppress(asyncio.CancelledError):
-                task.cancel()
-                await task
-        logger.info(f"Task killed: {type(self).__name__}")
-
-    async def remove_done_tasks(self):
-        for task in self.tasks[:]:
-            if task.done():
-                await task
-                self.tasks.remove(task)
-
-    async def stop(self):
-        self.is_running = False
-
-
-class SyncTask(ABC):
-    """
-    Run single threaded task. Tasks that subclass this are meant to be used in
-    a same loop with all other SyncTasks.
-    """
 
     @abstractmethod
-    def run(self) -> asyncio.Task:
+    async def run_on_object(self, obj):
         """
-        Run task sequentially (in same "thread" with other tasks).
+        Run task with a given object until self.is_running is False.
+
+        :param obj: Target object
         """
-        pass
+
+    async def run_task(self):
+        async def _auto_cancel(target_obj, cancel_scope: trio.CancelScope):
+            while True:
+                if target_obj.id not in self.included_ids:
+                    cancel_scope.cancel()
+                await trio.sleep(0)
+
+        async def _run_with_auto_cancel(target_obj):
+            async with trio.open_nursery() as task_nursery:
+                task_nursery.start_soon(_auto_cancel, target_obj, task_nursery.cancel_scope)
+                await self.run_on_object(target_obj)
+
+        async with trio.open_nursery() as nursery:
+            while True:
+                not_checked = self.included_ids.copy()
+
+                # Try to add new tasks
+                with db_session:
+                    for obj in self.get_objects():
+                        if obj.id in not_checked:
+                            not_checked.remove(obj.id)
+                            continue
+                        self.included_ids.append(obj.id)
+                        nursery.start_soon(_run_with_auto_cancel, obj)
+
+                # Remove not checked objects
+                for obj_id in not_checked:
+                    self.included_ids.remove(obj_id)
+
+                self.limit.total_tokens = self.tasks_limit
+                await trio.sleep(1)
 
 
-class SSHCheckTask(ConcurrentTask):
-    """
-    Task to check all SSH status.
-    """
-
+class SSHCheckTask(CheckTask):
     @property
     def tasks_limit(self):
         return config.get('ssh_tasks_count')
 
-    def get_new_task(self):
-        ssh: SSH = SSH.get_need_checking()
-        if ssh:
-            return asyncio.ensure_future(actions.check_ssh_status(ssh))
-        else:
-            return None
+    def get_objects(self):
+        return SSH.select()
+
+    async def run_on_object(self, obj):
+        while True:
+            async with self.limit:
+                await actions.check_ssh_status(obj)
+            await trio.sleep(60)
 
 
-class PortCheckTask(ConcurrentTask):
-    """
-    Task to check all Port status.
-    """
-
+class PortCheckTask(CheckTask):
     @property
     def tasks_limit(self):
-        return config.get('port_tasks_count')
+        return 100
 
-    def get_new_task(self):
-        port: Port = Port.get_need_checking()
-        if port is not None:
-            return asyncio.ensure_future(actions.check_port_ip(port))
-        else:
-            return None
+    def get_objects(self):
+        return Port.select()
 
+    async def run_on_object(self, port: Port):
+        while True:
+            # Sleep first to make the bellow continues easier
+            await trio.sleep(0)
 
-class ConnectSSHToPortTask(SyncTask):
-    """
-    Task to connect SSH to a Port.
-    """
+            async with trio.open_nursery() as nursery:
+                async with self.limit:
+                    with db_session:
+                        port: Port = Port[port.id].load_object()
+                        if port.ssh is not None:
+                            port.ssh.load()
 
-    @db_session(optimistic=False)
-    def run(self):
-        port: Port = Port.get_need_ssh()
-        if not port:
-            return None
+                    if port.is_connected:
+                        ip = await actions.check_port_ip(port)
+                        if port.ssh and ip != port.ssh.ip:
+                            logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - PROXY DIED")
+                            port.disconnect_ssh()
 
-        unique = config.get('use_unique_ssh')
-        ssh: SSH = SSH.get_ssh_for_port(port, unique=unique)
-        if not ssh:
-            return None
+                    # Connect SSH to port
+                    if port.need_ssh:
+                        ssh = SSH.get_ssh_for_port(port, unique=config.get('use_unique_ssh'))
+                        if ssh is None:
+                            continue
 
-        port.assign_ssh(ssh)
-        logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTING")
-        return asyncio.ensure_future(actions.connect_ssh_to_port(ssh, port))
+                        port.assign_ssh(ssh)
+                        logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTING")
+                        await actions.connect_ssh_to_port(ssh, port)
+                    # Reset port's SSH after a determined time
+                    else:
+                        if not config.get('auto_reset_ports'):
+                            continue
 
+                        reset_interval = config.get('port_reset_interval')
+                        time_expired = datetime.now() - timedelta(seconds=reset_interval)
+                        if not port.need_reset(time_expired):
+                            continue
 
-class ReconnectNewSSHTask(SyncTask):
-    """
-    Task to reconnect new SSH to a Port.
-    """
-
-    @db_session(optimistic=False)
-    def run(self):
-        if not config.get('auto_reset_ports'):
-            return None
-
-        reset_interval = config.get('port_reset_interval')
-        time_expired = datetime.now() - timedelta(seconds=reset_interval)
-        ports = Port.get_need_reset(time_expired)
-        if ports:
-            port_numbers = [str(port.port_number) for port in ports]
-            logger.info(f"Resetting ports [{','.join(port_numbers)}]")
-            return asyncio.ensure_future(actions.reset_ports(ports))
-        else:
-            return None
+                        logger.info(f"Port {port.port_number:<5} -> RESETTING")
+                        nursery.start_soon(actions.reset_ports, [port])
 
 
-class SSHStoreDownloadTask(ConcurrentTask):
-    """
-    Task to automatically get SSH from SSHStore.
-    """
+async def download_sshstore_ssh():
+    while True:
+        interval = config.get('sshstore_interval')
+        await trio.sleep(interval)
 
-    def __init__(self):
-        super().__init__()
-        self.last_run: Optional[datetime] = None
+        if not config.get('sshstore_enabled'):
+            continue
 
-    @property
-    def tasks_limit(self):
-        return 1
-
-    @staticmethod
-    async def run_get():
         api_key = config.get('sshstore_api_key')
         country = config.get('sshstore_country')
         limit = config.get('sshstore_limit')
-        interval = config.get('sshstore_interval')
 
         # noinspection PyBroadException
         try:
-            async with aiohttp.ClientSession() as client:
-                resp = await client.get(
-                    f"http://autossh.top/api/txt/{api_key}/{country}/{limit}"
-                )
-                await actions.insert_ssh_from_file_content(await resp.text())
+            async with aio_as_trio(aiohttp.ClientSession()) as client:
+                resp = await aio_as_trio(client.get)(f"http://autossh.top/api/txt/{api_key}/{country}/{limit}")
+                actions.insert_ssh_from_file_content(await aio_as_trio(resp.text)())
         except Exception:
             pass
-        await asyncio.sleep(interval)
-
-    def get_new_task(self):
-        if not config.get('sshstore_enabled'):
-            return
-        return asyncio.ensure_future(self.run_get())
 
 
-class AllTasksRunner(ConcurrentTask):
-    """
-    Task that run all other tasks in a proper order and manage them.
-    """
-
-    def __init__(self):
-        super().__init__()
-        self.concurrent_tasks: List[ConcurrentTask] = []
-        self.sync_tasks: Deque[SyncTask] = deque()
-
-        for name, cls in globals().items():
-            excluded_classes = [ConcurrentTask, SyncTask, AllTasksRunner]
-            if isclass(cls) and cls not in excluded_classes:
-                if issubclass(cls, ConcurrentTask):
-                    self.concurrent_tasks.append(cls())
-                elif issubclass(cls, SyncTask):
-                    self.sync_tasks.append(cls())
-
-        self.tasks = [
-            asyncio.ensure_future(task.run()) for task in self.concurrent_tasks
-        ]
-
-    @property
-    def tasks_limit(self):
-        return 50
-
-    async def stop(self):
-        await super().stop()
-        for task in self.concurrent_tasks:
-            await task.stop()
-
-    def get_new_task(self) -> asyncio.Task:
-        count = 0
-        while count < len(self.sync_tasks):
-            task = self.sync_tasks[0]
-            self.sync_tasks.rotate(-1)
-            result = task.run()
-            if isawaitable(result):
-                return result
-            count += 1
+async def run_all_tasks():
+    async with trio.open_nursery() as nursery:
+        ssh_check = SSHCheckTask()
+        port_check = PortCheckTask()
+        nursery.start_soon(ssh_check.run_task)
+        nursery.start_soon(port_check.run_task)
+        nursery.start_soon(download_sshstore_ssh)

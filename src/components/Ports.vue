@@ -38,7 +38,7 @@
             <i v-if="!portInfo.time_connected"
                class="fi fi-neutral"
                style="color: darkgoldenrod"></i>
-            <i v-else-if="portInfo.external_ip === portInfo.ssh.ip"
+            <i v-else-if="portInfo.public_ip === portInfo.ssh.ip"
                class="fi fi-slightly-smile"
                style="color: green"></i>
             <i v-else class="fi fi-frowning" style="color: red"></i>

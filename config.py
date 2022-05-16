@@ -19,10 +19,7 @@ class ConfigItem:
 DEFAULT_CONFIG = [
     ConfigItem(
         'SSH', 'tasks_count', 'ssh_tasks_count', 50,
-        "Số thread check SSH live/die"),
-    ConfigItem(
-        'PORT', 'tasks_count', 'port_tasks_count', 10,
-        "Số thread quản lý Port và kết nối SSH đến Port"),
+        "Số thread check fresh SSH"),
     ConfigItem(
         'PORT', 'use_unique_ssh', 'use_unique_ssh', False,
         "Không dùng lại các SSH đã dùng ở mỗi Port"
@@ -33,10 +30,6 @@ DEFAULT_CONFIG = [
     ConfigItem(
         'PORT', 'reset_interval', 'port_reset_interval', 60,
         "Thời gian reset IP từng port (đổi IP mỗi x giây)"),
-    ConfigItem(
-        'WEB', 'workers', 'web_workers_count', 5,
-        "Số workers chạy web (tăng tốc độ truy cập giao diện web)",
-        need_restart=True),
     ConfigItem(
         'WEB', 'port', 'web_port', 6080,
         "Port chạy web (truy cập web bằng link http://<ip>:<port>)",

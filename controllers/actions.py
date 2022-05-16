@@ -1,12 +1,13 @@
-import asyncio
 import logging
 from typing import List
 
 import psutil
-from pony.orm import db_session
+import trio
+from pony.orm import TransactionIntegrityError, commit, db_session
+from trio_asyncio import aio_as_trio
 
 import utils
-from controllers import putty_controllers
+from controllers import ssh_controllers
 from models import Port, SSH
 
 logger = logging.getLogger('Actions')
@@ -14,22 +15,26 @@ logger = logging.getLogger('Actions')
 
 async def check_ssh_status(ssh: SSH):
     """
-    Check for SSH live/die status and save to db
+    Check for SSH live/die status.
 
     :param ssh: Target SSH
     """
-    is_live = await putty_controllers.verify_ssh(ssh.ip, ssh.username, ssh.password)
+    SSH.begin_checking(ssh)
+    is_live = await aio_as_trio(ssh_controllers.verify_ssh)(ssh.ip, ssh.username, ssh.password)
     SSH.end_checking(ssh, is_live=is_live)
 
 
 async def check_port_ip(port: Port):
     """
-    Check for port's external IP and save to db
+    Check for port's external IP.
 
     :param port: Target port
+    :return:
     """
-    ip = await utils.get_proxy_ip(port.proxy_address)
-    Port.end_checking(port, external_ip=ip)
+    Port.begin_checking(port)
+    ip = await aio_as_trio(utils.get_proxy_ip)(port.proxy_address)
+    Port.end_checking(port, public_ip=ip)
+    return ip
 
 
 async def connect_ssh_to_port(ssh: SSH, port: Port):
@@ -40,17 +45,20 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
     :param ssh: Connecting SSH
     """
     try:
-        await putty_controllers.connect_ssh(ssh.ip, ssh.username, ssh.password,
-                                            port=port.port_number)
+        await aio_as_trio(ssh_controllers.connect_ssh)(
+            ssh.ip, ssh.username, ssh.password, port=port.port_number
+        )
         is_connected = True
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTED SUCCESSFULLY")
-    except putty_controllers.PuttyError:
+    except ssh_controllers.SSHError:
         is_connected = False
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTION FAILED")
 
-    port.is_connected = is_connected
-    if not is_connected:
-        port.disconnect_ssh(ssh, remove_from_used=True)
+    with db_session:
+        port = Port[port.id]
+        port.is_connected = is_connected
+        if not is_connected:
+            port.disconnect_ssh(remove_from_used=True)
 
 
 async def reconnect_port_using_ssh(port: Port, ssh: SSH):
@@ -60,8 +68,6 @@ async def reconnect_port_using_ssh(port: Port, ssh: SSH):
     :param port: Port
     :param ssh: SSH
     """
-    logger.debug(f"Port {port.port_number:<5} - KILLING PROCESS")
-    await utils.kill_process_on_port(port.port_number)
     logger.debug(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - RECONNECTING")
     await connect_ssh_to_port(ssh, port)
     logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - RECONNECTED SUCCESSFULLY")
@@ -76,24 +82,21 @@ async def reset_ports(ports: List[Port], unique=True, delete_ssh=False):
     for the same Port
     :param delete_ssh: Set to True to delete all used SSHs
     """
-    tasks = []
-    with db_session:
-        for port in ports:
-            port = Port[port.id]  # Load port.ssh
-            used_ssh = port.ssh
-            port.disconnect_ssh(used_ssh)
-            if delete_ssh:
-                used_ssh.delete()
+    async with trio.open_nursery() as nursery:
+        with db_session:
+            for port in ports:
+                # Disconnect SSH from port
+                port = Port[port.id]  # Load port.ssh
+                used_ssh = port.ssh
+                port.disconnect_ssh(used_ssh)
+                if delete_ssh:
+                    used_ssh.delete()
 
-            ssh = SSH.get_ssh_for_port(port, unique=unique)
-            if ssh:
-                port.assign_ssh(ssh)
-                tasks.append(asyncio.ensure_future(
-                    reconnect_port_using_ssh(port, ssh))
-                )
-
-    for task in tasks:
-        await task
+                # Reconnect new SSH to port
+                ssh = SSH.get_ssh_for_port(port, unique=unique)
+                if ssh:
+                    port.assign_ssh(ssh)
+                    nursery.start_soon(reconnect_port_using_ssh, port, ssh)
 
 
 def reset_old_status():
@@ -118,7 +121,7 @@ def kill_child_processes():
     psutil.wait_procs(children)
 
 
-async def insert_ssh_from_file_content(file_content):
+def insert_ssh_from_file_content(file_content):
     """
     Insert SSH into database from file content. Will skip SSH that are already
     in the database.
@@ -129,9 +132,12 @@ async def insert_ssh_from_file_content(file_content):
     created_ssh = []
     with db_session:
         for ssh_info in utils.parse_ssh_file(file_content):
-            if not SSH.exists(**ssh_info):
-                # Only create if it does not exist
+            try:
                 s = SSH(**ssh_info)
+                commit()
                 created_ssh.append(s)
+            except TransactionIntegrityError:
+                continue
         logger.info(f"Inserted {len(created_ssh)} SSH from file content")
+
     return created_ssh

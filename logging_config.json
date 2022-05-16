@@ -28,13 +28,6 @@
       ],
       "level": "WARNING",
       "propagate": false
-    },
-    "uvicorn.error": {
-      "handlers": [
-        "console"
-      ],
-      "level": "INFO",
-      "propagate": false
     }
   }
 }

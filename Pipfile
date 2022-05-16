@@ -15,6 +15,12 @@ aiofiles = "*"
 jinja2 = "*"
 websockets = "*"
 python-multipart = "*"
+asyncssh = "*"
+cryptography = "*"
+trio = "*"
+trio-asyncio = "*"
+hypercorn = {extras = ["trio"], version = "*"}
+pendulum = "*"
 
 [dev-packages]
 pyinstaller = "*"

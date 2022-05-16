@@ -1,4 +1,5 @@
 import json
+from typing import Dict
 
 from fastapi.routing import APIRouter
 
@@ -8,10 +9,12 @@ from models.io_models import SettingsInOut, SettingsUpdateResult
 router = APIRouter()
 
 
-@router.get('/')
+@router.get('', response_model=SettingsInOut)
 def get_all_settings():
     """
-    Get all settings
+    Lấy thông tin mọi Settings.
+
+    :return: Danh sách thông tin Settings
     """
     args = {
         i.full_name: config.get_by_item(i) for i in config.DEFAULT_CONFIG
@@ -19,10 +22,14 @@ def get_all_settings():
     return SettingsInOut(**args)
 
 
-@router.post('/')
+@router.post('', response_model=SettingsUpdateResult)
 def update_settings(settings: SettingsInOut):
     """
-    Update settings
+    Cập nhật Settings.
+
+    :param settings: Thông tin Settings mới
+
+    :return:
     """
     conf = config.get_config()
     need_restart = False
@@ -40,18 +47,22 @@ def update_settings(settings: SettingsInOut):
     return SettingsUpdateResult(need_restart=need_restart)
 
 
-@router.delete('/')
+@router.delete('')
 def reset_all_settings():
     """
-    Resset all settings to default values
+    Đặt lại toàn bộ Settings.
+
+    :return:
     """
     config.reset_config()
 
 
-@router.get('/names/')
+@router.get('/names', response_model=Dict[str, str])
 def get_settings_names():
     """
-    Get settings display names
+    Lấy thông tin tên hiển thị của các Settings.
+
+    :return: Tên hiển thị của các Settings
     """
     names = {}
     for item in config.DEFAULT_CONFIG:

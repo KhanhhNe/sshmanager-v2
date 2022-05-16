@@ -1,11 +1,12 @@
 {
   "name": "sshmanager",
+  "description": "Quản lý SSH chuyên nghiệp và nhanh chóng",
   "version": "2.1.8",
   "private": false,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "build-watch": "vue-cli-service build --mode=development --watch --no-clean",
+    "build": "vue-cli-service build --dest=build/web_dist",
+    "build-watch": "vue-cli-service build --dest=build/web_dist --mode=development --watch --no-clean",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
@@ -14,6 +15,7 @@
     "core-js": "^3.6.5",
     "file-saver": "^2.0.5",
     "fontisto": "^3.0.4",
+    "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "sass": "^1.38.1",
     "sass-loader": "^10.1.1",

@@ -5,8 +5,8 @@
         class="update-available"
     >Đã có phiên bản mới {{ newVersion }}!</span>
     <SSHList
-        :sshList="sshList"
-        :title="`SSH (${sshList.length})`"
+        :sshList="sortedList"
+        :title="`SSH (${sortedList.length})`"
         @add-ssh="sshRequest($event, 'post')"
         @delete-ssh="sshRequest($event, 'delete')"
         class="all-ssh"/>
@@ -50,6 +50,7 @@ import Settings from './components/Settings.vue'
 import tippy from 'tippy.js'
 import '@picocss/pico'
 import 'fontisto'
+import _ from 'lodash';
 
 export default {
   name: 'App',
@@ -61,8 +62,6 @@ export default {
   },
   data() {
     return {
-      sshSocket: new WebSocket(`ws://${location.host}/api/ssh/`),
-      portsSocket: new WebSocket(`ws://${location.host}/api/ports/`),
       sshList: [],
       ports: [],
       settings: [],
@@ -77,43 +76,48 @@ export default {
     },
     dieList() {
       return this.sshList.filter(ssh => ssh.last_checked !== null && !ssh.is_live)
+    },
+    sortedList() {
+      return _.orderBy(this.sshList, ({last_checked}) => last_checked || '', ['desc'])
     }
   },
   methods: {
     /**
-     * Send request to /api/ssh/ with SSH list and specified method, then
-     * request an update from server via WebSocket
+     * Send request to /api/ssh with SSH list and specified method
      * @param sshList
      * @param method
      * @returns {Promise<void>}
      */
     async sshRequest(sshList, method) {
-      await fetch('/api/ssh/', {
+      if (method === 'delete') {
+        sshList = _.map(sshList, ssh => ssh.id)
+      }
+      await fetch('/api/ssh', {
         method,
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(sshList)
       })
-      this.sshSocket.send('update')
     },
 
     /**
-     * Send request to /api/ports/ with ports and specified method, then request
-     * an update from server via WebSocket
+     * Send request to /api/ports with ports and specified method
      * @param ports
      * @param method
      * @returns {Promise<void>}
      */
     async portsRequest(ports, method) {
-      await fetch('/api/ports/', {
+      if (['put', 'delete'].includes(method)) {
+        ports = _.map(ports, port => port.port_number)
+      }
+      await fetch('/api/ports', {
         method,
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(ports)
       })
-      this.portsSocket.send('update')
     },
 
     /**
@@ -122,8 +126,8 @@ export default {
      * @returns {Promise<void>}
      */
     async getSettings() {
-      const settingsValues = await (await fetch('/api/settings/')).json()
-      const settingsNames = await (await fetch('/api/settings/names/')).json()
+      const settingsValues = await (await fetch('/api/settings')).json()
+      const settingsNames = await (await fetch('/api/settings/names')).json()
       const settings = []
       for (const [name, value] of Object.entries(settingsValues)) {
         const readable_name = settingsNames[name]
@@ -142,7 +146,7 @@ export default {
       for (const setting of newSettings) {
         settings[setting.name] = setting.value
       }
-      this.needRestart = await (await fetch('/api/settings/', {
+      this.needRestart = await (await fetch('/api/settings', {
         method: 'post',
         headers: {
           'Content-Type': 'application/json'
@@ -157,22 +161,82 @@ export default {
      * @returns {Promise<void>}
      */
     async resetSettings() {
-      await fetch('/api/settings/', {method: 'delete'})
+      await fetch('/api/settings', {method: 'delete'})
       this.needRestart = false
       await this.getSettings()
     }
+  },
+  beforeCreate() {
   },
   mounted() {
     fetch('/openapi.json').then(resp => resp.json()).then(data => {
       document.title = `SSHManager v${data.info.version}`
     })
+
+    function setupWebsocket(objectsList, endpoint) {
+      let socket, updateInterval
+      let lastModified = null
+      connect()
+
+      function connect() {
+        try {
+          if (socket) socket.close()
+          socket = new WebSocket(endpoint)
+          addListeners(socket)
+        } catch (e) {
+          console.error(e)
+          setTimeout(connect, 1000)
+        }
+      }
+
+      function requestUpdate() {
+        if (socket.readyState !== WebSocket.OPEN) return
+
+        socket.send(JSON.stringify({
+          last_modified: lastModified,
+          ids: _.map(objectsList, item => item.id)
+        }))
+      }
+
+      function addListeners(s) {
+        s.addEventListener('open', function () {
+          requestUpdate()
+          clearInterval(updateInterval)
+          updateInterval = setInterval(requestUpdate, 200)
+        })
+
+        s.addEventListener('message', function (event) {
+          const data = JSON.parse(event.data)
+          lastModified = data.last_modified || lastModified
+
+          // Update/Insert objects from database
+          for (const item of data.objects) {
+            const itemInList = _.find(objectsList, val => val.id === item.id)
+            if (itemInList) {
+              Object.assign(itemInList, item)
+            } else {
+              objectsList.push(item)
+            }
+          }
+
+          // Remove objects that no longer in the database
+          for (const itemId of data.removed) {
+            const itemIndex = _.findIndex(objectsList, item => item.id === itemId)
+            if (itemIndex !== -1) {
+              objectsList.splice(itemIndex, 1)
+            }
+          }
+        })
+
+        s.addEventListener('close', () => setTimeout(connect, 1000))
+      }
+    }
+
+    setupWebsocket(this.sshList, `ws://${location.host}/api/ssh`)
+    setupWebsocket(this.ports, `ws://${location.host}/api/ports`)
+
     const self = this
-    this.sshSocket.addEventListener('message', function (event) {
-      self.sshList = JSON.parse(event.data)
-    })
-    this.portsSocket.addEventListener('message', function (event) {
-      self.ports = JSON.parse(event.data)
-    })
+
     this.getSettings()
     tippy('[data-tippy-content]')
 
