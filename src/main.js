@@ -4,6 +4,7 @@ import moment from "moment";
 
 moment.locale('vi')
 
-createApp({
+const app = createApp({
     render: () => h(App),
-}).mount('#app')
+})
+app.mount('#app')

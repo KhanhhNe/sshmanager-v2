@@ -53,8 +53,8 @@
           style="display: none">
     </div>
 
-    <div v-if="!readOnly" class="footer">
-      <small>{{ checkSpeed }} <sub>SSH/phút</sub></small>
+    <div class="footer">
+      <small v-if="!readOnly">{{ checkSpeed }} <sub>SSH/phút</sub></small>
       <div>
         <label>Hiển thị</label>
         <select v-model="displayLimit" style="width: 6rem">
@@ -142,9 +142,11 @@ export default {
     }
   },
   mounted() {
-    if (!this.readOnly) {
-      setInterval(this.updateCheckSpeed, 1000)
+    if (this.readOnly) {
+      return
     }
+
+    setInterval(this.updateCheckSpeed, 1000)
   }
 }
 </script>
