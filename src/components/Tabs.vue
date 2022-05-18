@@ -1,14 +1,16 @@
 <template>
   <div class="tabs-wrapper">
     <ul>
-      <li v-for="tab in tabs" :key="tab.title">
+      <li v-for="tab in tabs" :key="tabTitle(tab)">
         <button
             @click="selectTab(tab)"
-            :class="tab !== currentTab ? 'outline' : ''">{{ tab.title }}
+            :class="tab !== currentTab ? 'outline' : ''">{{ tabTitle(tab) }}
         </button>
       </li>
     </ul>
-    <slot></slot>
+    <div class="tabs" ref="tabs">
+      <slot></slot>
+    </div>
   </div>
 </template>
 
@@ -17,8 +19,8 @@ export default {
   name: "Tabs",
   data() {
     return {
-      currentTab: undefined,
-      tabs: []
+      tabs: [],
+      currentTab: undefined
     }
   },
   methods: {
@@ -27,16 +29,19 @@ export default {
      * @param tab
      */
     selectTab(tab) {
-      this.tabs.forEach(tab => tab.$el.classList.add('hidden'))
+      this.tabs.forEach(tab => tab.classList.add('hidden'))
       this.currentTab = tab || this.currentTab
       if (this.currentTab) {
-        this.currentTab.$el.classList.remove('hidden')
+        this.currentTab.classList.remove('hidden')
       }
+    },
+
+    tabTitle(tab) {
+      return tab.querySelector('.title').textContent
     }
   },
   mounted() {
-    // Get tabs from children and select the first one
-    this.tabs = this.$children
+    this.tabs = this.$refs.tabs.children
     this.selectTab(this.tabs[0])
   }
 }
@@ -67,9 +72,20 @@ export default {
       }
     }
   }
+
+  .tabs {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 0;
+
+    & > * {
+      flex-grow: 1;
+    }
+  }
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 </style>

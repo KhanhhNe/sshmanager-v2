@@ -23,12 +23,12 @@ export default {
   margin-bottom: 1rem;
   white-space: nowrap;
 
-  & > div:not(:first-child) {
+  & > div {
     display: flex;
     align-items: center;
     gap: 0.75rem;
 
-    & > div {
+    & > :deep(div) {
       display: flex;
       gap: 0.2rem;
       align-items: center;

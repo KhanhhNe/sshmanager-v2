@@ -1,11 +1,9 @@
-import Vue from 'vue'
+import {createApp, h} from 'vue'
 import App from './App.vue'
 import moment from "moment";
 
 moment.locale('vi')
 
-Vue.config.productionTip = false
-
-new Vue({
-  render: h => h(App),
-}).$mount('#app')
+createApp({
+    render: () => h(App),
+}).mount('#app')

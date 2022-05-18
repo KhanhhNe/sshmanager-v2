@@ -155,8 +155,12 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style lang="scss" scoped>
 article {
+  display: flex;
+  flex-direction: column;
+
   .list-content {
-    display: flex;
+    flex-grow: 1;
+    min-height: 0;
     overflow: auto;
 
     textarea {
