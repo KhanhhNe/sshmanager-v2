@@ -1,10 +1,10 @@
 <template>
   <div class="tabs-wrapper">
     <ul>
-      <li v-for="tab in tabs" :key="tabTitle(tab)">
+      <li v-for="tab in tabs" :key="tab.title">
         <button
             @click="selectTab(tab)"
-            :class="tab !== currentTab ? 'outline' : ''">{{ tabTitle(tab) }}
+            :class="tab !== currentTab ? 'outline' : ''">{{ tab.title }}
         </button>
       </li>
     </ul>
@@ -15,6 +15,8 @@
 </template>
 
 <script>
+import _ from "lodash";
+
 export default {
   name: "Tabs",
   data() {
@@ -34,15 +36,19 @@ export default {
       if (this.currentTab) {
         this.currentTab.classList.remove('hidden')
       }
-    },
-
-    tabTitle(tab) {
-      return tab.querySelector('.title').textContent
     }
   },
   mounted() {
     this.tabs = this.$refs.tabs.children
     this.selectTab(this.tabs[0])
+    const self = this
+
+    setInterval(function updateTitle() {
+      self.tabs = _.map(self.$refs.tabs.children, tab => {
+        tab.title = tab.querySelector('.title').textContent
+        return tab
+      })
+    })
   }
 }
 </script>

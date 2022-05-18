@@ -1,8 +1,7 @@
 <!--suppress JSUnresolvedVariable -->
 <template>
   <article>
-    <ArticleTitle>
-      <template v-slot:title>{{ title }}</template>
+    <ArticleTitle :title="title">
       <div>
         <input
             type="text"
