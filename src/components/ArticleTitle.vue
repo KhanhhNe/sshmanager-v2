@@ -3,7 +3,9 @@
     <h2>
       <slot name="title"></slot>
     </h2>
-    <slot></slot>
+    <div>
+      <slot></slot>
+    </div>
   </div>
 </template>
 
@@ -16,25 +18,21 @@ export default {
 <style lang="scss" scoped>
 .title {
   display: flex;
-  align-items: stretch;
   justify-content: space-between;
-  height: 2.5rem;
+  align-items: center;
   margin-bottom: 1rem;
+  white-space: nowrap;
 
-  h2 {
-    margin-bottom: 0;
-  }
+  & > div:not(:first-child) {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 
-  & > *:nth-child(n+2) {
-    width: auto;
-    height: 100%;
-    padding: 0.5rem 0.75rem;
-    box-sizing: border-box;
-    margin: 0 0.25rem 0 0;
-  }
-
-  & > *:nth-child(2) {
-    margin-left: auto;
+    & > div {
+      display: flex;
+      gap: 0.2rem;
+      align-items: center;
+    }
   }
 }
 </style>

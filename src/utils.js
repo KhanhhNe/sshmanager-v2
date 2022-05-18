@@ -16,18 +16,6 @@ function getTimeDisplay(timeString) {
 
 
 /**
- * Compare 2 SSH objects by IP, username and password
- * @param ssh SSH object
- * @param otherSSH SSH object
- */
-function isSameSSH(ssh, otherSSH) {
-    return (
-        ssh.ip === otherSSH.ip &&
-        ssh.username === otherSSH.username &&
-        ssh.password === otherSSH.password)
-}
-
-/**
  * Get SSH display text, in format of status|ip|username|password
  * @param ssh SSH object
  * @returns {string} SSH display text
@@ -37,57 +25,7 @@ function getSshText(ssh) {
 }
 
 
-/**
- * Check whether the SSH is in list or not
- * @param ssh SSH object
- * @param sshList SSH list to find
- * @returns {boolean}
- */
-function isInList(ssh, sshList) {
-    for (const s of sshList) {
-        if (isSameSSH(s, ssh))
-            return true
-    }
-    return false
-}
-
-
-/**
- * Read a file as text
- * @param file File object
- * @returns {Promise<String>}
- */
-function readFileAsText(file) {
-    const reader = new FileReader()
-    return new Promise(resolve => {
-        reader.addEventListener('load', event => {
-            resolve(event.target.result)
-        })
-        reader.readAsText(file)
-    })
-}
-
-
-/**
- * Search in a list to find an object with given id.
- * @param list The list to search from
- * @param id Object Id to search for
- * @returns The item with given id, null if none found.
- */
-function findItemById(list, id) {
-    for (const item of list) {
-        if (item.id === id) {
-            return item
-        }
-    }
-    return null
-}
-
-
 module.exports = {
     getTimeDisplay,
-    getSshText,
-    isInList,
-    readFileAsText,
-    findItemById
+    getSshText
 }

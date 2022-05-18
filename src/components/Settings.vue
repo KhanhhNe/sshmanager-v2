@@ -1,5 +1,5 @@
 <template>
-  <article v-show="!hidden">
+  <article>
     <ArticleTitle>
       <template v-slot:title>{{ title }}</template>
       <div
@@ -59,9 +59,7 @@ export default {
     needRestart: Boolean
   },
   data() {
-    return {
-      hidden: false,
-    }
+    return {}
   },
   methods: {
     updateSettings() {
@@ -82,14 +80,6 @@ export default {
   flex-direction: column;
   align-items: flex-end;
   overflow: auto;
-
-  table {
-    table-layout: auto;
-
-    tr td:first-child {
-      white-space: nowrap;
-    }
-  }
 
   input {
     height: 2rem !important;

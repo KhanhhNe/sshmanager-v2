@@ -4,13 +4,21 @@
         v-if="newVersion && newVersion !== currentVersion"
         class="update-available"
     >Đã có phiên bản mới {{ newVersion }}!</span>
-    <SSHList
-        :sshList="sortedList"
-        :title="`SSH (${sortedList.length})`"
-        @add-ssh="sshRequest($event, 'post')"
-        @delete-ssh="sshRequest($event, 'delete')"
-        class="all-ssh"/>
     <Tabs class="live-die">
+      <Ports
+          :ports="ports"
+          :title="`Ports (${ports.length})`"
+          @add-ports="portsRequest($event, 'post')"
+          @reset-port="portsRequest($event, 'put')"
+          @remove-port="portsRequest($event, 'delete')"
+      />
+    </Tabs>
+    <Tabs class="all-ssh">
+      <SSHList
+          :sshList="sortedList"
+          :title="`SSH (${sortedList.length})`"
+          @add-ssh="sshRequest($event, 'post')"
+          @delete-ssh="sshRequest($event, 'delete')"/>
       <SSHList
           :sshList="liveList"
           :title="`Live (${liveList.length})`"
@@ -21,13 +29,6 @@
           :title="`Die (${dieList.length})`"
           @delete-ssh="sshRequest($event, 'delete')"
           :readOnly="true"/>
-      <Ports
-          :ports="ports"
-          :title="`Ports (${ports.length})`"
-          @add-ports="portsRequest($event, 'post')"
-          @reset-port="portsRequest($event, 'put')"
-          @remove-port="portsRequest($event, 'delete')"
-      />
     </Tabs>
     <Tabs>
       <Settings
@@ -257,6 +258,64 @@ export default {
 <style lang="scss">
 @use "sass:math";
 
+$base-font-size: 15px;
+
+h1, h2, h3, h4, h5, h6 {
+  --typography-spacing-vertical: 0;
+}
+
+:root {
+  --font-size: #{$base-font-size};
+  --spacing: 0.5rem;
+  --form-element-spacing-vertical: 0.5rem;
+  --form-element-spacing-horizontal: 0.75rem;
+  --border-radius: 0.5rem;
+}
+
+@media (min-width: 576px) {
+  :root {
+    --font-size: #{$base-font-size + 1};
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --font-size: #{$base-font-size + 2};
+  }
+}
+
+@media (min-width: 992px) {
+  :root {
+    --font-size: #{$base-font-size + 3};
+  }
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --font-size: #{$base-font-size + 4};
+  }
+}
+
+article {
+  margin: 0;
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  & > :last-child {
+    flex-grow: 1;
+  }
+
+  table {
+    margin-bottom: auto;
+  }
+}
+
+input, select, textarea, button {
+  margin-bottom: 0 !important;
+}
+
 .update-available {
   position: absolute;
   bottom: 0;
@@ -266,17 +325,15 @@ export default {
 
 #app {
   $padding: 1rem;
-  $gap: 1rem;
-  $used_space_vertical: $padding - math.div($gap, 2);
-  $used_space_horizontal: $padding - math.div($gap, 2);
+  $gap: 2rem;
   height: 100vh;
   padding: $padding;
   display: grid;
   grid-template-areas:
-      "live-die all"
-      "settings all";
-  grid-auto-columns: calc(50% - #{$used_space_vertical}) calc(50% - #{$used_space_vertical});
-  grid-auto-rows: calc(50% - #{$used_space_vertical}) calc(50% - #{$used_space_horizontal});
+      "all live-die"
+      "all settings";
+  grid-auto-columns: calc(60% - #{$padding}) calc(40% - #{$padding});
+  grid-auto-rows: calc(50% - #{$padding}) calc(50% - #{$padding});
   gap: $gap;
   overflow: hidden;
 
@@ -294,26 +351,6 @@ export default {
 
   .settings {
     grid-area: settings;
-  }
-
-  article {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    margin: 0;
-    padding: 1rem;
-
-    & > *:last-child {
-      flex-grow: 1;
-    }
-
-    table {
-      margin-bottom: auto;
-
-      td, th {
-        padding: 0.25rem;
-      }
-    }
   }
 }
 </style>
