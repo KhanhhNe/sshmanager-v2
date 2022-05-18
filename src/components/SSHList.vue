@@ -1,30 +1,25 @@
 <!--suppress JSUnresolvedVariable -->
 <template>
-  <article v-show="!hidden">
-    <ArticleTitle>
+  <article>
+    <ArticleTitle v-if="!readOnly">
       <template v-slot:title>{{ title }}</template>
-      <small v-if="!readOnly">{{ checkSpeed }} <sub>SSH/phút</sub></small>
-      <label style="padding-right: 0">Hiển thị</label>
-      <select v-model="displayLimit" style="margin-right: 0.75rem">
-        <option :value="200" selected>200</option>
-        <option :value="500">500</option>
-        <option :value="1000">1000</option>
-        <option :value="2000">2000</option>
-        <option :value="Infinity">Tất cả</option>
-      </select>
-      <button
-          v-if="!readOnly"
-          v-on:click="$refs.fileInput.click()"
-          data-tippy-content="Tải lên"><i class="fi fi-upload"></i></button>
-      <button
-          @click="downloadSSHList"
-          data-tippy-content="Tải xuống"
-          style="margin-right: 0.75rem"><i class="fi fi-download"></i></button>
+      <div>
+        <button
+            v-on:click="$refs.fileInput.click()"
+            data-tippy-content="Tải lên"><i class="fi fi-upload"></i></button>
+        <button
+            @click="downloadSSHList"
+            data-tippy-content="Tải xuống"><i class="fi fi-download"></i></button>
+      </div>
       <button
           @click="$emit('delete-ssh', sshList)"
           data-tippy-content="Xoá"
           class="secondary outline"><i class="fi fi-trash"></i></button>
     </ArticleTitle>
+    <ArticleTitle v-if="readOnly">
+      <template v-slot:title>{{ title }}</template>
+    </ArticleTitle>
+
     <div class="list-content">
       <table>
         <thead>
@@ -60,6 +55,20 @@
           accept="text/plain, text/csv"
           style="display: none">
     </div>
+
+    <div v-if="!readOnly" class="footer">
+      <small>{{ checkSpeed }} <sub>SSH/phút</sub></small>
+      <div>
+        <label>Hiển thị</label>
+        <select v-model="displayLimit" style="width: 6rem">
+          <option :value="200" selected>200</option>
+          <option :value="500">500</option>
+          <option :value="1000">1000</option>
+          <option :value="2000">2000</option>
+          <option :value="Infinity">Tất cả</option>
+        </select>
+      </div>
+    </div>
   </article>
 </template>
 
@@ -77,7 +86,6 @@ export default {
   },
   data() {
     return {
-      hidden: false,
       displayLimit: 200,
       checkSpeed: 0
     }
@@ -169,6 +177,20 @@ article {
       &.die td:first-child {
         color: red
       }
+    }
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    margin-left: auto;
+
+    & > div {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
     }
   }
 }

@@ -1,15 +1,16 @@
 <!--suppress JSUnresolvedVariable -->
 <template>
-  <article v-show="!hidden">
+  <article>
     <ArticleTitle>
       <template v-slot:title>{{ title }}</template>
       <input
           type="text"
           v-model="portsText"
           placeholder="8080,8000-8005,...">
-      <button
+      <a
           @click="addPorts"
-          data-tippy-content="Thêm ports"><i class="fi fi-plus-a"></i></button>
+          role="button"
+          data-tippy-content="Thêm ports"><i class="fi fi-plus-a"></i></a>
     </ArticleTitle>
     <div class="ports">
       <table>
@@ -85,7 +86,6 @@ export default {
   },
   data() {
     return {
-      hidden: false,
       showPortsInput: false,
       portsText: ''
     }
@@ -169,12 +169,6 @@ article {
       margin-bottom: auto;
       margin-right: 0.5rem;
     }
-  }
-
-  input {
-    padding: 0 0.25rem !important;
-    height: auto !important;
-    width: 35% !important;
   }
 }
 </style>

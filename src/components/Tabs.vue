@@ -27,10 +27,10 @@ export default {
      * @param tab
      */
     selectTab(tab) {
-      this.tabs.forEach(tab => tab.hidden = true)
+      this.tabs.forEach(tab => tab.$el.classList.add('hidden'))
       this.currentTab = tab || this.currentTab
       if (this.currentTab) {
-        this.currentTab.hidden = false
+        this.currentTab.$el.classList.remove('hidden')
       }
     }
   },
@@ -49,7 +49,6 @@ export default {
 
   ul {
     display: flex;
-    gap: 1rem;
     padding: 0;
     margin: 0;
 
@@ -57,10 +56,20 @@ export default {
       flex-grow: 1;
       list-style-type: none;
 
-      button {
-        margin: 0;
+      &:not(:first-child) button {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+      }
+
+      &:not(:last-child) button {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
       }
     }
   }
+}
+
+.hidden {
+  display: none;
 }
 </style>
