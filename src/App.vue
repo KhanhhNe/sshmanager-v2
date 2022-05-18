@@ -50,6 +50,7 @@ import tippy from 'tippy.js'
 import '@picocss/pico'
 import 'fontisto'
 import _ from 'lodash';
+import {setupWebsocket} from "@/utils";
 
 export default {
   name: 'App',
@@ -165,71 +166,10 @@ export default {
       await this.getSettings()
     }
   },
-  beforeCreate() {
-  },
   mounted() {
     fetch('/openapi.json').then(resp => resp.json()).then(data => {
       document.title = `SSHManager v${data.info.version}`
     })
-
-    function setupWebsocket(objectsList, endpoint) {
-      let socket, updateInterval
-      let lastModified = null
-      connect()
-
-      function connect() {
-        try {
-          if (socket) socket.close()
-          socket = new WebSocket(endpoint)
-          addListeners(socket)
-        } catch (e) {
-          console.error(e)
-          setTimeout(connect, 1000)
-        }
-      }
-
-      function requestUpdate() {
-        if (socket.readyState !== WebSocket.OPEN) return
-
-        socket.send(JSON.stringify({
-          last_modified: lastModified,
-          ids: _.map(objectsList, item => item.id)
-        }))
-      }
-
-      function addListeners(s) {
-        s.addEventListener('open', function () {
-          requestUpdate()
-          clearInterval(updateInterval)
-          updateInterval = setInterval(requestUpdate, 200)
-        })
-
-        s.addEventListener('message', function (event) {
-          const data = JSON.parse(event.data)
-          lastModified = data.last_modified || lastModified
-
-          // Update/Insert objects from database
-          for (const item of data.objects) {
-            const itemInList = _.find(objectsList, val => val.id === item.id)
-            if (itemInList) {
-              Object.assign(itemInList, item)
-            } else {
-              objectsList.push(item)
-            }
-          }
-
-          // Remove objects that no longer in the database
-          for (const itemId of data.removed) {
-            const itemIndex = _.findIndex(objectsList, item => item.id === itemId)
-            if (itemIndex !== -1) {
-              objectsList.splice(itemIndex, 1)
-            }
-          }
-        })
-
-        s.addEventListener('close', () => setTimeout(connect, 1000))
-      }
-    }
 
     setupWebsocket(this.sshList, `ws://${location.host}/api/ssh`)
     setupWebsocket(this.ports, `ws://${location.host}/api/ports`)
