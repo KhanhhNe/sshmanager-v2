@@ -3,14 +3,17 @@
   <article>
     <ArticleTitle>
       <template v-slot:title>{{ title }}</template>
-      <input
-          type="text"
-          v-model="portsText"
-          placeholder="8080,8000-8005,...">
-      <a
-          @click="addPorts"
-          role="button"
-          data-tippy-content="Thêm ports"><i class="fi fi-plus-a"></i></a>
+      <div>
+        <input
+            type="text"
+            v-model="portsText"
+            placeholder="8080,8000-8005,..."
+            style="width: 10rem">
+        <a
+            @click="addPorts"
+            role="button"
+            data-tippy-content="Thêm ports"><i class="fi fi-plus-a"></i></a>
+      </div>
     </ArticleTitle>
     <div class="ports">
       <table>

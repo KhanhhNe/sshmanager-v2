@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="main-app">
     <span
         v-if="newVersion && newVersion !== currentVersion"
         class="update-available"
@@ -298,18 +298,6 @@ h1, h2, h3, h4, h5, h6 {
 
 article {
   margin: 0;
-
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-
-  & > :last-child {
-    flex-grow: 1;
-  }
-
-  table {
-    margin-bottom: auto;
-  }
 }
 
 input, select, textarea, button {
@@ -323,7 +311,7 @@ input, select, textarea, button {
   font-size: 1rem;
 }
 
-#app {
+#main-app {
   $padding: 1rem;
   $gap: 2rem;
   height: 100vh;
@@ -335,7 +323,7 @@ input, select, textarea, button {
   grid-auto-columns: calc(60% - #{$padding}) calc(40% - #{$padding});
   grid-auto-rows: calc(50% - #{$padding}) calc(50% - #{$padding});
   gap: $gap;
-  overflow: hidden;
+  //overflow: hidden;
 
   .all-ssh {
     grid-area: all;
@@ -351,6 +339,16 @@ input, select, textarea, button {
 
   .settings {
     grid-area: settings;
+  }
+
+  & > * {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    table {
+      margin-bottom: auto;
+    }
   }
 }
 </style>

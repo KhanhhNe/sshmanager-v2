@@ -70,29 +70,34 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.warning {
-  color: red;
-  font-size: 0.85rem;
-}
-
-.content {
+article {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  overflow: auto;
 
-  input {
-    height: 2rem !important;
-    padding: 0.25rem !important;
-    margin: 0 !important;
-    width: 5rem !important;
+  .warning {
+    color: red;
+    font-size: 0.85rem;
+  }
 
-    &[type=checkbox] {
+  .content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    overflow: auto;
+
+    input {
       height: 2rem !important;
-      width: 2rem !important;
+      padding: 0.25rem !important;
+      margin: 0 !important;
+      width: 5rem !important;
 
-      &:not(:checked):after {
-        content: "?";
+      &[type=checkbox] {
+        height: 2rem !important;
+        width: 2rem !important;
+
+        &:not(:checked):after {
+          content: "?";
+        }
       }
     }
   }
