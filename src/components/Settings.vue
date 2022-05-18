@@ -1,7 +1,6 @@
 <template>
   <article>
-    <ArticleTitle>
-      <template v-slot:title>{{ title }}</template>
+    <ArticleTitle :title="title">
       <div
           class="warning"
           v-if="needRestart">Khởi động lại SSHManager để cập nhật cài đặt

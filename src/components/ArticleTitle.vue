@@ -1,8 +1,6 @@
-<template>
+<template ref="title">
   <div class="title">
-    <h2>
-      <slot name="title"></slot>
-    </h2>
+    <h2>{{ title }}</h2>
     <div>
       <slot></slot>
     </div>
@@ -11,7 +9,10 @@
 
 <script>
 export default {
-  name: "ArticleTitle.vue"
+  name: "ArticleTitle.vue",
+  props: {
+    title: String
+  }
 }
 </script>
 

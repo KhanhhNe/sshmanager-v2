@@ -22,12 +22,10 @@
       <SSHList
           :sshList="liveList"
           :title="`Live (${liveList.length})`"
-          @delete-ssh="sshRequest($event, 'delete')"
           :readOnly="true"/>
       <SSHList
           :sshList="dieList"
           :title="`Die (${dieList.length})`"
-          @delete-ssh="sshRequest($event, 'delete')"
           :readOnly="true"/>
     </Tabs>
     <Tabs>
