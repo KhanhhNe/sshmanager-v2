@@ -244,7 +244,7 @@ input, select, textarea, button {
 
 .update-available {
   position: absolute;
-  bottom: 0;
+  top: 95vh;
   color: red;
   font-size: 1rem;
 }
