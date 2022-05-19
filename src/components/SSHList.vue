@@ -1,9 +1,10 @@
 <!--suppress JSUnresolvedVariable -->
 <template>
   <article>
-    <ArticleTitle v-if="!readOnly" :title="title">
+    <ArticleTitle :title="title">
       <div>
         <button
+            v-if="!readOnly"
             v-on:click="$refs.fileInput.click()"
             data-tippy-content="Tải lên"><i class="fi fi-upload"></i></button>
         <button
@@ -15,7 +16,6 @@
           data-tippy-content="Xoá"
           class="secondary outline"><i class="fi fi-trash"></i></button>
     </ArticleTitle>
-    <ArticleTitle v-if="readOnly" :title="title"/>
 
     <div class="list-content">
       <table>
