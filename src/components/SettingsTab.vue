@@ -45,10 +45,10 @@
 </template>
 
 <script>
-import ArticleTitle from "@/components/ArticleTitle";
+import ArticleTitle from '@/components/ArticleTitle'
 
 export default {
-  name: "Settings",
+  name: 'SettingsTab',
   components: {
     ArticleTitle
   },

@@ -14,7 +14,7 @@
             data-tippy-content="Thêm ports"><i class="fi fi-plus-a"></i></a>
       </div>
     </ArticleTitle>
-    <div class="ports">
+    <div class="ports" style="grid-area: ports;">
       <table>
         <thead>
         <tr>
@@ -22,9 +22,9 @@
           <th>IP</th>
           <th>Check</th>
           <th><a
-              role="button"
-              @click="$emit('reset-port', ports)"
-              data-tippy-content="Đổi lại toàn bộ ports"
+            role="button"
+            @click="$emit('reset-port', ports)"
+            data-tippy-content="Đổi lại toàn bộ ports"
           ><i class="fi fi-spinner-refresh"></i></a></th>
           <th><a
               role="button"
@@ -71,14 +71,14 @@
 </template>
 
 <script>
-import ArticleTitle from "@/components/ArticleTitle"
-import {getTimeDisplay} from "@/utils"
-import ClipboardJS from "clipboard"
-import {delegate} from "tippy.js"
-import "tippy.js/dist/tippy.css";
+import ArticleTitle from '@/components/ArticleTitle'
+import {getTimeDisplay} from '@/utils'
+import ClipboardJS from 'clipboard'
+import {delegate} from 'tippy.js'
+import 'tippy.js/dist/tippy.css'
 
 export default {
-  name: "Ports",
+  name: 'PortList',
   components: {
     ArticleTitle
   },
@@ -104,10 +104,10 @@ export default {
           let ports
           if (portText.includes('-')) {
             const [start, stop] = portText
-                .split('-')
-                .map(p => parseInt(p))
+              .split('-')
+              .map(p => parseInt(p))
             ports = [...new Array(stop - start + 1).keys()]
-                .map(val => val + start)
+              .map(val => val + start)
           } else {
             ports = [parseInt(portText)]
           }

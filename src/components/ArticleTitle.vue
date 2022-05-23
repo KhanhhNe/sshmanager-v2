@@ -9,7 +9,7 @@
 
 <script>
 export default {
-  name: "ArticleTitle.vue",
+  name: 'ArticleTitle.vue',
   props: {
     title: String
   }

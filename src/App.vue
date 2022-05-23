@@ -1,72 +1,77 @@
 <template>
-  <div id="main-app">
+  <div id="app">
+    <Navbar style="grid-area: navbar;"></Navbar>
+    <div id="main-app" style="grid-area: main-app;">
     <span
-        v-if="newVersion && newVersion !== currentVersion"
-        class="update-available"
+      v-if="newVersion && newVersion !== currentVersion"
+      class="update-available"
     >Đã có phiên bản mới {{ newVersion }}!</span>
-    <Tabs class="live-die">
-      <Ports
+      <TabsComponent style="grid-area: live-die;">
+        <Ports
           :ports="ports"
           :title="`Ports (${ports.length})`"
           @add-ports="portsRequest($event, 'post')"
           @reset-port="portsRequest($event, 'put')"
           @remove-port="portsRequest($event, 'delete')"
-      />
-    </Tabs>
-    <Tabs class="all-ssh">
-      <SSHList
+        />
+      </TabsComponent>
+      <TabsComponent style="grid-area: all;">
+        <SSHList
           :sshList="sortedList"
           :title="`SSH (${sortedList.length})`"
           @add-ssh="sshRequest($event, 'post')"
           @delete-ssh="sshRequest($event, 'delete')"/>
-      <SSHList
+        <SSHList
           :sshList="liveList"
           :title="`Live (${liveList.length})`"
           :readOnly="true"/>
-      <SSHList
+        <SSHList
           :sshList="dieList"
           :title="`Die (${dieList.length})`"
           :readOnly="true"/>
-    </Tabs>
-    <Tabs>
-      <Settings
+      </TabsComponent>
+      <TabsComponent>
+        <Settings
           title="Settings"
           :settings="settings"
           :needRestart="needRestart"
           @update-settings="updateSettings($event)"
           @reset-settings="resetSettings()"
-          class="settings"/>
-    </Tabs>
+          style="grid-area: settings;"/>
+      </TabsComponent>
+    </div>
   </div>
 </template>
 
 <!--suppress JSUnresolvedVariable -->
 <script>
+import Navbar from '@/components/NavBar'
 import SSHList from './components/SSHList.vue'
-import Tabs from './components/Tabs.vue'
-import Ports from './components/Ports.vue'
-import Settings from './components/Settings.vue'
+import TabsComponent from './components/TabsComponent.vue'
+import Ports from './components/PortList.vue'
+import Settings from './components/SettingsTab.vue'
 import tippy from 'tippy.js'
 import '@picocss/pico'
 import 'fontisto'
-import _ from 'lodash';
-import {setupWebsocket} from "@/utils";
+import _ from 'lodash'
+import {setupWebsocket} from '@/utils'
 
 export default {
   name: 'App',
   components: {
-    Tabs,
+    Navbar,
+    TabsComponent,
     SSHList,
     Ports,
-    Settings,
+    Settings
   },
   data() {
     return {
       sshList: [],
       ports: [],
       settings: [],
-      currentVersion: "",
-      newVersion: "",
+      currentVersion: '',
+      newVersion: '',
       needRestart: false
     }
   },
@@ -180,15 +185,15 @@ export default {
     tippy('[data-tippy-content]')
 
     fetch('/openapi.json')
-        .then(resp => resp.json())
-        .then(json => {
-          self.currentVersion = json.info.version
-        })
+      .then(resp => resp.json())
+      .then(json => {
+        self.currentVersion = json.info.version
+      })
     fetch('https://raw.githubusercontent.com/KhanhhNe/sshmanager-v2/master/package.json')
-        .then(resp => resp.json())
-        .then(json => {
-          self.newVersion = json.version
-        })
+      .then(resp => resp.json())
+      .then(json => {
+        self.newVersion = json.version
+      })
   }
 }
 </script>
@@ -249,43 +254,37 @@ input, select, textarea, button {
   font-size: 1rem;
 }
 
-#main-app {
-  $padding: 1rem;
+#app {
   $gap: 2rem;
   height: 100vh;
-  padding: $padding;
+  padding: 0;
   display: grid;
   grid-template-areas:
+    "navbar main-app";
+  gap: $gap;
+
+  #main-app {
+    $padding: 1rem;
+    $gap: 2rem;
+    height: 100vh;
+    padding: $padding;
+    display: grid;
+    grid-template-areas:
       "all live-die"
       "all settings";
-  grid-auto-columns: calc(60% - #{$padding}) calc(40% - #{$padding});
-  grid-auto-rows: calc(50% - #{$padding}) calc(50% - #{$padding});
-  gap: $gap;
-  //overflow: hidden;
+    grid-auto-columns: calc(60% - #{$padding}) calc(40% - #{$padding});
+    grid-auto-rows: calc(50% - #{$padding}) calc(50% - #{$padding});
+    gap: $gap;
+    //overflow: hidden;
 
-  .all-ssh {
-    grid-area: all;
-  }
+    & > * {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
 
-  .live-die {
-    grid-area: live-die;
-  }
-
-  .ports {
-    grid-area: ports;
-  }
-
-  .settings {
-    grid-area: settings;
-  }
-
-  & > * {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-
-    table {
-      margin-bottom: auto;
+      table {
+        margin-bottom: auto;
+      }
     }
   }
 }
