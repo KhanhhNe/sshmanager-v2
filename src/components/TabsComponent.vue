@@ -15,10 +15,10 @@
 </template>
 
 <script>
-import _ from "lodash";
+import _ from 'lodash'
 
 export default {
-  name: "Tabs",
+  name: 'TabsComponent',
   data() {
     return {
       tabs: [],

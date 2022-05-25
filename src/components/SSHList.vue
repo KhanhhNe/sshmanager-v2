@@ -71,10 +71,10 @@
 
 <!--suppress JSUnusedGlobalSymbols -->
 <script>
-import ArticleTitle from "@/components/ArticleTitle";
-import {saveAs} from "file-saver";
-import {getSshText, getTimeDisplay} from "@/utils";
-import moment from "moment";
+import ArticleTitle from '@/components/ArticleTitle'
+import {saveAs} from 'file-saver'
+import {getSshText, getTimeDisplay} from '@/utils'
+import moment from 'moment'
 
 export default {
   name: 'SSHList',
@@ -130,15 +130,15 @@ export default {
      */
     updateCheckSpeed() {
       this.checkSpeed = this.sshList
-          .map(s => {
-            return {
-              ...s,
-              last_checked: moment(s.last_checked)
-            }
-          })
-          .filter(s => !s.is_checking && s.last_checked.isValid())
-          .filter(s => s.last_checked.isSameOrAfter(moment().subtract(1, 'minutes')))
-          .length
+        .map(s => {
+          return {
+            ...s,
+            last_checked: moment(s.last_checked)
+          }
+        })
+        .filter(s => !s.is_checking && s.last_checked.isValid())
+        .filter(s => s.last_checked.isSameOrAfter(moment().subtract(1, 'minutes')))
+        .length
     }
   },
   mounted() {

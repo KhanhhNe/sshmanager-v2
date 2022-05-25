@@ -1,35 +1,40 @@
 {
   "name": "sshmanager",
-  "description": "Quản lý SSH chuyên nghiệp và nhanh chóng",
   "version": "2.1.8",
   "private": false,
+  "description": "Quản lý SSH chuyên nghiệp và nhanh chóng",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build --dest=build/web_dist",
-    "build-watch": "vue-cli-service build --dest=build/web_dist --mode=development --watch --no-clean",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "build-watch": "vue-cli-service build --dest=build/web_dist --mode=development --watch --no-clean"
   },
   "dependencies": {
     "@picocss/pico": "^1.3.3",
+    "autoprefixer": "^10",
     "clipboard": "^2.0.8",
     "core-js": "^3.6.5",
     "file-saver": "^2.0.5",
     "fontisto": "^3.0.4",
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
+    "postcss": "^8",
     "sass": "^1.38.1",
     "sass-loader": "^10.1.1",
+    "tailwindcss": "^3",
     "tippy.js": "^6.3.2",
     "vue": "^3.2.33"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "~4.5.0",
-    "@vue/cli-plugin-eslint": "~4.5.0",
-    "@vue/cli-service": "~4.5.0",
-    "babel-eslint": "^10.1.0",
-    "eslint": "^6.7.2",
-    "eslint-plugin-vue": "^6.2.2",
-    "vue-template-compiler": "^2.6.11"
+    "@babel/core": "^7.12.16",
+    "@babel/eslint-parser": "^7.12.16",
+    "@vue/cli-plugin-babel": "~5.0.0",
+    "@vue/cli-plugin-eslint": "~5.0.0",
+    "@vue/cli-service": "~5.0.0",
+    "eslint": "^7.32.0",
+    "eslint-plugin-vue": "~8.0.0",
+    "@vue/eslint-config-standard": "^6.1.0",
+    "vue-cli-plugin-tailwind": "~3.0.0"
   },
   "eslintConfig": {
     "root": true,
@@ -37,11 +42,11 @@
       "node": true
     },
     "extends": [
-      "plugin:vue/essential",
+      "plugin:vue/vue3-essential",
       "eslint:recommended"
     ],
     "parserOptions": {
-      "parser": "babel-eslint"
+      "parser": "@babel/eslint-parser"
     },
     "rules": {}
   },
