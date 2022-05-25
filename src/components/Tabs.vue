@@ -78,6 +78,10 @@ export default {
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
       }
+
+      button {
+        width: 100%;
+      }
     }
   }
 

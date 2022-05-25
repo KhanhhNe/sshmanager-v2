@@ -8,10 +8,9 @@
             v-model="portsText"
             placeholder="8080,8000-8005,..."
             style="width: 10rem">
-        <a
+        <button
             @click="addPorts"
-            role="button"
-            data-tippy-content="Thêm ports"><i class="fi fi-plus-a"></i></a>
+            data-tippy-content="Thêm ports"><i class="fi fi-plus-a"></i></button>
       </div>
     </ArticleTitle>
     <div class="ports">
@@ -21,17 +20,19 @@
           <th>Port</th>
           <th>IP</th>
           <th>Check</th>
-          <th><a
-              role="button"
-              @click="$emit('reset-port', ports)"
-              data-tippy-content="Đổi lại toàn bộ ports"
-          ><i class="fi fi-spinner-refresh"></i></a></th>
-          <th><a
-              role="button"
-              @click="$emit('remove-port', ports)"
-              class="secondary outline"
-              data-tippy-content="Xoá toàn bộ ports"
-          ><i class="fi fi-trash"></i></a></th>
+          <th>
+            <button
+                @click="$emit('reset-port', ports)"
+                data-tippy-content="Đổi lại toàn bộ ports"
+            ><i class="fi fi-spinner-refresh"></i></button>
+          </th>
+          <th>
+            <button
+                @click="$emit('remove-port', ports)"
+                class="secondary outline"
+                data-tippy-content="Xoá toàn bộ ports"
+            ><i class="fi fi-trash"></i></button>
+          </th>
         </tr>
         </thead>
         <tbody>
