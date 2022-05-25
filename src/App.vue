@@ -4,7 +4,7 @@
         v-if="newVersion && newVersion !== currentVersion"
         class="update-available"
     >Đã có phiên bản mới {{ newVersion }}!</span>
-    <Tabs class="live-die">
+    <Tabs style="grid-area: ports">
       <Ports
           :ports="ports"
           :title="`Ports (${ports.length})`"
@@ -13,7 +13,7 @@
           @remove-port="portsRequest($event, 'delete')"
       />
     </Tabs>
-    <Tabs class="all-ssh">
+    <Tabs style="grid-area: all">
       <SSHList
           :sshList="sortedList"
           :title="`SSH (${sortedList.length})`"
@@ -28,7 +28,7 @@
           :title="`Die (${dieList.length})`"
           :readOnly="true"/>
     </Tabs>
-    <Tabs>
+    <Tabs style="grid-area: settings">
       <Settings
           title="Settings"
           :settings="settings"
@@ -256,28 +256,12 @@ input, select, textarea, button {
   padding: $padding;
   display: grid;
   grid-template-areas:
-      "all live-die"
+      "all ports"
       "all settings";
   grid-auto-columns: calc(60% - #{$padding}) calc(40% - #{$padding});
   grid-auto-rows: calc(50% - #{$padding}) calc(50% - #{$padding});
   gap: $gap;
   //overflow: hidden;
-
-  .all-ssh {
-    grid-area: all;
-  }
-
-  .live-die {
-    grid-area: live-die;
-  }
-
-  .ports {
-    grid-area: ports;
-  }
-
-  .settings {
-    grid-area: settings;
-  }
 
   & > * {
     display: flex;

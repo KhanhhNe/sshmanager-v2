@@ -31,7 +31,9 @@ export default {
      * @param tab
      */
     selectTab(tab) {
-      this.tabs.forEach(tab => tab.classList.add('hidden'))
+      for (const tab of this.tabs) {
+        tab.classList.add('hidden')
+      }
       this.currentTab = tab || this.currentTab
       if (this.currentTab) {
         this.currentTab.classList.remove('hidden')
@@ -87,6 +89,7 @@ export default {
 
     & > * {
       flex-grow: 1;
+      max-height: 100%;
     }
   }
 }

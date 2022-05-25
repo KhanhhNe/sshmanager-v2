@@ -152,6 +152,9 @@ export default {
 
 <style lang="scss" scoped>
 article {
+  display: flex;
+  flex-direction: column;
+
   .ports {
     overflow: auto;
 
