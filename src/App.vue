@@ -1,47 +1,51 @@
 <template>
-  <div id="main-app">
+  <div id="main-wrapper">
+    <NavBar :version="currentVersion" style="grid-area: navbar"></NavBar>
+    <div id="main-app" style="grid-area: main-app">
     <span
         v-if="newVersion && newVersion !== currentVersion"
         class="update-available"
     >Đã có phiên bản mới {{ newVersion }}!</span>
-    <Tabs style="grid-area: ports">
-      <Ports
-          :ports="ports"
-          :title="`Ports (${ports.length})`"
-          @add-ports="portsRequest($event, 'post')"
-          @reset-port="portsRequest($event, 'put')"
-          @remove-port="portsRequest($event, 'delete')"
-      />
-    </Tabs>
-    <Tabs style="grid-area: all">
-      <SSHList
-          :sshList="sortedList"
-          :title="`SSH (${sortedList.length})`"
-          @add-ssh="sshRequest($event, 'post')"
-          @delete-ssh="sshRequest($event, 'delete')"/>
-      <SSHList
-          :sshList="liveList"
-          :title="`Live (${liveList.length})`"
-          :readOnly="true"/>
-      <SSHList
-          :sshList="dieList"
-          :title="`Die (${dieList.length})`"
-          :readOnly="true"/>
-    </Tabs>
-    <Tabs style="grid-area: settings">
-      <Settings
-          title="Settings"
-          :settings="settings"
-          :needRestart="needRestart"
-          @update-settings="updateSettings($event)"
-          @reset-settings="resetSettings()"
-          class="settings"/>
-    </Tabs>
+      <Tabs style="grid-area: ports">
+        <Ports
+            :ports="ports"
+            :title="`Ports (${ports.length})`"
+            @add-ports="portsRequest($event, 'post')"
+            @reset-port="portsRequest($event, 'put')"
+            @remove-port="portsRequest($event, 'delete')"
+        />
+      </Tabs>
+      <Tabs style="grid-area: all">
+        <SSHList
+            :sshList="sortedList"
+            :title="`SSH (${sortedList.length})`"
+            @add-ssh="sshRequest($event, 'post')"
+            @delete-ssh="sshRequest($event, 'delete')"/>
+        <SSHList
+            :sshList="liveList"
+            :title="`Live (${liveList.length})`"
+            :readOnly="true"/>
+        <SSHList
+            :sshList="dieList"
+            :title="`Die (${dieList.length})`"
+            :readOnly="true"/>
+      </Tabs>
+      <Tabs style="grid-area: settings">
+        <Settings
+            title="Settings"
+            :settings="settings"
+            :needRestart="needRestart"
+            @update-settings="updateSettings($event)"
+            @reset-settings="resetSettings()"
+            class="settings"/>
+      </Tabs>
+    </div>
   </div>
 </template>
 
 <!--suppress JSUnresolvedVariable -->
 <script>
+import NavBar from "@/components/NavBar";
 import SSHList from './components/SSHList.vue'
 import Tabs from './components/Tabs.vue'
 import Ports from './components/Ports.vue'
@@ -55,6 +59,7 @@ import {setupWebsocket} from "@/utils";
 export default {
   name: 'App',
   components: {
+    NavBar,
     Tabs,
     SSHList,
     Ports,
@@ -167,10 +172,6 @@ export default {
     }
   },
   mounted() {
-    fetch('/openapi.json').then(resp => resp.json()).then(data => {
-      document.title = `SSHManager v${data.info.version}`
-    })
-
     setupWebsocket(this.sshList, `ws://${location.host}/api/ssh`)
     setupWebsocket(this.ports, `ws://${location.host}/api/ports`)
 
@@ -179,10 +180,12 @@ export default {
     this.getSettings()
     tippy('[data-tippy-content]')
 
+    this.currentVersion = localStorage.getItem("SSHManager version")
     fetch('/openapi.json')
         .then(resp => resp.json())
         .then(json => {
           self.currentVersion = json.info.version
+          localStorage.setItem("SSHManager version")
         })
     fetch('https://raw.githubusercontent.com/KhanhhNe/sshmanager-v2/master/package.json')
         .then(resp => resp.json())
@@ -240,36 +243,44 @@ article {
 
 input, select, textarea, button {
   margin-bottom: 0 !important;
+  width: auto;
 }
 
-.update-available {
-  position: absolute;
-  top: 95vh;
-  color: red;
-  font-size: 1rem;
-}
-
-#main-app {
-  $padding: 1rem;
-  $gap: 2rem;
-  height: 100vh;
-  padding: $padding;
+#main-wrapper {
   display: grid;
-  grid-template-areas:
+  grid-template-areas: "navbar main-app";
+  grid-auto-columns: min-content 1fr;
+  gap: 1rem;
+
+  #main-app {
+    $padding: 1rem;
+    $gap: 2rem;
+    height: 100vh;
+    padding: $padding;
+    display: grid;
+    grid-template-areas:
       "all ports"
       "all settings";
-  grid-auto-columns: calc(60% - #{$padding}) calc(40% - #{$padding});
-  grid-auto-rows: calc(50% - #{$padding}) calc(50% - #{$padding});
-  gap: $gap;
-  //overflow: hidden;
+    grid-auto-columns: calc(60% - #{$padding}) calc(40% - #{$padding});
+    grid-auto-rows: calc(50% - #{$padding}) calc(50% - #{$padding});
+    gap: $gap;
+    //overflow: hidden;
 
-  & > * {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+    & > * {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
 
-    table {
-      margin-bottom: auto;
+      table {
+        margin-bottom: auto;
+      }
+    }
+
+    .update-available {
+      position: absolute;
+      top: 95vh;
+      color: red;
+      font-size: 1rem;
     }
   }
 }
