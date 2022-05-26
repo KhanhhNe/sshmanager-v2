@@ -159,8 +159,8 @@ article {
   .ports {
     overflow: auto;
 
-    a[role=button] {
-      padding: 0.25rem 0.5rem;
+    th button {
+      border-width: 1px !important;
     }
 
     .proxy-ip {
