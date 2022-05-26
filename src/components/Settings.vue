@@ -5,15 +5,13 @@
           class="warning"
           v-if="needRestart">Khởi động lại SSHManager để cập nhật cài đặt
       </div>
-      <a
+      <button
           @click="$emit('reset-settings')"
-          role="button"
           data-tippy-content="Đặt lại toàn bộ cài đặt"
-          class="outline"><i class="fi fi-spinner-refresh"></i></a>
-      <a
+          class="outline"><i class="fi fi-spinner-refresh"></i></button>
+      <button
           @click="updateSettings"
-          data-tippy-content="Cập nhật cài đặt"
-          role="button"><i class="fi fi-check"></i></a>
+          data-tippy-content="Cập nhật cài đặt"><i class="fi fi-check"></i></button>
     </ArticleTitle>
     <div class="content">
       <table>
