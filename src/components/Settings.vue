@@ -23,7 +23,7 @@
         </thead>
         <tbody>
         <tr v-for="setting in settings" :key="setting.name">
-          <td>{{ setting.readable_name }}</td>
+          <td :data-tooltip="setting.name">{{ setting.readable_name }}</td>
           <td>
             <input
                 v-model="setting.value"
