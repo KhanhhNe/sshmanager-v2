@@ -21,6 +21,7 @@ trio = "*"
 trio-asyncio = "*"
 hypercorn = {extras = ["trio"], version = "*"}
 pendulum = "*"
+pyinstrument = "*"
 
 [dev-packages]
 pyinstaller = "*"
