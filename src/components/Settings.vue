@@ -1,16 +1,17 @@
 <template>
   <article>
-    <ArticleTitle :title="title">
-      <div
-          class="warning"
-          v-if="needRestart">Khởi động lại SSHManager để cập nhật cài đặt
-      </div>
+    <ArticleTitle title="Settings">
       <button
-          @click="$emit('reset-settings')"
+          @click="settingsStore.resetSettings()"
           data-tippy-content="Đặt lại toàn bộ cài đặt"
           class="outline"><i class="fi fi-spinner-refresh"></i></button>
       <button
-          @click="updateSettings"
+          @click="settingsStore.revertSettings()"
+          :disabled="!settingsStore.isChanged"
+          data-tippy-content="Huỷ bỏ thay đổi"><i class="fi fi-ban"></i></button>
+      <button
+          @click="settingsStore.updateSettings()"
+          :disabled="!settingsStore.isChanged"
           data-tippy-content="Cập nhật cài đặt"><i class="fi fi-check"></i></button>
     </ArticleTitle>
     <div class="content">
@@ -22,8 +23,8 @@
         </tr>
         </thead>
         <tbody>
-        <tr v-for="setting in settings" :key="setting.name">
-          <td :data-tooltip="setting.name">{{ setting.readable_name }}</td>
+        <tr v-for="(setting, name) in settingsStore.settings" :key="name">
+          <td :data-tooltip="name">{{ setting.readable_name }}</td>
           <td>
             <input
                 v-model="setting.value"
@@ -44,25 +45,16 @@
 
 <script>
 import ArticleTitle from "@/components/ArticleTitle";
+import {useSettingsStore} from "@/stores/settings";
 
 export default {
   name: "Settings",
   components: {
     ArticleTitle
   },
-  props: {
-    title: String,
-    settings: Array,
-    needRestart: Boolean
-  },
-  data() {
-    return {}
-  },
-  methods: {
-    updateSettings() {
-      this.$emit('update-settings', this.settings)
-    }
-  }
+  data: () => ({
+    settingsStore: useSettingsStore()
+  })
 }
 </script>
 
@@ -91,10 +83,6 @@ article {
       &[type=checkbox] {
         height: 2rem !important;
         width: 2rem !important;
-
-        &:not(:checked):after {
-          content: "?";
-        }
       }
     }
   }
