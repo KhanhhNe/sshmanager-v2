@@ -24,7 +24,7 @@ export const useSettingsStore = defineStore('settings', {
         },
 
         async revertSettings() {
-            await this.loadSettings()
+            this.settings = JSON.parse(this.originalSettings)
         },
 
         async updateSettings() {
