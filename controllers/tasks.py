@@ -140,21 +140,23 @@ class PortCheckTask(CheckTask):
 
 
 async def download_sshstore_ssh():
+    is_first_loop = False
     while True:
-        interval = config.get('sshstore_interval')
-        await trio.sleep(interval)
+        if not is_first_loop:
+            await trio.sleep(60)
+        else:
+            is_first_loop = True
 
         if not config.get('sshstore_enabled'):
             continue
 
         api_key = config.get('sshstore_api_key')
         country = config.get('sshstore_country')
-        limit = config.get('sshstore_limit')
 
         # noinspection PyBroadException
         try:
             async with aio_as_trio(aiohttp.ClientSession()) as client:
-                resp = await aio_as_trio(client.get)(f"http://autossh.top/api/txt/{api_key}/{country}/{limit}")
+                resp = await aio_as_trio(client.get)(f"http://autossh.top/api/txt/{api_key}/{country}/")
                 actions.insert_ssh_from_file_content(await aio_as_trio(resp.text)())
         except Exception:
             pass
