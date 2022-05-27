@@ -185,7 +185,7 @@ export default {
         .then(resp => resp.json())
         .then(json => {
           self.currentVersion = json.info.version
-          localStorage.setItem("SSHManager version")
+          localStorage.setItem("SSHManager version", self.currentVersion)
         })
     fetch('https://raw.githubusercontent.com/KhanhhNe/sshmanager-v2/master/package.json')
         .then(resp => resp.json())

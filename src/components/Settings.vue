@@ -1,17 +1,21 @@
 <template>
   <article>
-    <ArticleTitle :title="title">
-      <div
-          class="warning"
-          v-if="needRestart">Khởi động lại SSHManager để cập nhật cài đặt
-      </div>
+    <ArticleTitle title="Settings">
       <button
-          @click="$emit('reset-settings')"
+          @click="settingsStore.resetSettings()"
           data-tippy-content="Đặt lại toàn bộ cài đặt"
           class="outline"><i class="fi fi-spinner-refresh"></i></button>
-      <button
-          @click="updateSettings"
-          data-tippy-content="Cập nhật cài đặt"><i class="fi fi-check"></i></button>
+      <div>
+        <button
+            @click="settingsStore.revertSettings()"
+            :disabled="!isChanged"
+            data-tippy-content="Huỷ bỏ thay đổi"
+            class="secondary"><i class="fi fi-ban"></i></button>
+        <button
+            @click="settingsStore.updateSettings()"
+            :disabled="!isChanged"
+            data-tippy-content="Cập nhật cài đặt"><i class="fi fi-check"></i></button>
+      </div>
     </ArticleTitle>
     <div class="content">
       <table>
@@ -22,17 +26,17 @@
         </tr>
         </thead>
         <tbody>
-        <tr v-for="setting in settings" :key="setting.name">
-          <td>{{ setting.readable_name }}</td>
+        <tr v-for="(value, name) in settings" :key="name">
+          <td :data-tooltip="name">{{ settingsStore.getReadableName(name) }}</td>
           <td>
             <input
-                v-model="setting.value"
-                v-if="typeof setting.value === 'boolean'" type="checkbox">
+                v-model="settings[name]"
+                v-if="typeof value === 'boolean'" type="checkbox">
             <input
-                v-model="setting.value"
-                v-else-if="typeof setting.value === 'number'" type="number">
+                v-model="settings[name]"
+                v-else-if="typeof value === 'number'" type="number">
             <input
-                v-model="setting.value"
+                v-model="settings[name]"
                 v-else type="text">
           </td>
         </tr>
@@ -44,23 +48,22 @@
 
 <script>
 import ArticleTitle from "@/components/ArticleTitle";
+import {useSettingsStore} from "@/stores/settings";
+import {storeToRefs} from "pinia";
 
 export default {
   name: "Settings",
   components: {
     ArticleTitle
   },
-  props: {
-    title: String,
-    settings: Array,
-    needRestart: Boolean
-  },
-  data() {
-    return {}
-  },
-  methods: {
-    updateSettings() {
-      this.$emit('update-settings', this.settings)
+  data: () => {
+    const settingsStore = useSettingsStore()
+    const {settings, isChanged} = storeToRefs(settingsStore)
+
+    return {
+      settingsStore,
+      settings,
+      isChanged
     }
   }
 }
@@ -91,10 +94,6 @@ article {
       &[type=checkbox] {
         height: 2rem !important;
         width: 2rem !important;
-
-        &:not(:checked):after {
-          content: "?";
-        }
       }
     }
   }
