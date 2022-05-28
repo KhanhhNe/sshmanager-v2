@@ -75,6 +75,7 @@ import ArticleTitle from "@/components/ArticleTitle";
 import {saveAs} from "file-saver";
 import {getSshText, getTimeDisplay} from "@/utils";
 import moment from "moment";
+import _ from "lodash";
 
 export default {
   name: 'SSHList',
@@ -131,11 +132,13 @@ export default {
     updateCheckSpeed() {
       const totalMinutes = 5
 
-      this.checkSpeed = this.sshList
+      const sshList = this.sshList
           .filter(s => (
               moment().diff(moment(s.last_checked || ''), 'seconds') <= totalMinutes * 60
           ))
-          .length / totalMinutes
+      const oldest = _.minBy(sshList, s => s.last_checked).last_checked
+      const totalTime = moment().diff(moment(oldest), 'seconds') / 60
+      this.checkSpeed = _.round(sshList.length / totalTime, 1)
     }
   },
   mounted() {
@@ -143,7 +146,7 @@ export default {
       return
     }
 
-    setInterval(this.updateCheckSpeed, 1000)
+    setInterval(this.updateCheckSpeed)
   }
 }
 </script>
