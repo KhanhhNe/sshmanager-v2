@@ -19,14 +19,15 @@ def websocket_auto_update_endpoint(entity: Type[Model], output_model: Type[BaseM
 
             while True:
                 message = await websocket.receive_json()
+                query = entity.select()
+
                 if message.get('last_modified'):
                     parsed_time = pendulum.parse(message['last_modified'],
                                                  tz=pendulum.tz.get_local_timezone())
                     last_modified = datetime.fromtimestamp(parsed_time.timestamp())
-                    query = entity.select().filter(lambda obj: obj.last_modified > last_modified)
+                    query = query.filter(lambda obj: obj.last_modified > last_modified)
                 else:
                     last_modified = None
-                    query = entity.select()
 
                 with db_session:
                     objects = query[:].to_list()

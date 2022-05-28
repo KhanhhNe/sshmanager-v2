@@ -6,15 +6,6 @@
         v-if="newVersion && newVersion !== currentVersion"
         class="update-available"
     >Đã có phiên bản mới {{ newVersion }}!</span>
-      <Tabs style="grid-area: ports">
-        <Ports
-            :ports="ports"
-            :title="`Ports (${ports.length})`"
-            @add-ports="portsRequest($event, 'post')"
-            @reset-port="portsRequest($event, 'put')"
-            @remove-port="portsRequest($event, 'delete')"
-        />
-      </Tabs>
       <Tabs style="grid-area: all">
         <SSHList
             :sshList="sortedList"
@@ -30,13 +21,19 @@
             :title="`Die (${dieList.length})`"
             :readOnly="true"/>
       </Tabs>
+      <Tabs style="grid-area: ports">
+        <Ports
+            :ports="ports"
+            :title="`Ports (${ports.length})`"
+            @add-ports="portsRequest($event, 'post')"
+            @reset-port="portsRequest($event, 'put')"
+            @remove-port="portsRequest($event, 'delete')"
+        />
+        <SSHStore></SSHStore>
+      </Tabs>
       <Tabs style="grid-area: settings">
         <Settings
             title="Settings"
-            :settings="settings"
-            :needRestart="needRestart"
-            @update-settings="updateSettings($event)"
-            @reset-settings="resetSettings()"
             class="settings"/>
       </Tabs>
     </div>
@@ -55,10 +52,13 @@ import '@picocss/pico'
 import 'fontisto'
 import _ from 'lodash';
 import {setupWebsocket} from "@/utils";
+import SSHStore from "@/components/SSHStore";
+import {useSettingsStore} from "@/stores/settings";
 
 export default {
   name: 'App',
   components: {
+    SSHStore,
     NavBar,
     Tabs,
     SSHList,
@@ -67,12 +67,12 @@ export default {
   },
   data() {
     return {
+      a: SSHStore,
       sshList: [],
       ports: [],
-      settings: [],
+      settingsStore: useSettingsStore(),
       currentVersion: "",
-      newVersion: "",
-      needRestart: false
+      newVersion: ""
     }
   },
   computed: {
@@ -123,61 +123,15 @@ export default {
         },
         body: JSON.stringify(ports)
       })
-    },
-
-    /**
-     * Get settings and settings names, merge them together and update to
-     * this.settings
-     * @returns {Promise<void>}
-     */
-    async getSettings() {
-      const settingsValues = await (await fetch('/api/settings')).json()
-      const settingsNames = await (await fetch('/api/settings/names')).json()
-      const settings = []
-      for (const [name, value] of Object.entries(settingsValues)) {
-        const readable_name = settingsNames[name]
-        settings.push({name, value, readable_name})
-      }
-      this.settings = settings
-    },
-
-    /**
-     * Send settings update request to BE and call getSettings to sync FE & BE
-     * again
-     * @returns {Promise<void>}
-     */
-    async updateSettings(newSettings) {
-      const settings = {}
-      for (const setting of newSettings) {
-        settings[setting.name] = setting.value
-      }
-      this.needRestart = await (await fetch('/api/settings', {
-        method: 'post',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(settings)
-      })).json().needRestart
-      await this.getSettings()
-    },
-
-    /**
-     * Reset all settings and call getSettings
-     * @returns {Promise<void>}
-     */
-    async resetSettings() {
-      await fetch('/api/settings', {method: 'delete'})
-      this.needRestart = false
-      await this.getSettings()
     }
   },
   mounted() {
-    setupWebsocket(this.sshList, `ws://${location.host}/api/ssh`)
-    setupWebsocket(this.ports, `ws://${location.host}/api/ports`)
-
     const self = this
 
-    this.getSettings()
+    setTimeout(() => setupWebsocket(self.sshList, `ws://${location.host}/api/ssh`))
+    setTimeout(() => setupWebsocket(self.ports, `ws://${location.host}/api/ports`))
+
+    this.settingsStore.loadSettings()
     tippy('[data-tippy-content]')
 
     this.currentVersion = localStorage.getItem("SSHManager version")

@@ -14,10 +14,28 @@ from models import Port, SSH
 logger = logging.getLogger('Tasks')
 
 
+class IDManager:
+    def __init__(self):
+        self.ids = {}
+
+    def add(self, obj_id):
+        self.ids[obj_id] = True
+
+    def remove(self, obj_id):
+        if obj_id in self.ids:
+            del self.ids[obj_id]
+
+    def include(self, obj_id):
+        return bool(self.ids.get(obj_id))
+
+    def get_ids(self):
+        return list(self.ids.keys())
+
+
 class CheckTask(ABC):
     def __init__(self):
         self.limit = trio.CapacityLimiter(self.tasks_limit)
-        self.included_ids = []
+        self.included_ids = IDManager()
 
     @property
     @abstractmethod
@@ -45,7 +63,7 @@ class CheckTask(ABC):
     async def run_task(self):
         async def _auto_cancel(target_obj, cancel_scope: trio.CancelScope):
             while True:
-                if target_obj.id not in self.included_ids:
+                if not self.included_ids.include(target_obj.id):
                     cancel_scope.cancel()
                 await trio.sleep(0)
 
@@ -56,7 +74,7 @@ class CheckTask(ABC):
 
         async with trio.open_nursery() as nursery:
             while True:
-                not_checked = self.included_ids.copy()
+                not_checked = self.included_ids.get_ids()
 
                 # Try to add new tasks
                 with db_session:
@@ -64,7 +82,7 @@ class CheckTask(ABC):
                         if obj.id in not_checked:
                             not_checked.remove(obj.id)
                             continue
-                        self.included_ids.append(obj.id)
+                        self.included_ids.add(obj.id)
                         nursery.start_soon(_run_with_auto_cancel, obj)
 
                 # Remove not checked objects
@@ -140,21 +158,23 @@ class PortCheckTask(CheckTask):
 
 
 async def download_sshstore_ssh():
+    is_first_loop = False
     while True:
-        interval = config.get('sshstore_interval')
-        await trio.sleep(interval)
+        if not is_first_loop:
+            await trio.sleep(60)
+        else:
+            is_first_loop = True
 
         if not config.get('sshstore_enabled'):
             continue
 
         api_key = config.get('sshstore_api_key')
         country = config.get('sshstore_country')
-        limit = config.get('sshstore_limit')
 
         # noinspection PyBroadException
         try:
             async with aio_as_trio(aiohttp.ClientSession()) as client:
-                resp = await aio_as_trio(client.get)(f"http://autossh.top/api/txt/{api_key}/{country}/{limit}")
+                resp = await aio_as_trio(client.get)(f"http://autossh.top/api/txt/{api_key}/{country}/")
                 actions.insert_ssh_from_file_content(await aio_as_trio(resp.text)())
         except Exception:
             pass

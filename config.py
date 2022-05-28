@@ -46,14 +46,6 @@ DEFAULT_CONFIG = [
         'SSHSTORE', 'country', 'sshstore_country', 'US',
         "Quốc gia lấy SSH từ SSHSTORE"
     ),
-    ConfigItem(
-        'SSHSTORE', 'limit', 'sshstore_limit', 100,
-        "Giới hạn số SSH mỗi lần lấy từ SSHStore"
-    ),
-    ConfigItem(
-        'SSHSTORE', 'interval', 'sshstore_interval', 60,
-        "Thời gian nghỉ giữa 2 lần lấy SSH từ SSHStore (phút)"
-    ),
 ]
 
 PYDANTIC_ARGS = {}

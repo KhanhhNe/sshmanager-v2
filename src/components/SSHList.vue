@@ -129,16 +129,13 @@ export default {
      * Update SSH checking speed
      */
     updateCheckSpeed() {
+      const totalMinutes = 5
+
       this.checkSpeed = this.sshList
-          .map(s => {
-            return {
-              ...s,
-              last_checked: moment(s.last_checked)
-            }
-          })
-          .filter(s => !s.is_checking && s.last_checked.isValid())
-          .filter(s => s.last_checked.isSameOrAfter(moment().subtract(1, 'minutes')))
-          .length
+          .filter(s => (
+              moment().diff(moment(s.last_checked || ''), 'seconds') <= totalMinutes * 60
+          ))
+          .length / totalMinutes
     }
   },
   mounted() {

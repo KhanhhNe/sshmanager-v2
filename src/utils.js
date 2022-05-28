@@ -29,6 +29,7 @@ function getSshText(ssh) {
 function setupWebsocket(objectsList, endpoint) {
     let socket, updateInterval
     let lastModified = null
+    let updateReceived = true
     connect()
 
     function connect() {
@@ -45,10 +46,44 @@ function setupWebsocket(objectsList, endpoint) {
     function requestUpdate() {
         if (socket.readyState !== WebSocket.OPEN) return
 
-        socket.send(JSON.stringify({
-            last_modified: lastModified,
-            ids: _.map(objectsList, item => item.id)
-        }))
+        if (updateReceived) {
+            socket.send(JSON.stringify({
+                last_modified: lastModified,
+                ids: _.map(objectsList, item => item.id)
+            }))
+            updateReceived = false
+        }
+    }
+
+    function updateObjects(data) {
+        const indexes = {}
+        for (const item of data.objects) {
+            indexes[item.id] = undefined
+        }
+
+        // Build indexes from item ID to list index
+        for (const [index, item] of Object.entries(objectsList)) {
+            if (item.id in indexes) {
+                indexes[item.id] = index
+            }
+        }
+
+        // Update/insert items
+        for (const item of data.objects) {
+            const index = indexes[item.id]
+            if (index) {
+                Object.assign(objectsList[index], item)
+            } else {
+                objectsList.push(item)
+            }
+        }
+
+        // Remove items marked for removal
+        for (const [index, item] of Object.entries(objectsList)) {
+            if (data.removed.includes(item.id)) {
+                objectsList.splice(index, 1)
+            }
+        }
     }
 
     function addListeners(s) {
@@ -62,23 +97,9 @@ function setupWebsocket(objectsList, endpoint) {
             const data = JSON.parse(event.data)
             lastModified = data.last_modified || lastModified
 
-            // Update/Insert objects from database
-            for (const item of data.objects) {
-                const itemInList = _.find(objectsList, val => val.id === item.id)
-                if (itemInList) {
-                    Object.assign(itemInList, item)
-                } else {
-                    objectsList.push(item)
-                }
-            }
-
-            // Remove objects that no longer in the database
-            for (const itemId of data.removed) {
-                const itemIndex = _.findIndex(objectsList, item => item.id === itemId)
-                if (itemIndex !== -1) {
-                    objectsList.splice(itemIndex, 1)
-                }
-            }
+            // Upate objects from database
+            updateObjects(data)
+            updateReceived = true
         })
 
         s.addEventListener('close', () => setTimeout(connect, 1000))
