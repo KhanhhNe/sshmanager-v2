@@ -200,6 +200,14 @@ input, select, textarea, button {
   width: auto;
 }
 
+[data-tooltip]:not(a):not(button):not(input) {
+  border-bottom: none;
+}
+
+td {
+  border-bottom: var(--border-width) solid var(--table-border-color) !important;
+}
+
 #main-wrapper {
   display: grid;
   grid-template-areas: "navbar main-app";
