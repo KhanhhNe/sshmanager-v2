@@ -25,12 +25,16 @@ def websocket_auto_update_endpoint(entity: Type[Model], output_model: Type[BaseM
                     parsed_time = pendulum.parse(message['last_modified'],
                                                  tz=pendulum.tz.get_local_timezone())
                     last_modified = datetime.fromtimestamp(parsed_time.timestamp())
-                    query = query.filter(lambda obj: obj.last_modified > last_modified)
+                    query = query.filter(lambda obj: obj.last_modified >= last_modified)
                 else:
                     last_modified = None
 
                 with db_session:
-                    objects = query[:].to_list()
+                    objects = [obj for obj in query[:].to_list()
+                               if last_modified is None or (
+                                       obj.last_modified > last_modified or
+                                       obj.id not in message.get('ids', [])
+                               )]
                     # noinspection PyTypeChecker
                     object_ids = orm.select(obj.id for obj in entity)[:].to_list()
                     output_objects = [output_model.from_orm(obj).dict() for obj in objects]

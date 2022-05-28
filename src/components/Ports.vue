@@ -39,13 +39,18 @@
         <tr v-for="portInfo in ports" :key="portInfo.port_number">
           <td>{{ portInfo.port_number }}</td>
           <td class="port-info" v-if="portInfo.ssh">
-            <i v-if="!portInfo.time_connected"
-               class="fi fi-neutral"
-               style="color: darkgoldenrod"></i>
-            <i v-else-if="portInfo.public_ip === portInfo.ssh.ip"
-               class="fi fi-slightly-smile"
-               style="color: green"></i>
-            <i v-else class="fi fi-frowning" style="color: red"></i>
+            <span v-if="!portInfo.time_connected" data-tooltip="Đang kết nối">
+              <i class="fi fi-neutral"
+                 style="color: darkgoldenrod"></i>
+            </span>
+            <span v-else-if="portInfo.public_ip === portInfo.ssh.ip" data-tooltip="Đã kết nối">
+              <i class="fi fi-slightly-smile"
+                 style="color: green"></i>
+            </span>
+            <span v-else data-tooltip="Kết nối thất bại">
+              <i class="fi fi-frowning"
+                 style="color: red"></i>
+            </span>
             <span
                 :data-clipboard-text="proxyUrl(portInfo)"
                 class="proxy-ip">{{ portInfo.ssh.ip }}</span>
@@ -55,15 +60,17 @@
             <span style="opacity: 0.3">Chưa kết nối</span>
           </td>
           <td>{{ getTimeDisplay(portInfo.last_checked) || '' }}</td>
-          <td><a
-              role="button"
-              @click="$emit('reset-port', [portInfo])"
-          ><i class="fi fi-spinner-refresh"></i></a></td>
-          <td><a
-              role="button"
-              @click="$emit('remove-port', [portInfo])"
-              class="secondary outline"
-          ><i class="fi fi-trash"></i></a></td>
+          <td>
+            <button
+                @click="$emit('reset-port', [portInfo])"
+            ><i class="fi fi-spinner-refresh"></i></button>
+          </td>
+          <td>
+            <button
+                @click="$emit('remove-port', [portInfo])"
+                class="secondary outline"
+            ><i class="fi fi-trash"></i></button>
+          </td>
         </tr>
         </tbody>
       </table>

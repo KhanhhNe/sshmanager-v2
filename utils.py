@@ -8,6 +8,7 @@ import socket
 import aiohttp
 import asyncssh
 import psutil
+import trio.socket
 from aiohttp_socks import ProxyConnector
 
 
@@ -184,3 +185,13 @@ def configure_logging():
 
     for logger in ['multipart.multipart', 'charset_normalizer', 'asyncio']:
         logging.getLogger(logger).setLevel(logging.WARNING)
+
+
+async def test_ssh_connection(ip, port=22):
+    s = trio.socket.socket()
+    # noinspection PyBroadException
+    try:
+        await s.connect((ip, port))
+    except Exception:
+        return False
+    return True

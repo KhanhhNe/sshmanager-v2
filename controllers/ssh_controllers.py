@@ -38,7 +38,7 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
 
     :param host: SSH host
     :param username: SSH username
-    :param password: SSH possword
+    :param password: SSH password
     :param port: Local port to forward to
     :return: ProxyInfo object containing the forwarded Socks5 proxy
     """
