@@ -1,4 +1,5 @@
 import logging
+import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 
@@ -8,7 +9,8 @@ from pony.orm import db_session
 from trio_asyncio import aio_as_trio
 
 import config
-from controllers import actions
+import utils
+from controllers import actions, ssh_controllers
 from models import Port, SSH
 
 logger = logging.getLogger('Tasks')
@@ -103,8 +105,20 @@ class SSHCheckTask(CheckTask):
 
     async def run_on_object(self, obj):
         while True:
-            async with self.limit:
-                await actions.check_ssh_status(obj)
+            SSH.begin_checking(obj)
+            start_time = time.perf_counter()
+            ssh_info = f"{obj.ip:15} |      "
+            connection_succeed = await utils.test_ssh_connection(obj.ip)
+            run_time = '{:4.1f}'.format(time.perf_counter() - start_time)
+
+            if connection_succeed:
+                async with self.limit:
+                    is_live = await aio_as_trio(ssh_controllers.verify_ssh)(obj.ip, obj.username, obj.password)
+            else:
+                logging.getLogger('Ssh').debug(f"{ssh_info} ({run_time}s) - Cannot connect to SSH port.")
+                is_live = False
+
+            SSH.end_checking(obj, is_live=is_live)
             await trio.sleep(60)
 
 
