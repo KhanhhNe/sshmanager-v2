@@ -29,6 +29,7 @@ function getSshText(ssh) {
 function setupWebsocket(objectsList, endpoint) {
     let socket, updateInterval
     let lastModified = null
+    let updateReceived = true
     connect()
 
     function connect() {
@@ -45,10 +46,13 @@ function setupWebsocket(objectsList, endpoint) {
     function requestUpdate() {
         if (socket.readyState !== WebSocket.OPEN) return
 
-        socket.send(JSON.stringify({
-            last_modified: lastModified,
-            ids: _.map(objectsList, item => item.id)
-        }))
+        if (updateReceived) {
+            socket.send(JSON.stringify({
+                last_modified: lastModified,
+                ids: _.map(objectsList, item => item.id)
+            }))
+            updateReceived = false
+        }
     }
 
     function updateObjects(data) {
@@ -91,6 +95,7 @@ function setupWebsocket(objectsList, endpoint) {
 
             // Upate objects from database
             updateObjects(data)
+            updateReceived = true
         })
 
         s.addEventListener('close', () => setTimeout(connect, 1000))
