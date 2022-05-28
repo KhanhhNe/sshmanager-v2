@@ -126,10 +126,10 @@ export default {
     }
   },
   mounted() {
-    setupWebsocket(this.sshList, `ws://${location.host}/api/ssh`)
-    setupWebsocket(this.ports, `ws://${location.host}/api/ports`)
-
     const self = this
+
+    setTimeout(() => setupWebsocket(self.sshList, `ws://${location.host}/api/ssh`))
+    setTimeout(() => setupWebsocket(self.ports, `ws://${location.host}/api/ports`))
 
     this.settingsStore.loadSettings()
     tippy('[data-tippy-content]')

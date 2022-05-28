@@ -51,6 +51,33 @@ function setupWebsocket(objectsList, endpoint) {
         }))
     }
 
+    function updateObjects(data) {
+        const indexes = {}
+        for (const item of data.objects) {
+            indexes[item.id] = undefined
+        }
+
+        // Build indexes from item ID to list index
+        for (const [index, item] of Object.entries(objectsList)) {
+            if (item.id in indexes) {
+                indexes[item.id] = index
+            }
+        }
+
+        // Update/insert items
+        for (const item of data.objects) {
+            const index = indexes[item.id]
+            if (index) {
+                Object.assign(objectsList[index], item)
+            } else {
+                objectsList.push(item)
+            }
+        }
+
+        // Remove items marked for removal
+        objectsList = _.filter(objectsList, item => _.find(data.removed, i => i.id === item.id))
+    }
+
     function addListeners(s) {
         s.addEventListener('open', function () {
             requestUpdate()
@@ -62,23 +89,8 @@ function setupWebsocket(objectsList, endpoint) {
             const data = JSON.parse(event.data)
             lastModified = data.last_modified || lastModified
 
-            // Update/Insert objects from database
-            for (const item of data.objects) {
-                const itemInList = _.find(objectsList, val => val.id === item.id)
-                if (itemInList) {
-                    Object.assign(itemInList, item)
-                } else {
-                    objectsList.push(item)
-                }
-            }
-
-            // Remove objects that no longer in the database
-            for (const itemId of data.removed) {
-                const itemIndex = _.findIndex(objectsList, item => item.id === itemId)
-                if (itemIndex !== -1) {
-                    objectsList.splice(itemIndex, 1)
-                }
-            }
+            // Upate objects from database
+            updateObjects(data)
         })
 
         s.addEventListener('close', () => setTimeout(connect, 1000))

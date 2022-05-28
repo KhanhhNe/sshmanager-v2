@@ -13,7 +13,7 @@
       <a href="https://zalo.me/g/jowyks334" data-tooltip="Group Zalo" target="_blank" role="button" class="outline"><i
           class="fi fi-comments"></i></a>
       <a href="https://me.momo.vn/khanhhne" data-tooltip="Donate Momo" target="_blank" role="button" class="donate"><i
-          class="fi fi-wallet"></i></a>
+          class="fi fi-shopping-package"></i></a>
     </div>
   </article>
 </template>
