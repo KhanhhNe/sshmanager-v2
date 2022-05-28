@@ -1,5 +1,6 @@
 const moment = require('moment')
 const _ = require("lodash");
+const {isReactive, reactive} = require("vue");
 
 
 /**
@@ -63,15 +64,13 @@ function setupWebsocket(objectsList, endpoint) {
 
         // Build indexes from item ID to list index
         for (const [index, item] of Object.entries(objectsList)) {
-            if (item.id in indexes) {
-                indexes[item.id] = index
-            }
+            indexes[item.id] = index
         }
 
         // Update/insert items
         for (const item of data.objects) {
             const index = indexes[item.id]
-            if (index) {
+            if (index !== undefined) {
                 Object.assign(objectsList[index], item)
             } else {
                 objectsList.push(item)
@@ -79,10 +78,27 @@ function setupWebsocket(objectsList, endpoint) {
         }
 
         // Remove items marked for removal
-        for (const [index, item] of Object.entries(objectsList)) {
-            if (data.removed.includes(item.id)) {
-                objectsList.splice(index, 1)
+        const removing = objectsList
+            .map((item, index) => ({item, index}))
+            .filter(item => data.removed.includes(item.item.id))
+            .map(item => item.index)
+        if (!removing.length) return
+        removing.sort((a, b) => a - b)
+
+        const chunks = [[removing[0]]]
+        for (const index of removing.slice(1)) {
+            const lastChunk = chunks[chunks.length - 1]
+            if (lastChunk[lastChunk.length - 1] < index - 1) {
+                chunks.push([index])
+            } else {
+                lastChunk.push(index)
             }
+        }
+
+        let offset = 0
+        for (const chunk of chunks) {
+            objectsList.splice(chunk[0] - offset, chunk.length)
+            offset += chunk.length
         }
     }
 

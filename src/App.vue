@@ -15,11 +15,13 @@
         <SSHList
             :sshList="liveList"
             :title="`Live (${liveList.length})`"
-            :readOnly="true"/>
+            :readOnly="true"
+            @delete-ssh="sshRequest($event, 'delete')"/>
         <SSHList
             :sshList="dieList"
             :title="`Die (${dieList.length})`"
-            :readOnly="true"/>
+            :readOnly="true"
+            @delete-ssh="sshRequest($event, 'delete')"/>
       </Tabs>
       <Tabs style="grid-area: ports">
         <Ports
@@ -126,10 +128,10 @@ export default {
     }
   },
   mounted() {
-    const self = this
+    const self = this, sshList = this.sshList, ports = this.ports
 
-    setTimeout(() => setupWebsocket(self.sshList, `ws://${location.host}/api/ssh`))
-    setTimeout(() => setupWebsocket(self.ports, `ws://${location.host}/api/ports`))
+    setTimeout(() => setupWebsocket(sshList, `ws://${location.host}/api/ssh`))
+    setTimeout(() => setupWebsocket(ports, `ws://${location.host}/api/ports`))
 
     this.settingsStore.loadSettings()
     tippy('[data-tippy-content]')
