@@ -79,7 +79,11 @@ function setupWebsocket(objectsList, endpoint) {
         }
 
         // Remove items marked for removal
-        objectsList = _.filter(objectsList, item => _.find(data.removed, i => i.id === item.id))
+        for (const [index, item] of Object.entries(objectsList)) {
+            if (data.removed.includes(item.id)) {
+                objectsList.splice(index, 1)
+            }
+        }
     }
 
     function addListeners(s) {
