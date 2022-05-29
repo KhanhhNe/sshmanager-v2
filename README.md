@@ -37,6 +37,7 @@ Tính năng nổi bật
 Hướng dẫn sử dụng
 ----
 Mua phiên bản exe portable tại đây: <a href="https://taphoammo.net/gian-hang/sshmanager-v2-2">Link</a>
+
 Tải phiên bản mới nhất từ link trên, giải nén và chạy file `sshmanager-v2.exe`.
 Cửa sổ trình duyệt mặc định sẽ mở ra với URL của tool. URL đó cũng có thể
 truy cập từ các thiết bị khác trong cùng mạng LAN.
