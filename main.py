@@ -1,18 +1,23 @@
+import functools
 import logging
 import os
 import warnings
 import webbrowser
+from multiprocessing import Event
+from typing import Optional
 
 import cryptography
 import hypercorn.trio
 import trio
 import trio_asyncio
-from hypercorn.run import run
+from hypercorn.trio import worker_serve
+from hypercorn.utils import check_multiprocess_shutdown_event
 
 with warnings.catch_warnings():
     # Ignore the warnings of using deprecated cryptography libraries in asyncssh
     warnings.filterwarnings('ignore', category=cryptography.CryptographyDeprecationWarning)
     import asyncssh
+    from app import app
 
 import config
 import utils
@@ -20,13 +25,29 @@ from controllers import tasks, actions
 from models import init_db
 
 
-async def run_app(hypercorn_config):
+def run_web(hypercorn_config: hypercorn.Config,
+            sockets: Optional[hypercorn.config.Sockets] = None,
+            shutdown_event: Optional[Event] = None):
+    if sockets is not None:
+        for sock in sockets.secure_sockets:
+            sock.listen(hypercorn_config.backlog)
+        for sock in sockets.insecure_sockets:
+            sock.listen(hypercorn_config.backlog)
+
+    shutdown_trigger = None
+    if shutdown_event is not None:
+        shutdown_trigger = functools.partial(check_multiprocess_shutdown_event, shutdown_event, trio.sleep)
+
+    return functools.partial(worker_serve, app, hypercorn_config, sockets=sockets, shutdown_trigger=shutdown_trigger)
+
+
+async def run_app(hypercorn_config: hypercorn.Config):
     asyncssh.set_log_level(logging.CRITICAL)
 
     async with trio.open_nursery() as nursery:
         actions.reset_old_status()
         nursery.start_soon(tasks.run_all_tasks)
-        nursery.start_soon(trio.to_thread.run_sync, run, hypercorn_config)
+        nursery.start_soon(run_web(hypercorn_config))
 
 
 if __name__ == '__main__':
@@ -64,4 +85,5 @@ if __name__ == '__main__':
         trio_asyncio.run(run_app, conf)
     finally:
         print("Exited")
-        exit()
+
+    exit()

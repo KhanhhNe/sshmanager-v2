@@ -13,6 +13,7 @@ work_path = 'build/pyinstaller'
 dist_path = 'build/dist'
 
 shutil.rmtree(dist_path, ignore_errors=True)
+shutil.rmtree(work_path, ignore_errors=True)
 completed = subprocess.run('npm run build', shell=True)
 if completed.returncode:
     print("NPM build failed!")
@@ -20,12 +21,7 @@ if completed.returncode:
 
 PyInstaller.__main__.run([
     'main.py', f'--name={app_name}', '--icon=public/favicon.ico',
-    f'--distpath={dist_path}', f'--workpath={work_path}', '--onedir', '--noconfirm',
-    '--debug=noarchive',
-    '--add-data=package.json;.',
-    '--add-data=logging_config.json;.',
-    '--add-binary=executables/*;executables',
-    '--hidden-import=app',
+    f'--distpath={dist_path}/{app_name}', f'--workpath={work_path}', '--onefile', '--noconfirm',
 
     # PonyORM and SQLite
     '--hidden-import=pony.orm.dbproviders',
@@ -36,6 +32,9 @@ PyInstaller.__main__.run([
     '--hidden-import=websockets.legacy.server',
 ])
 
+shutil.copy('package.json', f"{dist_path}/{app_name}")
+shutil.copy('logging_config.json', f"{dist_path}/{app_name}")
+shutil.copytree('executables', f"{dist_path}/{app_name}/executables", dirs_exist_ok=True)
 shutil.copytree(web_dist, f"{dist_path}/{app_name}/web", dirs_exist_ok=True)
 
 print("Zipping files...")
