@@ -7,7 +7,7 @@ dễ dàng nhất.
 
 <p align="center">
   <!--suppress CheckImageSize -->
-  <img src="logo/logo.png" alt="sshmanager logo" width="150"/>
+  <img src="public/logo.png" alt="sshmanager logo" width="150"/>
 </p>
 
 Tính năng nổi bật
