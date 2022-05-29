@@ -1,9 +1,7 @@
 import logging
-import multiprocessing
 import os
 import warnings
 import webbrowser
-from multiprocessing import freeze_support
 
 import cryptography
 import hypercorn.trio
@@ -22,16 +20,17 @@ from controllers import tasks, actions
 from models import init_db
 
 
-async def run_app():
+async def run_app(hypercorn_config):
     asyncssh.set_log_level(logging.CRITICAL)
 
     async with trio.open_nursery() as nursery:
         actions.reset_old_status()
         nursery.start_soon(tasks.run_all_tasks)
+        nursery.start_soon(trio.to_thread.run_sync, run, hypercorn_config)
 
 
 if __name__ == '__main__':
-    freeze_support()
+    # freeze_support()
     os.makedirs('data', exist_ok=True)
     port = config.get('web_port')
 
@@ -57,21 +56,14 @@ if __name__ == '__main__':
     conf.accesslog = '-'
     conf.errorlog = '-'
     conf.worker_class = 'trio'
-    conf.workers = 5
+    conf.workers = 1
     conf.application_path = 'app:app'
 
     # Run the app
     try:
-        process = multiprocessing.Process(target=run, args=(conf,))
-        process.start()
-
-        try:
-            trio_asyncio.run(run_app)
-        except Exception:
-            process.kill()
-            process.join()
-            raise
+        trio_asyncio.run(run_app, conf)
     except KeyboardInterrupt:
         pass
     finally:
         print("Exited")
+        exit()

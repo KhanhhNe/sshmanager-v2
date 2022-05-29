@@ -21,9 +21,11 @@ if completed.returncode:
 PyInstaller.__main__.run([
     'main.py', f'--name={app_name}', '--icon=public/favicon.ico',
     f'--distpath={dist_path}', f'--workpath={work_path}', '--onedir', '--noconfirm',
+    '--debug=noarchive',
     '--add-data=package.json;.',
     '--add-data=logging_config.json;.',
     '--add-binary=executables/*;executables',
+    '--hidden-import=app',
 
     # PonyORM and SQLite
     '--hidden-import=pony.orm.dbproviders',
