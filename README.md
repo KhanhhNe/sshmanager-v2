@@ -1,82 +1,55 @@
 # SSHManager
 
-An open source tool for managing, checking and connecting to your SSH proxy
+Tool check fresh và tạo proxy Socks5 tự động từ SSH.
 
-Now you won't have to use `BitviseSSH` or `PuttySSH` to manually connect to an
-SSH, set up port forwarding and try until a usable SSH in your list is found;
-you can *click, *click, *click and `SSHManager` will do all of that hard work
-for you.
+Đơn giản hoá các thao tác liên quan đến SSH và tự động tạo proxy Socks5 từ SSH
+dễ dàng nhất.
 
 <p align="center">
   <!--suppress CheckImageSize -->
   <img src="logo/logo.png" alt="sshmanager logo" width="150"/>
 </p>
 
-Features
+Tính năng nổi bật
 ----
 
-- **Multi-threaded SSH checking**: with the help of `PuttySSH`, `SSHManager`
-  ensures the best use of your system resources with optimized asynchronous
-  queueing techniques
-- **Multi-port SSH port forwarding**: port forwarding using SSH will be easier
-  than ever! `SSHManager` provides a simple and intuitive interface to manage
-  port forwarding, with live status report of each individual ones
-- **Easy API integration**: all application endpoints can be used with simple
-  arguments, supplied in `/docs` endpoint of the app with OpenAPI format
-- **Open source**: The source code is available for everyone to use and modify
-  as needed, and is open to contributions. The executable is, however, paid with
-  a small amount of fee to keep the project alive.
+- **Check SSH đa luồng**: `SSHManager` đảm bảo tốc độ check fresh SSH và kết nối
+  tối ưu nhất (nhờ thư viện `AsyncSSH`)
+- **Setup proxy Socks5 tự động**: Tự động tạo proxy Socks5 cho mọi port local mà
+  bạn muốn, đảm bảo thời gian "disconnect" tối thiểu, tự động kết nối lại nếu bị
+  mất kết nối
+- **API tương tác đơn giản**: `SSHManager` có đầy đủ API để tương tác với backend
+  và thực hiện gần như mọi thao tác bạn có thể làm bằng giao diện. Toàn bộ API đều
+  được thiết kế kĩ lưỡng để ai cũng có thể tích hợp `SSHManager` vào công việc của
+  mình
+- **Mã nguồn mở**: Sứ mệnh của `SSHManager` là trở thành tool quản lý SSH tốt nhất,
+  minh bạch và an toàn nhất, vì vậy mã nguồn `SSHManager` sẽ luôn được public trên
+  GitHub để tất cả mọi người đều có thể sử dụng cho mục đích của mình một cách miễn
+  phí.
 
-Screenshots
+Ảnh chụp màn hình
 ----
 <p align="center">
   <!--suppress CheckImageSize -->
   <img src="logo/screenshot-1.png" alt="screenshot" width="600"/>
 </p>
 
-Usage
+Hướng dẫn sử dụng
 ----
-Buy link (executable
-version): <a href="https://taphoammo.net/gian-hang/sshmanager-v2-1">
-Link</a> <br>
-Download the latest executable release and run `sshmanager-v2.exe`. A browser
-tab will open with the app's URL, which is accessible over LAN (local network)
-from other devices too.
+Mua phiên bản exe portable tại đây: <a href="https://taphoammo.net/gian-hang/sshmanager-v2-2">Link</a>
+Tải phiên bản mới nhất từ link trên, giải nén và chạy file `sshmanager-v2.exe`.
+Cửa sổ trình duyệt mặc định sẽ mở ra với URL của tool. URL đó cũng có thể
+truy cập từ các thiết bị khác trong cùng mạng LAN.
 
-Build your own SSHManager
+Sau khi chạy `SSHManager`, bạn có thể truy cập `http://localhost:6080/docs` để
+tham khảo tài liệu API của `SSHManager`.
+
+Liên hệ hỗ trợ
 ----
-Requirements: `Windows 11`, `Python 3.9.5`, `NodeJS v14.16.1` (not tested under
-other systems)
+Liên lạc mình thông qua thông tin liên lạc bên dưới (ưu tiên Facebook) hoặc
+thông tin liên lạc trong giao diện `SSHManager` nhé.
 
-### Steps:
-1. Clone the repository
-
-```bash
-https://github.com/KhanhhNe/sshmanager-v2.git
-cd sshmanager-v2
-```
-
-2. Install needed libraries
-
-```bash
-pip install pipenv
-pipenv install
-npm install
-```
-
-3. Run the build script
-
-If possible, run the bellow command as Administrator (highest priviledge) to
-avoid directory permission problems.
-
-```bash
-pipenv run compile.py
-```
-
-A new zip file named `sshmanager-v2.*.*.zip` will be created in the folder and
-ready to be used!
-
-Follow me
+Theo dõi mình
 ----
 Facebook: https://www.facebook.com/khanh.luong.6 <br>
 LinkedIn: https://www.linkedin.com/in/khanh-luong-quang <br>
