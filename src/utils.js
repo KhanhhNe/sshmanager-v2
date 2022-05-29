@@ -1,6 +1,5 @@
 const moment = require('moment')
-const _ = require("lodash");
-const {isReactive, reactive} = require("vue");
+const _ = require("lodash")
 
 
 /**

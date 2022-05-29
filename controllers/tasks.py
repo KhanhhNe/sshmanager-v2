@@ -1,5 +1,6 @@
 import logging
 import time
+import traceback
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 
@@ -114,11 +115,11 @@ class SSHCheckTask(CheckTask):
             if connection_succeed:
                 async with self.limit:
                     is_live = await aio_as_trio(ssh_controllers.verify_ssh)(obj.ip, obj.username, obj.password)
+                    SSH.end_checking(obj, is_live=is_live)
             else:
                 logging.getLogger('Ssh').debug(f"{ssh_info} ({run_time}s) - Cannot connect to SSH port.")
-                is_live = False
+                SSH.end_checking(obj, is_live=False)
 
-            SSH.end_checking(obj, is_live=is_live)
             await trio.sleep(60)
 
 
@@ -172,14 +173,9 @@ class PortCheckTask(CheckTask):
 
 
 async def download_sshstore_ssh():
-    is_first_loop = False
     while True:
-        if not is_first_loop:
-            await trio.sleep(60)
-        else:
-            is_first_loop = True
-
         if not config.get('sshstore_enabled'):
+            await trio.sleep(0)
             continue
 
         api_key = config.get('sshstore_api_key')
@@ -191,7 +187,10 @@ async def download_sshstore_ssh():
                 resp = await aio_as_trio(client.get)(f"http://autossh.top/api/txt/{api_key}/{country}/")
                 actions.insert_ssh_from_file_content(await aio_as_trio(resp.text)())
         except Exception:
+            logger.debug(traceback.format_exc())
             pass
+
+        await trio.sleep(60)
 
 
 async def run_all_tasks():

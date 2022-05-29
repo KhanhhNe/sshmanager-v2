@@ -130,14 +130,16 @@ export default {
      * Update SSH checking speed
      */
     updateCheckSpeed() {
-      const totalMinutes = 5
+      const totalMinutes = 3
 
       const sshList = this.sshList
           .filter(s => (
+              !s.is_checking &&
               moment().diff(moment(s.last_checked || ''), 'seconds') <= totalMinutes * 60
           ))
-      const oldest = _.minBy(sshList, s => s.last_checked).last_checked
-      const totalTime = moment().diff(moment(oldest), 'seconds') / 60
+      const oldest = _.minBy(sshList, s => s.last_checked)
+      const oldestTime = oldest ? oldest.last_checked : ''
+      const totalTime = moment().diff(moment(oldestTime), 'seconds') / 60
       this.checkSpeed = _.round(sshList.length / totalTime, 1)
     }
   },

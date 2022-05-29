@@ -243,6 +243,7 @@ td {
     .update-available {
       position: absolute;
       top: 95vh;
+      height: 0;
       color: red;
       font-size: 1rem;
     }

@@ -4,7 +4,7 @@ from pony import orm
 from pony.orm import Database
 
 DB_ENGINE = 'sqlite'
-DB_PATH = '../data/db.sqlite'
+DB_PATH = os.path.join(os.getcwd(), 'data', 'db.sqlite')
 
 db = Database()
 
