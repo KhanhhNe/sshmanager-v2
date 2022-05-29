@@ -115,11 +115,11 @@ class SSHCheckTask(CheckTask):
             if connection_succeed:
                 async with self.limit:
                     is_live = await aio_as_trio(ssh_controllers.verify_ssh)(obj.ip, obj.username, obj.password)
+                    SSH.end_checking(obj, is_live=is_live)
             else:
                 logging.getLogger('Ssh').debug(f"{ssh_info} ({run_time}s) - Cannot connect to SSH port.")
-                is_live = False
+                SSH.end_checking(obj, is_live=False)
 
-            SSH.end_checking(obj, is_live=is_live)
             await trio.sleep(60)
 
 
