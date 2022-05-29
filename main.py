@@ -62,8 +62,6 @@ if __name__ == '__main__':
     # Run the app
     try:
         trio_asyncio.run(run_app, conf)
-    except KeyboardInterrupt:
-        pass
     finally:
         print("Exited")
         exit()
