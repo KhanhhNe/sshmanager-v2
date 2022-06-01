@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import UploadFile
 from fastapi.routing import APIRouter
-from pony.orm import ObjectNotFound, TransactionIntegrityError, commit, db_session, desc
+from pony.orm import ObjectNotFound, db_session, desc
 
 from controllers import actions
 from models import SSH
@@ -43,12 +43,9 @@ def add_ssh(ssh_list: List[SSHIn]):
     """
     results = []
     for ssh in ssh_list:
-        try:
+        if not SSH.exists(**ssh.dict()):
             s = SSH(**ssh.dict())
-            commit()
             results.append(s)
-        except TransactionIntegrityError:
-            continue
 
     return [SSHOut.from_orm(s) for s in results]
 

@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi.responses import PlainTextResponse
 from fastapi.routing import APIRouter
-from pony.orm import TransactionIntegrityError, commit, db_session
+from pony.orm import db_session
 
 import config
 from controllers.actions import reset_ports
@@ -37,12 +37,9 @@ def add_ports(port_list: List[PortIn]):
     """
     results = []
     for port in port_list:
-        try:
+        if not Port.exists(**port.dict()):
             p = Port(**port.dict())
-            commit()
             results.append(p)
-        except TransactionIntegrityError:
-            continue
 
     return [PortOut.from_orm(p) for p in results]
 

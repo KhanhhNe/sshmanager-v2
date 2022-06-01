@@ -1,9 +1,8 @@
 import logging
 from typing import List
 
-import psutil
 import trio
-from pony.orm import TransactionIntegrityError, commit, db_session
+from pony.orm import db_session
 from trio_asyncio import aio_as_trio
 
 import utils
@@ -108,17 +107,7 @@ def reset_old_status():
             ssh.reset_status()
         for port in Port.select():
             port.reset_status()
-
-
-def kill_child_processes():
-    """
-    Kill all child processes started by the application.
-    """
-    process = psutil.Process()
-    children: List[psutil.Process] = process.children(recursive=True)
-    for child in children:
-        child.kill()
-    psutil.wait_procs(children)
+    logger.debug("Status reset is done")
 
 
 def insert_ssh_from_file_content(file_content):
@@ -132,12 +121,9 @@ def insert_ssh_from_file_content(file_content):
     created_ssh = []
     with db_session:
         for ssh_info in utils.parse_ssh_file(file_content):
-            try:
+            if not SSH.exists(**ssh_info):
                 s = SSH(**ssh_info)
-                commit()
                 created_ssh.append(s)
-            except TransactionIntegrityError:
-                continue
-        logger.info(f"Inserted {len(created_ssh)} SSH from file content")
+    logger.info(f"Inserted {len(created_ssh)} SSH from file content")
 
     return created_ssh
