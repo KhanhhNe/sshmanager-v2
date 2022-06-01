@@ -12,6 +12,7 @@ import trio
 import trio_asyncio
 from hypercorn.trio import worker_serve
 from hypercorn.utils import check_multiprocess_shutdown_event
+from trio.to_thread import run_sync
 
 with warnings.catch_warnings():
     # Ignore the warnings of using deprecated cryptography libraries in asyncssh
@@ -23,6 +24,8 @@ import config
 import utils
 from controllers import tasks, actions
 from models import init_db
+
+logger = logging.getLogger('Main')
 
 
 def run_web(hypercorn_config: hypercorn.Config,
@@ -45,7 +48,7 @@ async def run_app(hypercorn_config: hypercorn.Config):
     asyncssh.set_log_level(logging.CRITICAL)
 
     async with trio.open_nursery() as nursery:
-        actions.reset_old_status()
+        nursery.start_soon(run_sync, actions.reset_old_status)
         nursery.start_soon(tasks.run_all_tasks)
         nursery.start_soon(run_web(hypercorn_config))
 
@@ -68,7 +71,9 @@ if __name__ == '__main__':
     utils.configure_logging()
 
     # Initialize database
+    logger.debug("Database initializing...")
     init_db()
+    logger.debug("Database initialized")
 
     # Hypercorn config
     conf = hypercorn.config.Config()
