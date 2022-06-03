@@ -85,12 +85,12 @@ class SSHOut(SSHOutBase):
     # noinspection PyMethodParameters
     @validator('status_text', pre=True, always=True, check_fields=False)
     def default_status_text(cls, v, values):
-        if not v and values['last_checked']:
-            return 'live' if values['is_live'] else 'die'
-        elif values['is_live']:
-            return 'live'
-        else:
-            return v or ''
+        if v:
+            return v
+        return {
+            True: 'live',
+            False: 'die'
+        }.get(values['is_live'], '')
 
 
 class PortIn(BaseModel):
