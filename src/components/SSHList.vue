@@ -130,7 +130,7 @@ export default {
      * Update SSH checking speed
      */
     updateCheckSpeed() {
-      const totalMinutes = 3
+      const totalMinutes = 10
 
       const sshList = this.sshList
           .filter(s => (

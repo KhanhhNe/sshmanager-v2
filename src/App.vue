@@ -79,10 +79,10 @@ export default {
   },
   computed: {
     liveList() {
-      return this.sshList.filter(ssh => ssh.last_checked !== null && ssh.is_live)
+      return this.sshList.filter(ssh => ssh.is_live === true)
     },
     dieList() {
-      return this.sshList.filter(ssh => ssh.last_checked !== null && !ssh.is_live)
+      return this.sshList.filter(ssh => ssh.is_live === false)
     },
     sortedList() {
       return _.orderBy(this.sshList, ({last_checked}) => last_checked || '', ['desc'])

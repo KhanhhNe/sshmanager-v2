@@ -61,7 +61,7 @@ class SSH(Model):
     ip = Required(str)
     username = Optional(str)
     password = Optional(str)
-    is_live = Required(bool, default=False)
+    is_live = Optional(bool)
 
     composite_key(ip, username, password)
 
