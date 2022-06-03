@@ -129,7 +129,7 @@ class Port(Model):
 
     @auto_renew_objects
     def need_reset(self, time_expired: datetime):
-        return self.ssh is not None and self.time_connected < time_expired
+        return self.time_connected is not None and self.time_connected < time_expired
 
     @property
     @auto_renew_objects
