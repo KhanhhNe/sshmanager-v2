@@ -92,6 +92,8 @@ class CheckTask(ABC):
                 for obj_id in not_checked:
                     self.included_ids.remove(obj_id)
 
+                if 'ssh' in str(type(self)).lower():
+                    print(self.tasks_limit, self.limit.total_tokens)
                 self.limit.total_tokens = self.tasks_limit
                 await trio.sleep(1)
 

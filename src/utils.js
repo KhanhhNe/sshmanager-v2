@@ -122,8 +122,14 @@ function setupWebsocket(objectsList, endpoint) {
 }
 
 
+function isRecent(ssh) {
+    return moment().diff(moment(ssh.last_checked), 'milliseconds') <= 1000
+}
+
+
 module.exports = {
     getTimeDisplay,
     getSshText,
-    setupWebsocket
+    setupWebsocket,
+    isRecent
 }

@@ -32,7 +32,7 @@
         <tr
             v-for="ssh in sshList.slice(0, displayLimit)"
             :key="getSshText(ssh)"
-            :class="ssh.status_text"
+            :class="[ssh.status_text, isRecent(ssh) ? 'recent' : '']"
             class="ssh">
           <td>{{ ssh.status_text || (ssh.is_checking ? 'checking' : '') }}
           </td>
@@ -73,7 +73,7 @@
 <script>
 import ArticleTitle from "@/components/ArticleTitle";
 import {saveAs} from "file-saver";
-import {getSshText, getTimeDisplay} from "@/utils";
+import {getSshText, getTimeDisplay, isRecent} from "@/utils";
 import moment from "moment";
 import _ from "lodash";
 
@@ -101,6 +101,7 @@ export default {
   methods: {
     getTimeDisplay,
     getSshText,
+    isRecent,
 
     /**
      * Get SSH list from input#file-upload
@@ -175,12 +176,18 @@ article {
     white-space: nowrap;
 
     .ssh {
+      transition: background-color 1s ease;
+
       &.live td:first-child {
         color: green
       }
 
       &.die td:first-child {
         color: red
+      }
+
+      &.recent {
+        background-color: rgba(3, 206, 3, 0.27);
       }
     }
   }
