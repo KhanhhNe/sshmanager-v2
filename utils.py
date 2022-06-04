@@ -120,7 +120,7 @@ async def get_proxy_ip(proxy_address, tries=0) -> str:
     """
     # noinspection PyBroadException
     try:
-        connector = ProxyConnector.from_url(proxy_address)
+        connector = ProxyConnector.from_url(proxy_address, enable_cleanup_closed=True)
         async with aiohttp.ClientSession(connector=connector) as client:
             # noinspection PyBroadException
             try:
