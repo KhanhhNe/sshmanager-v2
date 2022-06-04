@@ -48,9 +48,9 @@ async def run_app(hypercorn_config: hypercorn.Config):
     asyncssh.set_log_level(logging.CRITICAL)
 
     async with trio.open_nursery() as nursery:
+        nursery.start_soon(run_web(hypercorn_config))
         nursery.start_soon(run_sync, actions.reset_old_status)
         nursery.start_soon(tasks.run_all_tasks)
-        nursery.start_soon(run_web(hypercorn_config))
 
 
 if __name__ == '__main__':
