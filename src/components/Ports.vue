@@ -40,8 +40,8 @@
           <td>{{ portInfo.port_number }}</td>
           <td class="port-info" v-if="portInfo.ssh">
             <span v-if="!portInfo.time_connected" data-tooltip="Đang kết nối">
-              <i class="fi fi-neutral"
-                 style="color: darkgoldenrod"></i>
+              <i class="fi fi-spinner fi-spin"
+                 style="color: var(--primary)"></i>
             </span>
             <span v-else-if="portInfo.public_ip === portInfo.ssh.ip" data-tooltip="Đã kết nối">
               <i class="fi fi-slightly-smile"
