@@ -1,4 +1,6 @@
 import json
+import logging
+import traceback
 from datetime import datetime
 from typing import Type
 
@@ -10,6 +12,8 @@ from pony.orm.core import db_session
 from pydantic import BaseModel
 
 from models import Model
+
+logger = logging.getLogger('Websockets')
 
 
 def websocket_auto_update_endpoint(entity: Type[Model], output_model: Type[BaseModel]):
@@ -55,5 +59,8 @@ def websocket_auto_update_endpoint(entity: Type[Model], output_model: Type[BaseM
                 }, default=str))
         except WebSocketDisconnect:
             pass
+        except Exception:
+            logger.error(traceback.format_exc())
+            raise
 
     return handle_websocket
