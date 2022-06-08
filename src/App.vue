@@ -84,7 +84,8 @@ export default {
       return this.sshList.filter(ssh => ssh.is_live === false)
     },
     sortedList() {
-      return _.orderBy(this.sshList, ({last_checked}) => last_checked || '', ['desc'])
+      return this.sshList
+      // return _.orderBy(this.sshList, ({last_checked}) => last_checked || '', ['desc'])
     }
   },
   methods: {

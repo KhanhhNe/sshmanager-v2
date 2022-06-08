@@ -149,7 +149,7 @@ export default {
       return
     }
 
-    setInterval(this.updateCheckSpeed)
+    setInterval(this.updateCheckSpeed, 1000)
   }
 }
 </script>
