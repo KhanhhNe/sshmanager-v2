@@ -92,8 +92,6 @@ class CheckTask(ABC):
                 for obj_id in not_checked:
                     self.included_ids.remove(obj_id)
 
-                if 'ssh' in str(type(self)).lower():
-                    print(self.tasks_limit, self.limit.total_tokens)
                 self.limit.total_tokens = self.tasks_limit
                 await trio.sleep(1)
 
@@ -148,7 +146,7 @@ class PortCheckTask(CheckTask):
                     if port.is_connected:
                         ip = await actions.check_port_ip(port)
                         if port.ssh and ip != port.ssh.ip:
-                            logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - PROXY DIED")
+                            logger.info(f"Port {port.port_number:<5} -> SSH {port.ssh.ip:<15} - PROXY DIED")
                             port.disconnect_ssh()
 
                     # Connect SSH to port

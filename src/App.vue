@@ -69,7 +69,6 @@ export default {
   },
   data() {
     return {
-      a: SSHStore,
       sshList: [],
       ports: [],
       settingsStore: useSettingsStore(),
