@@ -2,10 +2,10 @@ from typing import List
 
 from fastapi import UploadFile
 from fastapi.routing import APIRouter
-from pony.orm import ObjectNotFound, db_session, desc
+from pony.orm import ObjectNotFound, db_session
 
 from controllers import actions
-from models import SSH
+from models import Port, SSH
 from models.io_models import SSHIn, SSHOut
 from views.websockets import websocket_auto_update_endpoint
 
@@ -13,21 +13,14 @@ router = APIRouter()
 
 
 @router.get('', response_model=List[SSHOut])
-@db_session
 def get_all_ssh():
     """
     Lấy thông tin toàn bộ SSH.
 
     :return: Danh sách thông tin SSH
     """
-    checked_ssh_list = (SSH
-                        .select(lambda ssh: ssh.last_checked is not None)
-                        .order_by(desc(SSH.last_checked))[:]
-                        .to_list())
-    unchecked_ssh_list = (SSH
-                          .select(lambda ssh: ssh.last_checked is None)[:]
-                          .to_list())
-    ssh_list = checked_ssh_list + unchecked_ssh_list
+    with db_session(optimistic=False):
+        ssh_list = SSH.select().prefetch(Port)[:].to_list()
     return [SSHOut.from_orm(ssh) for ssh in ssh_list]
 
 
@@ -83,10 +76,10 @@ async def upload_ssh(ssh_file: UploadFile):
     :return: Thông tin SSH sau khi tạo
     """
     file_content = (await ssh_file.read()).decode()
-    created_ssh = actions.insert_ssh_from_file_content(file_content)
-    with db_session:
+    ssh_ids = actions.insert_ssh_from_file_content(file_content)
+    with db_session(optimistic=False):
         # Re-query SSHs and format into output model
-        return [SSHOut.from_orm(SSH[s.id]) for s in created_ssh]
+        return [SSHOut.from_orm(SSH[ssh_id]) for ssh_id in ssh_ids]
 
 
-router.add_api_websocket_route('', websocket_auto_update_endpoint(SSH, SSHOut))
+router.add_api_websocket_route('', websocket_auto_update_endpoint(SSH, SSHOut, [Port]))

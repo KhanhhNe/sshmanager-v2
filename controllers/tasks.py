@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import aiohttp
 import trio
 from pony.orm import db_session
+from pony.orm.core import Query
 from trio_asyncio import aio_as_trio
 
 import config
@@ -48,12 +49,16 @@ class CheckTask(ABC):
         """
 
     @abstractmethod
-    def get_objects(self):
+    def get_objects(self) -> Query:
         """
         Get objects to run tasks on.
 
         :return: Objects iterable
         """
+
+    def _get_objects_list(self):
+        with db_session(optimistic=False):
+            return self.get_objects()[:].to_list()
 
     @abstractmethod
     async def run_on_object(self, obj):
@@ -78,15 +83,21 @@ class CheckTask(ABC):
         async with trio.open_nursery() as nursery:
             while True:
                 not_checked = self.included_ids.get_ids()
+                added = []
 
                 # Try to add new tasks
-                with db_session:
-                    for obj in self.get_objects():
-                        if obj.id in not_checked:
-                            not_checked.remove(obj.id)
-                            continue
-                        self.included_ids.add(obj.id)
-                        nursery.start_soon(_run_with_auto_cancel, obj)
+                objects = await trio.to_thread.run_sync(self._get_objects_list)
+
+                for obj in objects:
+                    if obj.id in not_checked:
+                        not_checked.remove(obj.id)
+                        continue
+                    added.append(obj)
+
+                for obj in added:
+                    self.included_ids.add(obj.id)
+                    nursery.start_soon(_run_with_auto_cancel, obj)
+                    await trio.sleep(0)
 
                 # Remove not checked objects
                 for obj_id in not_checked:
@@ -185,7 +196,7 @@ async def download_sshstore_ssh():
         try:
             async with aio_as_trio(aiohttp.ClientSession()) as client:
                 resp = await aio_as_trio(client.get)(f"http://autossh.top/api/txt/{api_key}/{country}/")
-                actions.insert_ssh_from_file_content(await aio_as_trio(resp.text)())
+                await trio.to_thread.run_sync(actions.insert_ssh_from_file_content, await aio_as_trio(resp.text)())
         except Exception:
             logger.debug(traceback.format_exc())
             pass

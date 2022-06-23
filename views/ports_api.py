@@ -6,7 +6,7 @@ from pony.orm import commit, db_session
 
 import config
 from controllers.actions import reset_ports
-from models import Port
+from models import Port, SSH
 from models.io_models import PortIn, PortOut
 from views.websockets import websocket_auto_update_endpoint
 
@@ -107,4 +107,4 @@ def get_proxies_string(full_url: str = None):
     return PlainTextResponse('\n'.join(results))
 
 
-router.add_api_websocket_route('', websocket_auto_update_endpoint(Port, PortOut))
+router.add_api_websocket_route('', websocket_auto_update_endpoint(Port, PortOut, [SSH]))

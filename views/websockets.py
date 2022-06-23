@@ -2,7 +2,7 @@ import json
 import logging
 import traceback
 from datetime import datetime
-from typing import Type
+from typing import List, Optional, Type
 
 import pendulum
 import trio
@@ -17,7 +17,11 @@ from models import Model
 logger = logging.getLogger('Websockets')
 
 
-def websocket_auto_update_endpoint(entity: Type[Model], output_model: Type[BaseModel]):
+def websocket_auto_update_endpoint(entity: Type[Model], output_model: Type[BaseModel],
+                                   prefetch_models: Optional[List[Type[Model]]] = None):
+    if prefetch_models is None:
+        prefetch_models = []
+
     async def handle_websocket(websocket: WebSocket):
         try:
             await websocket.accept()
@@ -34,15 +38,16 @@ def websocket_auto_update_endpoint(entity: Type[Model], output_model: Type[BaseM
                 else:
                     last_modified = None
 
-                with db_session:
-                    objects = [obj for obj in query[:].to_list()
+                with db_session(optimistic=False):
+                    objects = [obj for obj in query.prefetch(*prefetch_models)[:].to_list()
                                if last_modified is None or (
                                        obj.last_modified > last_modified or
                                        obj.id not in message.get('ids', [])
                                )]
                     # noinspection PyTypeChecker
                     object_ids = orm.select(obj.id for obj in entity)[:].to_list()
-                    output_objects = [output_model.from_orm(obj).dict() for obj in objects]
+
+                output_objects = [output_model.from_orm(obj).dict() for obj in objects]
 
                 if objects:
                     last_modified = max(objects, key=lambda obj: obj.last_modified).last_modified
