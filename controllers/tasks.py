@@ -195,8 +195,10 @@ async def download_sshstore_ssh():
 
 async def run_all_tasks():
     async with trio.open_nursery() as nursery:
+        await trio.sleep(1)
         ssh_check = SSHCheckTask()
         port_check = PortCheckTask()
         nursery.start_soon(ssh_check.run_task)
         nursery.start_soon(port_check.run_task)
         nursery.start_soon(download_sshstore_ssh)
+        logger.debug("Tasks started")
