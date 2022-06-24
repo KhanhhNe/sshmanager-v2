@@ -1,6 +1,6 @@
 from functools import wraps
 
-from pony.orm import ObjectNotFound, db_session, make_proxy
+from pony.orm import ObjectNotFound, db_session
 
 from models import db
 
@@ -18,11 +18,11 @@ def auto_renew_objects(func):
         try:
             for ind, arg in enumerate(args):
                 if arg and issubclass(type(arg), db.Entity):
-                    args[ind] = make_proxy(args[ind])
+                    args[ind] = type(arg)[arg.id]
 
             for key, val in kwargs.items():
                 if val and issubclass(type(val), db.Entity):
-                    kwargs[key] = make_proxy(val)
+                    kwargs[key] = type(val)[val.id]
         except ObjectNotFound:
             return
         return func(*args, **kwargs)

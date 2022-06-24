@@ -150,9 +150,7 @@ class PortCheckTask(CheckTask):
             async with trio.open_nursery() as nursery:
                 async with self.limit:
                     with db_session:
-                        port: Port = Port[port.id].load_object()
-                        if port.ssh is not None:
-                            port.ssh.load()
+                        port = Port.select(lambda p: p.id == port.id).prefetch(SSH).first().load_object()
 
                     if port.is_connected:
                         ip = await actions.check_port_ip(port)
