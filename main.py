@@ -41,6 +41,7 @@ def run_web(hypercorn_config: hypercorn.Config,
     if shutdown_event is not None:
         shutdown_trigger = functools.partial(check_multiprocess_shutdown_event, shutdown_event, trio.sleep)
 
+    logger.debug("Initialized web server")
     return functools.partial(worker_serve, app, hypercorn_config, sockets=sockets, shutdown_trigger=shutdown_trigger)
 
 

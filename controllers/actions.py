@@ -7,7 +7,7 @@ from trio_asyncio import aio_as_trio
 
 import utils
 from controllers import ssh_controllers
-from models import Port, SSH
+from models import Port, SSH, db
 
 logger = logging.getLogger('Actions')
 
@@ -118,12 +118,11 @@ def insert_ssh_from_file_content(file_content):
     :param file_content: SSH file content
     :return: List of created SSH
     """
-    created_ssh = []
+    ssh_ids = []
     with db_session:
         for ssh_info in utils.parse_ssh_file(file_content):
             if not SSH.exists(**ssh_info):
-                s = SSH(**ssh_info)
-                created_ssh.append(s)
-    logger.info(f"Inserted {len(created_ssh)} SSH from file content")
+                ssh_ids.append(db.insert(SSH, **ssh_info))
+    logger.info(f"Inserted {len(ssh_ids)} SSH from file content")
 
-    return created_ssh
+    return ssh_ids

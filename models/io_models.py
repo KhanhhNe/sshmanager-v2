@@ -13,51 +13,57 @@ def generate_pydantic_model(entity: Type[EntityMeta], model_name, field_descript
         orm_mode = True
 
     entity_name = repr(entity.__name__)
-    result = {}
+    # noinspection PyProtectedMember
+    entity_attrs = entity._get_attrs_(exclude=['classtype'])
+
+    model_fields = {}
+
     relationship_fields = []
-
     description_missing = []
-    attr: Attribute
+
+    entity_attr: Attribute
     # noinspection PyProtectedMember,PyArgumentList
-    for attr in entity._get_attrs_(exclude=['classtype']):
-        if attr.is_relation:
+    for entity_attr in entity._get_attrs_(exclude=['classtype']):
+        if entity_attr.is_relation:
             attr_type = Json
-            relationship_fields.append(attr.name)
+            relationship_fields.append(entity_attr.name)
         else:
-            attr_type = attr.py_type
+            attr_type = entity_attr.py_type
 
-        args = {}
-        if not attr.is_required:
-            args['default'] = None
-        if attr.name in field_description:
-            args['description'] = field_description[attr.name]
+        field_args = {}
+        if not entity_attr.is_required:
+            field_args['default'] = None
+        if entity_attr.name in field_description:
+            field_args['description'] = field_description[entity_attr.name]
         else:
-            description_missing.append(attr.name)
+            description_missing.append(entity_attr.name)
 
-        result[attr.name] = (attr_type, Field(**args))
+        model_fields[entity_attr.name] = (attr_type, Field(**field_args))
 
+    # Raise exception for missing/redundant description
+    # (to ensure programmer won't forget to change them after updating the model)
     if description_missing:
         missing_display = ', '.join(map(repr, description_missing))
         print(json.dumps({i: '' for i in description_missing}, indent=4))
         raise KeyError(f"No description found of entity {entity_name} for attributes: {missing_display}")
 
-    redundant_fields = []
-    for name in field_description:
-        if name not in result:
-            redundant_fields.append(name)
-    if redundant_fields:
+    if redundant_fields := set(field_description) - set(model_fields):
         redundant_display = ', '.join(map(repr, redundant_fields))
         raise KeyError(f"Redundant description found of entity {entity_name} for attributes: {redundant_display}")
 
     @validator(*relationship_fields, pre=True, always=True, allow_reuse=True)
     def relationship_validator(cls, v):
         if v:
-            return json.dumps(v.to_dict(), default=str)
+            if isinstance(v, dict):
+                data = v
+            else:
+                data = v.to_dict()
+            return json.dumps(data, default=str)
 
     return create_model(model_name,
                         __config__=Config,
                         __validators__={'relationship_validator': relationship_validator},
-                        **result)
+                        **model_fields)
 
 
 class SSHIn(BaseModel):
