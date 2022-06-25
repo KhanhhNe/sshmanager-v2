@@ -2,12 +2,12 @@ import logging
 from typing import List
 
 import trio
-from pony.orm import db_session
+from pony.orm import commit, db_session
 from trio_asyncio import aio_as_trio
 
 import utils
 from controllers import ssh_controllers
-from models import Port, SSH, db
+from models import Port, SSH
 
 logger = logging.getLogger('Actions')
 
@@ -118,11 +118,12 @@ def insert_ssh_from_file_content(file_content):
     :param file_content: SSH file content
     :return: List of created SSH
     """
-    ssh_ids = []
+    created_ssh = []
     with db_session:
         for ssh_info in utils.parse_ssh_file(file_content):
             if not SSH.exists(**ssh_info):
-                ssh_ids.append(db.insert(SSH, **ssh_info))
-    logger.info(f"Inserted {len(ssh_ids)} SSH from file content")
+                created_ssh.append(SSH(**ssh_info))
+        commit()
+    logger.info(f"Inserted {len(created_ssh)} SSH from file content")
 
-    return ssh_ids
+    return [ssh.id for ssh in created_ssh]
