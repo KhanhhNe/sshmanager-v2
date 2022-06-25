@@ -98,9 +98,9 @@ async def reset_ports(ports: List[Port], unique=True, delete_ssh=False):
                     nursery.start_soon(reconnect_port_using_ssh, port, ssh)
 
 
-def reset_old_status():
+def reset_entities_data():
     """
-    Reset attribute is_checking of Port and SSH to False on startup
+    Reset SSH and Port data from previous application run.
     """
     with db_session:
         for ssh in SSH.select():

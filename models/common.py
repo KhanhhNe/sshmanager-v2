@@ -12,19 +12,19 @@ def auto_renew_objects(func):
     """
 
     @wraps(func)
-    @db_session(optimistic=False)
     def wrapped(*args, **kwargs):
-        args = list(args)
-        try:
-            for ind, arg in enumerate(args):
-                if arg and issubclass(type(arg), db.Entity):
-                    args[ind] = type(arg)[arg.id]
+        with db_session(optimistic=False):
+            args = list(args)
+            try:
+                for ind, arg in enumerate(args):
+                    if arg and issubclass(type(arg), db.Entity):
+                        args[ind] = type(arg)[arg.id]
 
-            for key, val in kwargs.items():
-                if val and issubclass(type(val), db.Entity):
-                    kwargs[key] = type(val)[val.id]
-        except ObjectNotFound:
-            return
-        return func(*args, **kwargs)
+                for key, val in kwargs.items():
+                    if val and issubclass(type(val), db.Entity):
+                        kwargs[key] = type(val)[val.id]
+            except ObjectNotFound:
+                return
+            return func(*args, **kwargs)
 
     return wrapped
