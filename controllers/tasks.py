@@ -82,26 +82,21 @@ class CheckTask(ABC):
 
         async with trio.open_nursery() as nursery:
             while True:
-                not_checked = self.included_ids.get_ids()
-                added = []
-
-                # Try to add new tasks
                 objects = await trio.to_thread.run_sync(self._get_objects_list)
 
-                for obj in objects:
-                    if obj.id in not_checked:
-                        not_checked.remove(obj.id)
-                        continue
-                    added.append(obj)
+                tasks_ids = set(self.included_ids.get_ids())
+                object_ids = set(o.id for o in objects)
+                objects_by_id = {obj.id: obj for obj in objects}
 
-                for obj in added:
-                    self.included_ids.add(obj.id)
-                    nursery.start_soon(_run_with_auto_cancel, obj)
-                    await trio.sleep(0)
-
-                # Remove not checked objects
-                for obj_id in not_checked:
-                    self.included_ids.remove(obj_id)
+                # Try to add new tasks
+                if added := object_ids - tasks_ids:
+                    for obj_id in added:
+                        self.included_ids.add(obj_id)
+                        nursery.start_soon(_run_with_auto_cancel, objects_by_id[obj_id])
+                else:
+                    if removed := tasks_ids - object_ids:
+                        for obj_id in removed:
+                            self.included_ids.remove(obj_id)
 
                 self.limit.total_tokens = self.tasks_limit
                 await trio.sleep(1)
@@ -115,7 +110,7 @@ class SSHCheckTask(CheckTask):
     def get_objects(self):
         return SSH.select()
 
-    async def run_on_object(self, obj):
+    async def run_on_object(self, obj: SSH):
         while True:
             SSH.begin_checking(obj)
             start_time = time.perf_counter()
@@ -133,11 +128,8 @@ class SSHCheckTask(CheckTask):
 
             # Auto delete the died SSH if requested
             if config.get('ssh_auto_delete_died'):
-                with db_session:
-                    ssh = SSH[obj.id]
-                    if not ssh.is_live:
-                        SSH[obj.id].delete()
-                        break
+                if obj.delete_if_died():
+                    logging.getLogger('Ssh').debug(f"{ssh_info} Cancelled checking due to died status.")
 
             await trio.sleep(60)
 

@@ -95,6 +95,19 @@ class SSH(Model):
         else:
             return None
 
+    @auto_renew_objects
+    def delete_if_died(self):
+        """
+        Delete the SSH if it is died.
+
+        :return: Whether the SSH is deleted or not.
+        """
+        if not self.is_live:
+            self.delete()
+            return True
+        else:
+            return False
+
 
 class Port(Model):
     """
