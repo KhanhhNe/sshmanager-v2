@@ -21,6 +21,10 @@ DEFAULT_CONFIG = [
         'SSH', 'tasks_count', 'ssh_tasks_count', 50,
         "Số thread check fresh SSH"),
     ConfigItem(
+        'SSH', 'auto_delete_died', 'ssh_auto_delete_died', False,
+        "Tự động xoá SSH die"
+    ),
+    ConfigItem(
         'PORT', 'use_unique_ssh', 'use_unique_ssh', False,
         "Không dùng lại các SSH đã dùng ở mỗi Port"
     ),

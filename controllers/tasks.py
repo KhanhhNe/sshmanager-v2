@@ -131,6 +131,14 @@ class SSHCheckTask(CheckTask):
                 logging.getLogger('Ssh').debug(f"{ssh_info} ({run_time}s) - Cannot connect to SSH port.")
                 SSH.end_checking(obj, is_live=False)
 
+            # Auto delete the died SSH if requested
+            if config.get('ssh_auto_delete_died'):
+                with db_session:
+                    ssh = SSH[obj.id]
+                    if not ssh.is_live:
+                        SSH[obj.id].delete()
+                        break
+
             await trio.sleep(60)
 
 
