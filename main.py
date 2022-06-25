@@ -50,7 +50,7 @@ async def run_app(hypercorn_config: hypercorn.Config):
 
     async with trio.open_nursery() as nursery:
         nursery.start_soon(run_web(hypercorn_config))
-        nursery.start_soon(run_sync, actions.reset_old_status)
+        nursery.start_soon(run_sync, actions.reset_entities_data)
         nursery.start_soon(tasks.run_all_tasks)
 
 

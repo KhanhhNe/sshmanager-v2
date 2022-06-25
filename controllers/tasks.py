@@ -84,22 +84,31 @@ class CheckTask(ABC):
             while True:
                 objects = await trio.to_thread.run_sync(self._get_objects_list)
 
+                # Convert to set for efficient operations later
                 tasks_ids = set(self.included_ids.get_ids())
                 object_ids = set(o.id for o in objects)
                 objects_by_id = {obj.id: obj for obj in objects}
 
+                # Limit total tasks add/remove loops, preventing the event loop being blocked
+                maximum_loop = self.tasks_limit
+
                 # Try to add new tasks
                 if added := object_ids - tasks_ids:
-                    for obj_id in added:
+                    for index, obj_id in enumerate(added):
                         self.included_ids.add(obj_id)
                         nursery.start_soon(_run_with_auto_cancel, objects_by_id[obj_id])
+                        if index >= maximum_loop:
+                            break
                 else:
+                    # Remove tasks not in the database anymore
                     if removed := tasks_ids - object_ids:
-                        for obj_id in removed:
+                        for index, obj_id in enumerate(removed):
                             self.included_ids.remove(obj_id)
+                            if index >= maximum_loop:
+                                break
 
                 self.limit.total_tokens = self.tasks_limit
-                await trio.sleep(1)
+                await trio.sleep(5)
 
 
 class SSHCheckTask(CheckTask):
@@ -112,24 +121,26 @@ class SSHCheckTask(CheckTask):
 
     async def run_on_object(self, obj: SSH):
         while True:
-            SSH.begin_checking(obj)
             start_time = time.perf_counter()
             ssh_info = f"{obj.ip:15} |      "
             connection_succeed = await utils.test_ssh_connection(obj.ip)
             run_time = '{:4.1f}'.format(time.perf_counter() - start_time)
 
-            if connection_succeed:
-                async with self.limit:
+            async with self.limit:
+                if connection_succeed:
                     is_live = await aio_as_trio(ssh_controllers.verify_ssh)(obj.ip, obj.username, obj.password)
-                    SSH.end_checking(obj, is_live=is_live)
-            else:
-                logging.getLogger('Ssh').debug(f"{ssh_info} ({run_time}s) - Cannot connect to SSH port.")
-                SSH.end_checking(obj, is_live=False)
+                    await SSH.async_end_checking(obj, is_live=is_live)
+                else:
+                    logging.getLogger('Ssh').debug(f"{ssh_info} ({run_time}s) - Cannot connect to SSH port.")
+                    await SSH.async_end_checking(obj, is_live=False)
+
+            await trio.sleep(0)
 
             # Auto delete the died SSH if requested
             if config.get('ssh_auto_delete_died'):
                 if obj.delete_if_died():
                     logging.getLogger('Ssh').debug(f"{ssh_info} Cancelled checking due to died status.")
+                    break
 
             await trio.sleep(60)
 
@@ -150,7 +161,8 @@ class PortCheckTask(CheckTask):
             async with trio.open_nursery() as nursery:
                 async with self.limit:
                     with db_session:
-                        port = Port.select(lambda p: p.id == port.id).prefetch(SSH).first().load_object()
+                        port = Port.select(lambda p: p.id == port.id).prefetch(SSH).first()
+                        port.load()
 
                     if port.is_connected:
                         ip = await actions.check_port_ip(port)

@@ -112,7 +112,7 @@ function setupWebsocket(objectsList, endpoint) {
             const data = JSON.parse(event.data)
             lastModified = data.last_modified || lastModified
 
-            // Upate objects from database
+            // Update objects from database
             updateObjects(data)
             updateReceived = true
         })

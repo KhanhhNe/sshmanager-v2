@@ -1,6 +1,8 @@
+import functools
 import typing
 from datetime import datetime
 
+import trio
 from pony.orm import Optional, Required, Set, composite_key
 
 import utils
@@ -9,23 +11,11 @@ from models.common import auto_renew_objects
 
 
 class Model(db.Entity):
-    is_checking = Required(bool, default=False)
     last_checked = Optional(datetime)
     last_modified = Required(datetime, default=datetime.now)
 
     def before_update(self):
-        # Update time stamps
         self.last_modified = datetime.now()
-        if self.is_checking:
-            self.last_checked = datetime.now()
-
-    @classmethod
-    @auto_renew_objects
-    def begin_checking(cls, obj):
-        """
-        Start the checking process (set checking-related flags in database).
-        """
-        obj.is_checking = True
 
     @classmethod
     @auto_renew_objects
@@ -37,21 +27,18 @@ class Model(db.Entity):
         :param obj: Object
         :param kwargs: Updating values
         """
-        obj.set(**kwargs)
-        obj.is_checking = False
+        obj.set(**kwargs, last_checked=datetime.now())
+
+    @classmethod
+    async def async_end_checking(cls, obj, **kwargs):
+        return await trio.to_thread.run_sync(functools.partial(cls.end_checking, obj, **kwargs))
 
     @auto_renew_objects
     def reset_status(self):
         """
         Reset all object's status.
         """
-        self.is_checking = False
         self.last_checked = None
-
-    @auto_renew_objects
-    def load_object(self):
-        self.load()
-        return self
 
 
 class SSH(Model):

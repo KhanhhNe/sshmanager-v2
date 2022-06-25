@@ -34,7 +34,7 @@
             :key="getSshText(ssh)"
             :class="[ssh.status_text, isRecent(ssh) ? 'recent' : '']"
             class="ssh">
-          <td>{{ ssh.status_text || (ssh.is_checking ? 'checking' : '') }}
+          <td>{{ ssh.status_text }}
           </td>
           <td>{{ ssh.ip }}</td>
           <td>{{ ssh.username }}</td>
@@ -134,10 +134,7 @@ export default {
       const totalMinutes = 10
 
       const sshList = this.sshList
-          .filter(s => (
-              !s.is_checking &&
-              moment().diff(moment(s.last_checked || ''), 'seconds') <= totalMinutes * 60
-          ))
+          .filter(s => moment().diff(moment(s.last_checked || ''), 'seconds') <= totalMinutes * 60)
       const oldest = _.minBy(sshList, s => s.last_checked)
       const oldestTime = oldest ? oldest.last_checked : ''
       const totalTime = moment().diff(moment(oldestTime), 'seconds') / 60

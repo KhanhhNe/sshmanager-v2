@@ -74,7 +74,6 @@ class SSHIn(BaseModel):
 
 SSHOutBase = generate_pydantic_model(SSH, 'SSHOutBase', {
     "id": "",
-    "is_checking": "SSH đang được kiểm tra fresh",
     "last_checked": "Thời điểm được kiểm tra gần nhất",
     "last_modified": "Thời điểm cập nhật gần nhất",
     "ip": "IP của SSH",
@@ -105,7 +104,6 @@ class PortIn(BaseModel):
 
 PortOut = generate_pydantic_model(Port, 'PortOut', {
     "id": "",
-    "is_checking": "Port đang được kiểm tra kết nối",
     "last_checked": "Thời điểm Port được kiểm tra gần nhất",
     "last_modified": "Thời điểm Port được cập nhật gần nhất",
     "port_number": "Cổng trong máy local được quản lý bởi Port",

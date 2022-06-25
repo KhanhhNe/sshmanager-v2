@@ -26,7 +26,6 @@ def get_all_ports():
 
 
 @router.post('', response_model=List[PortOut])
-@db_session
 def add_ports(port_list: List[PortIn]):
     """
     Tạo Port.
@@ -36,13 +35,14 @@ def add_ports(port_list: List[PortIn]):
     :return: Thông tin Port sau khi tạo
     """
     results = []
-    for port in port_list:
-        if not Port.exists(**port.dict()):
-            p = Port(**port.dict())
-            results.append(p)
-    commit()
+    with db_session:
+        for port in port_list:
+            if not Port.exists(**port.dict()):
+                results.append(Port(**port.dict()))
+        commit()
 
-    return [PortOut.from_orm(p) for p in results]
+    with db_session:
+        return [PortOut.from_orm(Port[p.id]) for p in results]
 
 
 @router.delete('', response_model=int)
