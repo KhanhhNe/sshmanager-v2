@@ -4,11 +4,23 @@ from dataclasses import dataclass
 from typing import List
 
 import asyncssh
+import asyncssh.compression
+import asyncssh.encryption
+import asyncssh.kex
+import asyncssh.mac
 
 import utils
 from utils import get_proxy_ip
 
 logger = logging.getLogger('Ssh')
+algs_config = dict(kex_algs=asyncssh.kex.get_kex_algs(),
+                   encryption_algs=asyncssh.encryption.get_encryption_algs(),
+                   mac_algs=asyncssh.mac.get_mac_algs(),
+                   compression_algs=asyncssh.compression.get_compression_algs(),
+                   signature_algs=(asyncssh.public_key.get_x509_certificate_algs() +
+                                   asyncssh.public_key.get_public_key_algs()))
+for key, algs in algs_config.items():
+    algs_config[key] = [alg.decode() for alg in algs]
 
 
 @dataclass
@@ -55,8 +67,11 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
 
     try:
         try:
-            connection = await asyncssh.connect(host, username=username, password=password,
-                                                known_hosts=None)
+            connection = await asyncssh.connect(
+                host, username=username, password=password,
+                known_hosts=None, **algs_config
+            )
+
             await connection.forward_socks('', port)
             proxy_info = ProxyInfo(port=port, connection=connection)
 
