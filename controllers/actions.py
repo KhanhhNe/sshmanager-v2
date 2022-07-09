@@ -12,17 +12,6 @@ from models import Port, SSH
 logger = logging.getLogger('Actions')
 
 
-async def check_ssh_status(ssh: SSH):
-    """
-    Check for SSH live/die status.
-
-    :param ssh: Target SSH
-    """
-    SSH.begin_checking(ssh)
-    is_live = await aio_as_trio(ssh_controllers.verify_ssh)(ssh.ip, ssh.username, ssh.password)
-    SSH.end_checking(ssh, is_live=is_live)
-
-
 async def check_port_ip(port: Port):
     """
     Check for port's external IP.
