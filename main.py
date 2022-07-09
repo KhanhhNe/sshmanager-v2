@@ -4,6 +4,7 @@ import os
 import warnings
 import webbrowser
 from multiprocessing import Event
+from traceback import format_exc
 from typing import Optional
 
 import cryptography
@@ -89,7 +90,10 @@ if __name__ == '__main__':
     # Run the app
     try:
         trio_asyncio.run(run_app, conf)
+    except Exception:
+        logger.exception(format_exc())
+        raise
     finally:
-        print("Exited")
+        logger.info("Exited")
 
     exit()
