@@ -144,13 +144,10 @@ class SSHCheckTask(CheckTask):
 
                 await SSH.async_end_checking(obj, is_live=is_live)
 
-            await trio.sleep(0)
-
-            # Auto delete the died SSH if requested
-            if config.get('ssh_auto_delete_died'):
-                if obj.delete_if_died():
-                    logging.getLogger('Ssh').debug(f"{ssh_info} Cancelled checking due to died status.")
-                    break
+                # Auto delete the died SSH if requested
+                if not is_live and config.get('ssh_auto_delete_died'):
+                    if await trio.to_thread.run_sync(obj.delete_if_died):
+                        break
 
             await trio.sleep(60)
 
