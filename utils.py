@@ -187,6 +187,7 @@ def configure_logging():
         logging.getLogger(logger).setLevel(logging.WARNING)
 
 
+# Leave here if it will be used later
 async def test_ssh_connection(ip, port=22):
     s = trio.socket.socket()
     # noinspection PyBroadException

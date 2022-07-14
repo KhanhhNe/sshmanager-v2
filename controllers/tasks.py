@@ -115,6 +115,10 @@ class SSHCheckTask(CheckTask):
     def tasks_limit(self):
         return config.get('ssh_tasks_count')
 
+    @property
+    def test_timeout(self):
+        return config.get('ssh_test_timeout')
+
     def get_objects(self):
         return SSH.select()
 
@@ -126,16 +130,19 @@ class SSHCheckTask(CheckTask):
                 return '{:4.1f}'.format(trio.current_time() - start_time)
 
             ssh_info = f"{obj.ip:15} |      "
-            connection_succeed = await utils.test_ssh_connection(obj.ip)
-            run_time = '{:4.1f}'.format(time.perf_counter() - start_time)
 
             async with self.limit:
-                if connection_succeed:
-                    is_live = await aio_as_trio(ssh_controllers.verify_ssh)(obj.ip, obj.username, obj.password)
-                    await SSH.async_end_checking(obj, is_live=is_live)
-                else:
-                    logging.getLogger('Ssh').debug(f"{ssh_info} ({run_time}s) - Cannot connect to SSH port.")
-                    await SSH.async_end_checking(obj, is_live=False)
+                start_time = trio.current_time()
+
+                try:
+                    with trio.fail_after(self.test_timeout):
+                        is_live = await aio_as_trio(ssh_controllers.verify_ssh)(obj.ip, obj.username, obj.password)
+                except trio.TooSlowError:
+                    # Timeout exceeded
+                    logging.getLogger('Ssh').debug(f"{ssh_info} ({run_time()}s) - Test timeout exceeded.")
+                    is_live = False
+
+                await SSH.async_end_checking(obj, is_live=is_live)
 
             await trio.sleep(0)
 

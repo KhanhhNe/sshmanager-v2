@@ -25,6 +25,10 @@ DEFAULT_CONFIG = [
         "Tự động xoá SSH die"
     ),
     ConfigItem(
+        'SSH', 'test_timeout', 'ssh_test_timeout', 20,
+        "Thời gian check live SSH tối đa (từ kết nối đến test IP)"
+    ),
+    ConfigItem(
         'PORT', 'use_unique_ssh', 'use_unique_ssh', False,
         "Không dùng lại các SSH đã dùng ở mỗi Port"
     ),
