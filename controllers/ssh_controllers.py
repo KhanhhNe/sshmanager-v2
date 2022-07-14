@@ -13,14 +13,20 @@ import utils
 from utils import get_proxy_ip
 
 logger = logging.getLogger('Ssh')
-algs_config = dict(kex_algs=asyncssh.kex.get_kex_algs(),
-                   encryption_algs=asyncssh.encryption.get_encryption_algs(),
-                   mac_algs=asyncssh.mac.get_mac_algs(),
-                   compression_algs=asyncssh.compression.get_compression_algs(),
-                   signature_algs=(asyncssh.public_key.get_x509_certificate_algs() +
-                                   asyncssh.public_key.get_public_key_algs()))
-for key, algs in algs_config.items():
-    algs_config[key] = [alg.decode() for alg in algs]
+
+
+def get_algs_config():
+    config = dict(server_host_key_algs=[b'ssh-rsa'],  # For old dropbear servers compatibility issues
+                  kex_algs=asyncssh.kex.get_kex_algs(),
+                  encryption_algs=asyncssh.encryption.get_encryption_algs(),
+                  mac_algs=asyncssh.mac.get_mac_algs(),
+                  compression_algs=asyncssh.compression.get_compression_algs(),
+                  signature_algs=(asyncssh.public_key.get_x509_certificate_algs() +
+                                  asyncssh.public_key.get_public_key_algs()))
+    for key, algs in config.items():
+        config[key] = [alg.decode() for alg in algs]
+
+    return config
 
 
 @dataclass
@@ -69,7 +75,7 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
         try:
             connection = await asyncssh.connect(
                 host, username=username, password=password,
-                known_hosts=None, **algs_config
+                known_hosts=None, **get_algs_config()
             )
 
             await connection.forward_socks('', port)
@@ -79,7 +85,7 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
                 await utils.kill_ssh_connection(connection)
                 raise SSHError("Cannot connect to forwarded proxy.")
         except (OSError, asyncssh.Error) as exc:
-            raise SSHError(f"{exc}.")
+            raise SSHError(f"{type(exc).__name__}: {exc}.")
 
     except SSHError as exc:
         run_time = '{:4.1f}'.format(time.perf_counter() - start_time)
