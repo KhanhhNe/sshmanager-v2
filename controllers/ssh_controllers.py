@@ -23,6 +23,10 @@ def get_algs_config():
                   compression_algs=asyncssh.compression.get_compression_algs(),
                   signature_algs=(asyncssh.public_key.get_x509_certificate_algs() +
                                   asyncssh.public_key.get_public_key_algs()))
+
+    if b'ecdh-sha2-nistp521' in config['kex_algs']:
+        config['kex_algs'].remove(b'ecdh-sha2-nistp521')
+
     for key, algs in config.items():
         config[key] = [alg.decode() for alg in algs]
 
