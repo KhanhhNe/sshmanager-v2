@@ -1,5 +1,4 @@
 import logging
-import time
 from dataclasses import dataclass
 from typing import List
 
@@ -8,6 +7,7 @@ import asyncssh.compression
 import asyncssh.encryption
 import asyncssh.kex
 import asyncssh.mac
+import trio
 
 import utils
 from utils import get_proxy_ip
@@ -16,7 +16,7 @@ logger = logging.getLogger('Ssh')
 
 
 def get_algs_config():
-    config = dict(server_host_key_algs=[b'ssh-rsa'],  # For old dropbear servers compatibility issues
+    config = dict(server_host_key_algs=[b'ssh-rsa'],  # Old dropbear servers compatibility
                   kex_algs=asyncssh.kex.get_kex_algs(),
                   encryption_algs=asyncssh.encryption.get_encryption_algs(),
                   mac_algs=asyncssh.mac.get_mac_algs(),
@@ -24,6 +24,7 @@ def get_algs_config():
                   signature_algs=(asyncssh.public_key.get_x509_certificate_algs() +
                                   asyncssh.public_key.get_public_key_algs()))
 
+    # OpenSSH 7.2 compatibility
     if b'ecdh-sha2-nistp521' in config['kex_algs']:
         config['kex_algs'].remove(b'ecdh-sha2-nistp521')
 
@@ -72,8 +73,11 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
     except SSHError:
         pass
 
-    start_time = time.perf_counter()
+    start_time = trio.current_time()
     ssh_info = f"{host:15} | {port:5}"
+
+    def run_time():
+        return '{:4.1f}'.format(trio.current_time() - start_time)
 
     try:
         try:
@@ -92,13 +96,11 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
             raise SSHError(f"{type(exc).__name__}: {exc}.")
 
     except SSHError as exc:
-        run_time = '{:4.1f}'.format(time.perf_counter() - start_time)
-        logger.debug(f"{ssh_info} ({run_time}s) - {exc}")
+        logger.debug(f"{ssh_info} ({run_time()}s) - {exc}")
         raise
 
     else:
-        run_time = '{:4.1f}'.format(time.perf_counter() - start_time)
-        logger.debug(f"{ssh_info} ({run_time}s) - Connected successfully.")
+        logger.debug(f"{ssh_info} ({run_time()}s) - Connected successfully.")
 
     proxies.append(proxy_info)
     return proxy_info

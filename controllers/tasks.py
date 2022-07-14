@@ -1,5 +1,4 @@
 import logging
-import time
 import traceback
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
@@ -121,7 +120,11 @@ class SSHCheckTask(CheckTask):
 
     async def run_on_object(self, obj: SSH):
         while True:
-            start_time = time.perf_counter()
+            start_time = trio.current_time()
+
+            def run_time():
+                return '{:4.1f}'.format(trio.current_time() - start_time)
+
             ssh_info = f"{obj.ip:15} |      "
             connection_succeed = await utils.test_ssh_connection(obj.ip)
             run_time = '{:4.1f}'.format(time.perf_counter() - start_time)
