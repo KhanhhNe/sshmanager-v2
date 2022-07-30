@@ -33,6 +33,11 @@ def generate_pydantic_model(entity: Type[EntityMeta], model_name, field_descript
         field_args = {}
         if not entity_attr.is_required:
             field_args['default'] = None
+        if entity_attr.kwargs.get('min'):
+            field_args['ge'] = entity_attr.kwargs['min']
+        if entity_attr.kwargs.get('max'):
+            field_args['le'] = entity_attr.kwargs['max']
+
         if entity_attr.name in field_description:
             field_args['description'] = field_description[entity_attr.name]
         else:
