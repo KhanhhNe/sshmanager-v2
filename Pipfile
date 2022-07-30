@@ -7,7 +7,6 @@ name = "pypi"
 pony = "*"
 aiohttp = { extras = ["asyncio"], version = "*" }
 fastapi = "*"
-uvicorn = "*"
 pydantic = "*"
 aiohttp-socks = "*"
 psutil = "*"

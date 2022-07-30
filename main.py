@@ -1,25 +1,22 @@
 import functools
 import logging
+import multiprocessing
 import os
 import warnings
 import webbrowser
-from multiprocessing import Event
 from traceback import format_exc
-from typing import Optional
 
 import cryptography
 import hypercorn.trio
 import trio
 import trio_asyncio
-from hypercorn.trio import worker_serve
-from hypercorn.utils import check_multiprocess_shutdown_event
+from hypercorn.run import run
 from trio.to_thread import run_sync
 
 with warnings.catch_warnings():
     # Ignore the warnings of using deprecated cryptography libraries in asyncssh
     warnings.filterwarnings('ignore', category=cryptography.CryptographyDeprecationWarning)
     import asyncssh
-    from app import app
 
 import config
 import utils
@@ -29,30 +26,17 @@ from models import init_db
 logger = logging.getLogger('Main')
 
 
-def run_web(hypercorn_config: hypercorn.Config,
-            sockets: Optional[hypercorn.config.Sockets] = None,
-            shutdown_event: Optional[Event] = None):
-    if sockets is not None:
-        for sock in sockets.secure_sockets:
-            sock.listen(hypercorn_config.backlog)
-        for sock in sockets.insecure_sockets:
-            sock.listen(hypercorn_config.backlog)
-
-    shutdown_trigger = None
-    if shutdown_event is not None:
-        shutdown_trigger = functools.partial(check_multiprocess_shutdown_event, shutdown_event, trio.sleep)
-
-    logger.debug("Initialized web server")
-    return functools.partial(worker_serve, app, hypercorn_config, sockets=sockets, shutdown_trigger=shutdown_trigger)
-
-
-async def run_app(hypercorn_config: hypercorn.Config):
+async def run_tasks():
     asyncssh.set_log_level(logging.CRITICAL)
-
     async with trio.open_nursery() as nursery:
-        nursery.start_soon(run_web(hypercorn_config))
-        nursery.start_soon(run_sync, actions.reset_entities_data)
+        await run_sync(init_db)
+        await run_sync(actions.reset_entities_data)
         nursery.start_soon(tasks.run_all_tasks)
+
+
+def run_hypercorn_server(conf: hypercorn.Config):
+    utils.configure_logging()
+    run(conf)
 
 
 if __name__ == '__main__':
@@ -60,22 +44,16 @@ if __name__ == '__main__':
     os.makedirs('data', exist_ok=True)
     port = config.get('web_port')
 
-    # Remove config.ini file by default when debugging
     if os.environ.get("DEBUG"):
+        # Remove config.ini file by default when debugging
         if os.path.exists('data/config.ini'):
             os.remove('data/config.ini')
-
-    # Open the webbrowser pointing to app's URL
-    if not os.environ.get("DEBUG"):
+    else:
+        # Open the web browser pointing to app's URL
         webbrowser.open_new_tab(f"http://{utils.get_ipv4_address()}:{port}")
 
     # Logging related config
     utils.configure_logging()
-
-    # Initialize database
-    logger.debug("Database initializing...")
-    init_db()
-    logger.debug("Database initialized")
 
     # Hypercorn config
     conf = hypercorn.config.Config()
@@ -84,16 +62,20 @@ if __name__ == '__main__':
     conf.accesslog = '-'
     conf.errorlog = '-'
     conf.worker_class = 'trio'
-    conf.workers = 1
+    conf.workers = 5
     conf.application_path = 'app:app'
+
+    run_server = functools.partial(run_hypercorn_server, conf)
+    process = multiprocessing.Process(target=run_server)
+    process.start()
 
     # Run the app
     try:
-        trio_asyncio.run(run_app, conf)
+        trio_asyncio.run(run_tasks)
     except Exception:
         logger.exception(format_exc())
         raise
     finally:
+        process.terminate()
+        process.join()
         logger.info("Exited")
-
-    exit()

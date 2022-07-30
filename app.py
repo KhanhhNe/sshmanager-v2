@@ -5,6 +5,7 @@ import sys
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from models import init_db
 from views import ports_api, settings_api, ssh_api
 
 os.environ['PATH'] += ';executables'
@@ -13,6 +14,11 @@ package_data = json.load(open('package.json', encoding='utf-8'))
 app = FastAPI(title="SSHManager by KhanhhNe",
               description=package_data['description'],
               version=package_data['version'])
+
+
+@app.on_event("startup")
+def app_init():
+    init_db()
 
 
 # Routers
