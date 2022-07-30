@@ -37,7 +37,9 @@
         </thead>
         <tbody>
         <tr v-for="portInfo in ports" :key="portInfo.port_number">
-          <td>{{ portInfo.port_number }}</td>
+          <td @click="copyProxyUrl()" :data-clipboard-text="proxyUrl(portInfo)" class="port-number">
+            {{ portInfo.port_number }}
+          </td>
           <td class="port-info" v-if="portInfo.ssh">
             <span v-if="!portInfo.time_connected" data-tooltip="Đang kết nối">
               <i class="fi fi-spinner fi-spin"
@@ -51,9 +53,7 @@
               <i class="fi fi-frowning"
                  style="color: red"></i>
             </span>
-            <span
-                :data-clipboard-text="proxyUrl(portInfo)"
-                class="proxy-ip">{{ portInfo.ssh.ip }}</span>
+            <span class="proxy-ip">{{ portInfo.ssh.ip }}</span>
           </td>
           <td v-else class="port-info">
             <i class="fi fi-frowning" style="color: red"></i>
@@ -83,21 +83,21 @@ import ArticleTitle from "@/components/ArticleTitle"
 import {getTimeDisplay} from "@/utils"
 import ClipboardJS from "clipboard"
 import {delegate} from "tippy.js"
-import "tippy.js/dist/tippy.css";
+import "tippy.js/dist/tippy.css"
 
 export default {
   name: "Ports",
   components: {
-    ArticleTitle
+    ArticleTitle,
   },
   props: {
     ports: Array,
-    title: String
+    title: String,
   },
   data() {
     return {
       showPortsInput: false,
-      portsText: ''
+      portsText: '',
     }
   },
   methods: {
@@ -132,29 +132,40 @@ export default {
     },
 
     /**
-     * Get proxy URL for display. Returns an empty string if port is not
-     * connected to any SSH
-     * @param portInfo port
-     * @returns {string} Proxy string in format <scheme>://<host>:<port>
+     * Copy proxy URL to clipboard
+     */
+    copyProxyUrl() {
+      const clipboard = new ClipboardJS('.port-number')
+      clipboard.on('success', e => {
+        e.clearSelection()
+        e.trigger.setAttribute('data-tooltip', 'Đã copy')
+        setTimeout(() => {
+          e.trigger.removeAttribute('data-tooltip')
+        }, 1000)
+      })
+    },
+
+    /**
+     * Get proxy URL
      */
     proxyUrl(portInfo) {
       return `socks5://${new URL(location.href).hostname}:${portInfo.port_number}`
-    }
+    },
   },
   watch: {
     ports() {
-      new ClipboardJS('.proxy-ip')
+      new ClipboardJS('.port-info')
       // noinspection JSUnusedGlobalSymbols
       delegate('.ports', {
-        target: '.proxy-ip',
+        target: '.port-info',
         content: 'Đã copy',
         trigger: 'click',
         onShow(instance) {
           setTimeout(() => instance.hide(), 1000)
-        }
+        },
       })
-    }
-  }
+    },
+  },
 }
 </script>
 
@@ -170,7 +181,9 @@ article {
       border-width: 1px !important;
     }
 
-    .proxy-ip {
+    .port-number {
+      z-index: 999;
+
       &:hover {
         cursor: pointer;
         text-decoration: underline;
