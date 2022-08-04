@@ -88,23 +88,18 @@ class CheckTask(ABC):
                 object_ids = set(o.id for o in objects)
                 objects_by_id = {obj.id: obj for obj in objects}
 
-                # Limit total tasks add/remove loops, preventing the event loop being blocked
-                maximum_loop = self.tasks_limit
-
                 # Try to add new tasks
                 if added := object_ids - tasks_ids:
                     for index, obj_id in enumerate(added):
                         self.included_ids.add(obj_id)
                         nursery.start_soon(_run_with_auto_cancel, objects_by_id[obj_id])
-                        if index >= maximum_loop:
-                            break
+                        await trio.sleep(0)
                 else:
                     # Remove tasks not in the database anymore
                     if removed := tasks_ids - object_ids:
                         for index, obj_id in enumerate(removed):
                             self.included_ids.remove(obj_id)
-                            if index >= maximum_loop:
-                                break
+                            await trio.sleep(0)
 
                 self.limit.total_tokens = self.tasks_limit
                 await trio.sleep(5)
