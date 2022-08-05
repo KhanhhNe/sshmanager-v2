@@ -17,21 +17,11 @@ class Model(db.Entity):
     def before_update(self):
         self.last_modified = datetime.now()
 
-    @classmethod
-    @auto_renew_objects
-    def end_checking(cls, obj, **kwargs):
-        """
-        Stop checking and update object's values into database using the keyword
-        arguments.
+    def _update_check_result(self, **kwargs):
+        self.set(**kwargs, last_checked=datetime.now())
 
-        :param obj: Object
-        :param kwargs: Updating values
-        """
-        obj.set(**kwargs, last_checked=datetime.now())
-
-    @classmethod
-    async def async_end_checking(cls, obj, **kwargs):
-        return await trio.to_thread.run_sync(functools.partial(cls.end_checking, obj, **kwargs))
+    async def update_check_result(self, **kwargs):
+        return await trio.to_thread.run_sync(functools.partialmethod(self._update_check_result, **kwargs))
 
     @auto_renew_objects
     def reset_status(self):
@@ -39,6 +29,10 @@ class Model(db.Entity):
         Reset all object's status.
         """
         self.last_checked = None
+
+    def load(self):
+        super().load()
+        return self
 
 
 class SSH(Model):

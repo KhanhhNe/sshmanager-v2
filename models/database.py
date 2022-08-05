@@ -41,6 +41,9 @@ db = Database()
 
 
 def init_db():
+    if db.provider is not None:
+        return
+
     db.bind(DB_ENGINE, DB_PATH, create_db=True)
     try:
         db.generate_mapping(create_tables=True)
@@ -54,8 +57,3 @@ def init_db():
         orm.perm('view', group='anybody')
     with db.set_perms_for(Port):
         orm.perm('view', group='anybody')
-
-
-def generate_mappings():
-    db.bind(DB_ENGINE, DB_PATH)
-    db.generate_mapping()

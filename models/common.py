@@ -5,6 +5,10 @@ from pony.orm import ObjectNotFound, db_session
 from models import db
 
 
+def renew_object(obj):
+    return type(obj)[obj.id]
+
+
 def auto_renew_objects(func):
     """
     Decorator to ensure objects are got from current db_session before executing
@@ -18,11 +22,11 @@ def auto_renew_objects(func):
             try:
                 for ind, arg in enumerate(args):
                     if arg and issubclass(type(arg), db.Entity):
-                        args[ind] = type(arg)[arg.id]
+                        args[ind] = renew_object(arg)
 
                 for key, val in kwargs.items():
                     if val and issubclass(type(val), db.Entity):
-                        kwargs[key] = type(val)[val.id]
+                        kwargs[key] = renew_object(val)
             except ObjectNotFound:
                 return
             return func(*args, **kwargs)
