@@ -62,8 +62,9 @@ if __name__ == '__main__':
     conf.accesslog = '-'
     conf.errorlog = '-'
     conf.worker_class = 'trio'
-    conf.workers = 5
+    conf.workers = 1
     conf.application_path = 'app:app'
+    conf.use_reloader = True
 
     run_server = functools.partial(run_hypercorn_server, conf)
     process = multiprocessing.Process(target=run_server)

@@ -5,6 +5,7 @@ from pony.orm import ObjectNotFound, db_session
 from models import db
 
 
+@db_session
 def renew_object(obj):
     return type(obj)[obj.id]
 

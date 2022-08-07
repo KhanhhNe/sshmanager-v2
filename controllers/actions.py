@@ -45,8 +45,8 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
     with db_session:
         port = Port[port.id]
         port.is_connected = is_connected
-        if not is_connected:
-            port.disconnect_ssh(remove_from_used=True)
+    if not is_connected:
+        port.disconnect_ssh(remove_from_used=True)
 
 
 async def reconnect_port_using_ssh(port: Port, ssh: SSH):

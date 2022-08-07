@@ -61,7 +61,8 @@ class CheckTask(ABC):
         async def _run(target_obj):
             while True:
                 try:
-                    target_obj = models.common.renew_object(target_obj).load()
+                    with db_session:
+                        target_obj = models.common.renew_object(target_obj).load()
                     await self.run_on_object(target_obj)
                 except orm.ObjectNotFound:
                     break
@@ -152,9 +153,10 @@ class PortCheckTask(CheckTask):
         async with trio.open_nursery() as nursery:
             async with self.limit:
                 with db_session:
-                    # Load the port SSH if available
-                    if port.ssh:
-                        port.ssh.load()
+                    if port := Port.select(lambda p: p.id == port.id).prefetch(SSH).first():
+                        port.load()
+                    else:
+                        return
 
                 if port.is_connected:
                     ip = await aio_as_trio(utils.get_proxy_ip)(port.proxy_address)

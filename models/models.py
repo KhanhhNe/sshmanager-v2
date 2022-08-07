@@ -17,11 +17,12 @@ class Model(db.Entity):
     def before_update(self):
         self.last_modified = datetime.now()
 
+    @auto_renew_objects
     def _update_check_result(self, **kwargs):
         self.set(**kwargs, last_checked=datetime.now())
 
     async def update_check_result(self, **kwargs):
-        return await trio.to_thread.run_sync(functools.partialmethod(self._update_check_result, **kwargs))
+        return await trio.to_thread.run_sync(functools.partial(self._update_check_result, **kwargs))
 
     @auto_renew_objects
     def reset_status(self):
@@ -30,6 +31,7 @@ class Model(db.Entity):
         """
         self.last_checked = None
 
+    @auto_renew_objects
     def load(self):
         super().load()
         return self
