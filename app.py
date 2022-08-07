@@ -1,8 +1,11 @@
 import json
 import os.path
 import sys
+import zipfile
+from io import BytesIO
 
 from fastapi import FastAPI
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
 from models import init_db
@@ -19,6 +22,16 @@ app = FastAPI(title="SSHManager by KhanhhNe",
 @app.on_event("startup")
 def app_init():
     init_db()
+
+
+@app.get('/api/debug-zip')
+def get_debug_file():
+    bytes_io = BytesIO()
+    zip_file = zipfile.ZipFile(bytes_io, 'w')
+    for filename in os.listdir('data'):
+        zip_file.write(f'data/{filename}', filename)
+    zip_file.close()
+    return Response(content=bytes_io.getvalue(), media_type='application/zip')
 
 
 # Routers

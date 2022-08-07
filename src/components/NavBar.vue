@@ -6,14 +6,16 @@
     </div>
 
     <div>
+      <a href="/api/debug-zip" data-tooltip="Tải file thông tin debug" target="_blank" role="button"
+         class="outline"><i class="fi fi-bug"/></a>
       <a href="https://facebook.com/khanh.luong.6" data-tooltip="Facebook" target="_blank" role="button"
-         class="outline"><i class="fi fi-facebook"></i></a>
-      <a href="https://zalo.me/0968259849" data-tooltip="Zalo" target="_blank" role="button" class="outline"><i
-          class="fi fi-comment"></i></a>
-      <a href="https://zalo.me/g/jowyks334" data-tooltip="Group Zalo" target="_blank" role="button" class="outline"><i
-          class="fi fi-comments"></i></a>
-      <a href="https://me.momo.vn/khanhhne" data-tooltip="Donate Momo" target="_blank" role="button" class="donate"><i
-          class="fi fi-shopping-package"></i></a>
+         class="outline"><i class="fi fi-facebook"/></a>
+      <a href="https://zalo.me/0968259849" data-tooltip="Zalo" target="_blank" role="button"
+         class="outline"><i class="fi fi-comment"/></a>
+      <a href="https://zalo.me/g/jowyks334" data-tooltip="Group Zalo" target="_blank" role="button"
+         class="outline"><i class="fi fi-comments"/></a>
+      <a href="https://me.momo.vn/khanhhne" data-tooltip="Donate Momo" target="_blank" role="button"
+         class="donate"><i class="fi fi-shopping-package"/></a>
     </div>
   </article>
 </template>
@@ -22,8 +24,8 @@
 export default {
   name: "NavBar",
   props: {
-    version: String
-  }
+    version: String,
+  },
 }
 </script>
 
