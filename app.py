@@ -1,6 +1,5 @@
 import json
 import os.path
-import sys
 import zipfile
 from io import BytesIO
 
@@ -39,10 +38,5 @@ app.include_router(ssh_api.router, prefix='/api/ssh')
 app.include_router(ports_api.router, prefix='/api/ports')
 app.include_router(settings_api.router, prefix='/api/settings')
 
-if getattr(sys, 'frozen', False):
-    # If app is running from Pyinstaller exe
-    static_dir = 'web'
-else:
-    static_dir = 'build/web_dist'
-
+static_dir = next(filter(os.path.exists, ['web', 'build/web_dist']))
 app.mount('/', StaticFiles(directory=static_dir, html=True, check_dir=False))
