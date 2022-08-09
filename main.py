@@ -5,6 +5,7 @@ import multiprocessing
 import os
 import warnings
 import webbrowser
+from multiprocessing import freeze_support
 from traceback import format_exc
 
 import cryptography
@@ -44,22 +45,23 @@ def run_hypercorn_server(hypercorn_conf: hypercorn.Config):
 
 def kill_all_processes(parent_pid: int):
     try:
-        exited.wait()
+        while True:
+            if exited.is_set():
+                break
     except KeyboardInterrupt:
         pass
+    finally:
+        parent = psutil.Process(pid=parent_pid)
+        children = parent.children(recursive=True)
+        children = [p for p in children if p.pid != os.getpid()]
 
-    children = psutil.Process(pid=parent_pid).children(recursive=True)
-    children = [p for p in children if p.pid != os.getpid()]
-
-    for child in children:
-        child.terminate()
-    gone, alive = psutil.wait_procs(children, timeout=1)
-    for child in alive:
-        child.kill()
+        for child in children:
+            child.terminate()
+        parent.terminate()
 
 
 if __name__ == '__main__':
-    # freeze_support()
+    freeze_support()
     os.makedirs('data', exist_ok=True)
     port = config.get('web_port')
 
@@ -70,9 +72,10 @@ if __name__ == '__main__':
     conf = hypercorn.config.Config()
     conf.bind = [f'0.0.0.0:{port}']
     conf.graceful_timeout = 0
-    conf.accesslog = '-'
-    conf.errorlog = '-'
+    conf.accesslog = 'data/access.log'
+    conf.errorlog = 'data/error.log'
     conf.worker_class = 'trio'
+    conf.workers = 1
     conf.application_path = 'app:app'
 
     if os.environ.get("DEBUG"):
@@ -86,9 +89,6 @@ if __name__ == '__main__':
         # Open the web browser pointing to app's URL
         webbrowser.open_new_tab(f"http://{utils.get_ipv4_address()}:{port}")
 
-        # Use multiple worker to speed up the server
-        conf.workers = multiprocessing.cpu_count()
-
     # Make sure to set the exit event after this process exits
     atexit.register(exited.set)
 
@@ -100,7 +100,9 @@ if __name__ == '__main__':
     try:
         trio_asyncio.run(run_tasks)
     except Exception:
+        print('main thing')
         logger.exception(format_exc())
         raise
     finally:
+        exited.set()
         logger.info("Exited")

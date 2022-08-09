@@ -23,6 +23,8 @@ PyInstaller.__main__.run([
     'main.py', f'--name={app_name}', '--icon=public/favicon.ico',
     f'--distpath={dist_path}/{app_name}', f'--workpath={work_path}', '--onefile', '--noconfirm',
 
+    '--hidden-import=app',
+
     # PonyORM and SQLite
     '--hidden-import=pony.orm.dbproviders',
     '--hidden-import=pony.orm.dbproviders.sqlite',
