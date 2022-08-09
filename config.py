@@ -21,6 +21,9 @@ DEFAULT_CONFIG = [
         'SSH', 'tasks_count', 'ssh_tasks_count', 50,
         "Số thread check fresh SSH"),
     ConfigItem(
+        'SSH', 'ssh_ports', 'ssh_ports', '22,4980,4981',
+        "Danh sách các port của SSH (cách nhau bằng dấu phẩy)"),
+    ConfigItem(
         'SSH', 'auto_delete_died', 'ssh_auto_delete_died', False,
         "Tự động xoá SSH die"
     ),

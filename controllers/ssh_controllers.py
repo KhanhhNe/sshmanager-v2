@@ -1,6 +1,8 @@
+import asyncio
 import logging
+import re
 from dataclasses import dataclass
-from typing import List
+from typing import Dict, List
 
 import asyncssh
 import asyncssh.compression
@@ -8,7 +10,9 @@ import asyncssh.encryption
 import asyncssh.kex
 import asyncssh.mac
 import trio
+from asyncssh import SSHClientConnection
 
+import config
 import utils
 from utils import get_proxy_ip
 
@@ -47,6 +51,7 @@ class ProxyInfo:
 
 
 proxies: List[ProxyInfo] = []
+ssh_port: Dict[str, int] = {}
 
 
 class SSHError(Exception):
@@ -81,10 +86,33 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
 
     try:
         try:
-            connection = await asyncssh.connect(
-                host, username=username, password=password,
-                known_hosts=None, **get_algs_config()
-            )
+            # Try to get port number from cached result
+            if port := ssh_port.get(f"{host}|{username}|{password}"):
+                ports = [port]
+            # Fallback to possible ports from config
+            else:
+                ports = [int(p) for p in re.findall(r'\d+', config.get('ssh_ports'))]
+
+            # Ensure at least one port is added
+            if not ports:
+                ports = [22]
+
+            result = await asyncio.gather(*[
+                asyncssh.connect(
+                    host, username=username, password=password, port=port,
+                    known_hosts=None, **get_algs_config())
+                for port in ports
+            ], return_exceptions=True)
+
+            # Find the first successful connection
+            try:
+                connection: SSHClientConnection = next(filter(lambda x: not isinstance(x, Exception), result))
+            except StopIteration:
+                raise result[0]
+
+            # Cache the port number for future use
+            # noinspection PyProtectedMember
+            ssh_port[f"{host}|{username}|{password}"] = connection._port
 
             await connection.forward_socks('', port)
             proxy_info = ProxyInfo(port=port, connection=connection)
