@@ -13,11 +13,7 @@ def generate_pydantic_model(entity: Type[EntityMeta], model_name, field_descript
         orm_mode = True
 
     entity_name = repr(entity.__name__)
-    # noinspection PyProtectedMember
-    entity_attrs = entity._get_attrs_(exclude=['classtype'])
-
     model_fields = {}
-
     relationship_fields = []
     description_missing = []
 
@@ -56,6 +52,7 @@ def generate_pydantic_model(entity: Type[EntityMeta], model_name, field_descript
         redundant_display = ', '.join(map(repr, redundant_fields))
         raise KeyError(f"Redundant description found of entity {entity_name} for attributes: {redundant_display}")
 
+    # noinspection PyUnusedLocal
     @validator(*relationship_fields, pre=True, always=True, allow_reuse=True)
     def relationship_validator(cls, v):
         if v:

@@ -10,7 +10,6 @@ import asyncssh.encryption
 import asyncssh.kex
 import asyncssh.mac
 import trio
-from asyncssh import SSHClientConnection
 
 import config
 import utils
@@ -20,22 +19,22 @@ logger = logging.getLogger('Ssh')
 
 
 def get_algs_config():
-    config = dict(server_host_key_algs=[b'ssh-rsa'],  # Old dropbear servers compatibility
-                  kex_algs=asyncssh.kex.get_kex_algs(),
-                  encryption_algs=asyncssh.encryption.get_encryption_algs(),
-                  mac_algs=asyncssh.mac.get_mac_algs(),
-                  compression_algs=asyncssh.compression.get_compression_algs(),
-                  signature_algs=(asyncssh.public_key.get_x509_certificate_algs() +
-                                  asyncssh.public_key.get_public_key_algs()))
+    algs_config = dict(server_host_key_algs=[b'ssh-rsa'],  # Old dropbear servers compatibility
+                       kex_algs=asyncssh.kex.get_kex_algs(),
+                       encryption_algs=asyncssh.encryption.get_encryption_algs(),
+                       mac_algs=asyncssh.mac.get_mac_algs(),
+                       compression_algs=asyncssh.compression.get_compression_algs(),
+                       signature_algs=(asyncssh.public_key.get_x509_certificate_algs() +
+                                       asyncssh.public_key.get_public_key_algs()))
 
     # OpenSSH 7.2 compatibility
-    if b'ecdh-sha2-nistp521' in config['kex_algs']:
-        config['kex_algs'].remove(b'ecdh-sha2-nistp521')
+    if b'ecdh-sha2-nistp521' in algs_config['kex_algs']:
+        algs_config['kex_algs'].remove(b'ecdh-sha2-nistp521')
 
-    for key, algs in config.items():
-        config[key] = [alg.decode() for alg in algs]
+    for key, algs in algs_config.items():
+        algs_config[key] = [alg.decode() for alg in algs]
 
-    return config
+    return algs_config
 
 
 @dataclass
@@ -51,7 +50,7 @@ class ProxyInfo:
 
 
 proxies: List[ProxyInfo] = []
-ssh_port: Dict[str, int] = {}
+ssh_port: Dict[str, List[int]] = {}
 
 
 class SSHError(Exception):
@@ -86,33 +85,27 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
 
     try:
         try:
-            # Try to get port number from cached result
-            if port := ssh_port.get(f"{host}|{username}|{password}"):
-                ports = [port]
-            # Fallback to possible ports from config
-            else:
-                ports = [int(p) for p in re.findall(r'\d+', config.get('ssh_ports'))]
+            ports = (
+                # Get port number from cached result
+                    ssh_port.get(f"{host}|{username}|{password}") or
+                    # Get port numbers from config file
+                    [int(p) for p in re.findall(r'\d+', config.get('ssh_ports'))] or
+                    # Default to port 22
+                    [22]
+            )
 
-            # Ensure at least one port is added
-            if not ports:
-                ports = [22]
-
-            result = await asyncio.gather(*[
+            connection: asyncssh.SSHClientConnection = await utils.get_first_success([
                 asyncssh.connect(
                     host, username=username, password=password, port=port,
-                    known_hosts=None, **get_algs_config())
+                    preferred_auth='password', known_hosts=None, **get_algs_config(),
+                    connect_timeout='30s', login_timeout='15s'
+                )
                 for port in ports
-            ], return_exceptions=True)
-
-            # Find the first successful connection
-            try:
-                connection: SSHClientConnection = next(filter(lambda x: not isinstance(x, Exception), result))
-            except StopIteration:
-                raise result[0]
+            ])
 
             # Cache the port number for future use
             # noinspection PyProtectedMember
-            ssh_port[f"{host}|{username}|{password}"] = connection._port
+            ssh_port[f"{host}|{username}|{password}"] = [connection._port]
 
             await connection.forward_socks('', port)
             proxy_info = ProxyInfo(port=port, connection=connection)
@@ -120,7 +113,7 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
             if not await get_proxy_ip(proxy_info.address):
                 await utils.kill_ssh_connection(connection)
                 raise SSHError("Cannot connect to forwarded proxy.")
-        except (OSError, asyncssh.Error) as exc:
+        except (OSError, asyncssh.Error, asyncio.CancelledError) as exc:
             raise SSHError(f"{type(exc).__name__}: {exc}.")
 
     except SSHError as exc:
