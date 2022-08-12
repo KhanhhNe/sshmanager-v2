@@ -12,19 +12,6 @@ from models import Port, SSH
 logger = logging.getLogger('Actions')
 
 
-async def check_port_ip(port: Port):
-    """
-    Check for port's external IP.
-
-    :param port: Target port
-    :return:
-    """
-    Port.begin_checking(port)
-    ip = await aio_as_trio(utils.get_proxy_ip)(port.proxy_address)
-    Port._update_check_result(port, public_ip=ip)
-    return ip
-
-
 async def connect_ssh_to_port(ssh: SSH, port: Port):
     """
     Connect SSH to port.
@@ -38,9 +25,9 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
         )
         is_connected = True
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTED SUCCESSFULLY")
-    except ssh_controllers.SSHError:
+    except ssh_controllers.SSHError as exc:
         is_connected = False
-        logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTION FAILED")
+        logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTION FAILED - {exc.args[0]}")
 
     with db_session:
         port = Port[port.id]
