@@ -5,6 +5,7 @@ import trio
 from pony.orm import commit, db_session
 from trio_asyncio import aio_as_trio
 
+import config
 import utils
 from controllers import ssh_controllers
 from models import Port, SSH
@@ -20,12 +21,13 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
     :param ssh: Connecting SSH
     """
     try:
-        await aio_as_trio(ssh_controllers.connect_ssh)(
-            ssh.ip, ssh.username, ssh.password, port=port.port_number
-        )
+        with trio.fail_after(config.get('ssh_test_timeout')):
+            await aio_as_trio(ssh_controllers.connect_ssh)(
+                ssh.ip, ssh.username, ssh.password, port=port.port_number
+            )
         is_connected = True
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTED SUCCESSFULLY")
-    except ssh_controllers.SSHError as exc:
+    except (ssh_controllers.SSHError, trio.TooSlowError) as exc:
         is_connected = False
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTION FAILED - {exc.args[0]}")
 
