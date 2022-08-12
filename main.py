@@ -60,8 +60,7 @@ def kill_all_processes(parent_pid: int):
         parent.terminate()
 
 
-if __name__ == '__main__':
-    freeze_support()
+def main():
     os.makedirs('data', exist_ok=True)
     port = config.get('web_port')
 
@@ -100,9 +99,13 @@ if __name__ == '__main__':
     try:
         trio_asyncio.run(run_tasks)
     except Exception:
-        print('main thing')
         logger.exception(format_exc())
         raise
     finally:
         exited.set()
         logger.info("Exited")
+
+
+if __name__ == '__main__':
+    freeze_support()
+    main()
