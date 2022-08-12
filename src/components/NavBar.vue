@@ -6,7 +6,8 @@
     </div>
 
     <div>
-      <a href="/api/debug-zip" data-tooltip="Tải file thông tin debug" target="_blank" role="button"
+      <a href="/api/debug-zip" download="debug.zip" data-tooltip="Tải file thông tin debug" target="_blank"
+         role="button"
          class="outline"><i class="fi fi-bug"/></a>
       <a href="https://facebook.com/khanh.luong.6" data-tooltip="Facebook" target="_blank" role="button"
          class="outline"><i class="fi fi-facebook"/></a>
