@@ -32,6 +32,10 @@ DEFAULT_CONFIG = [
         "Số giây check live SSH tối đa (từ kết nối đến test IP)"
     ),
     ConfigItem(
+        'PORT', 'auto_replace_died_ssh', 'port_auto_replace_died_ssh', True,
+        "Tự động thay thế SSH die"
+    ),
+    ConfigItem(
         'PORT', 'use_unique_ssh', 'use_unique_ssh', False,
         "Không dùng lại các SSH đã dùng ở mỗi Port"
     ),

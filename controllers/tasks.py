@@ -158,10 +158,14 @@ class PortCheckTask(CheckTask):
                     else:
                         return
 
+                # Update port ip
                 if port.is_connected:
                     ip = await aio_as_trio(utils.get_proxy_ip)(port.proxy_address)
                     await port.update_check_result(public_ip=ip)
-                    if port.ssh and ip != port.ssh.ip:
+
+                # Remove SSH if port is not connected anymore
+                if config.get('port_auto_replace_died_ssh'):
+                    if port.ssh and port.public_ip != port.ssh.ip:
                         logger.info(f"Port {port.port_number:<5} -> SSH {port.ssh.ip:<15} - PROXY DIED")
                         port.disconnect_ssh()
 
@@ -176,10 +180,7 @@ class PortCheckTask(CheckTask):
                     await actions.connect_ssh_to_port(ssh, port)
 
                 # Reset port's SSH after a determined time
-                else:
-                    if not config.get('auto_reset_ports'):
-                        return
-
+                if config.get('auto_reset_ports'):
                     reset_interval = config.get('port_reset_interval')
                     time_expired = datetime.now() - timedelta(seconds=reset_interval)
                     if not port.need_reset(time_expired):
