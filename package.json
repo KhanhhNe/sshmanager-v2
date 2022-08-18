@@ -1,7 +1,7 @@
 {
   "name": "sshmanager",
   "description": "Tool check fresh và tạo proxy Socks5 tự động từ SSH.",
-  "version": "2.2.7",
+  "version": "2.2.8",
   "private": false,
   "scripts": {
     "serve": "vue-cli-service serve",
