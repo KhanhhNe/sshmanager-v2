@@ -85,14 +85,11 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
 
     try:
         try:
-            ports = (
-                # Get port number from cached result
-                    ssh_port.get(f"{host}|{username}|{password}") or
-                    # Get port numbers from config file
-                    [int(p) for p in re.findall(r'\d+', config.get('ssh_ports'))] or
-                    # Default to port 22
-                    [22]
-            )
+            config_ports = [int(p) for p in re.findall(r'\d+', config.get('ssh_ports'))]
+            ports = (ssh_port.get(f"{host}|{username}|{password}") or  # Get port number from cached result
+                     config_ports or  # Get port numbers from config file
+                     [22]  # Default to port 22
+                     )
 
             connection: asyncssh.SSHClientConnection = await utils.get_first_success([
                 asyncssh.connect(
@@ -113,7 +110,7 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
             if not await get_proxy_ip(proxy_info.address):
                 await utils.kill_ssh_connection(connection)
                 raise SSHError("Cannot connect to forwarded proxy.")
-        except (OSError, asyncssh.Error, asyncio.CancelledError) as exc:
+        except (OSError, asyncssh.Error, asyncio.TimeoutError) as exc:
             raise SSHError(f"{type(exc).__name__}: {exc}.")
 
     except SSHError as exc:
