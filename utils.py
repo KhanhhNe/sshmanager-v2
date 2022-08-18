@@ -145,4 +145,7 @@ async def get_first_success(aws: List[Awaitable]):
             return result
         except Exception as exc:
             exception = exc
-    raise exception
+    if not isinstance(exception, asyncio.CancelledError):
+        raise exception
+    else:
+        raise asyncio.TimeoutError()
