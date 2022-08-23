@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass
+from functools import cache
 from typing import List
 
 import asyncssh
@@ -16,6 +17,7 @@ from utils import get_proxy_ip
 logger = logging.getLogger('Ssh')
 
 
+@cache
 def get_algs_config():
     algs_config = dict(server_host_key_algs=[b'ssh-rsa'],  # Old dropbear servers compatibility
                        kex_algs=asyncssh.kex.get_kex_algs(),
@@ -28,6 +30,9 @@ def get_algs_config():
     # OpenSSH 7.2 compatibility
     if b'ecdh-sha2-nistp521' in algs_config['kex_algs']:
         algs_config['kex_algs'].remove(b'ecdh-sha2-nistp521')
+
+    # Reverse order of kex_algs to prefer less secure algorithms
+    algs_config['kex_algs'] = algs_config['kex_algs'][::-1]
 
     for key, algs in algs_config.items():
         algs_config[key] = [alg.decode() for alg in algs]
@@ -86,7 +91,7 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None,
             connection: asyncssh.SSHClientConnection = await asyncssh.connect(
                 host, username=username, password=password, port=ssh_port,
                 preferred_auth='password', known_hosts=None, **get_algs_config(),
-                connect_timeout='30s'
+                connect_timeout='30s', config=None
             )
 
             await connection.forward_socks('', port)
@@ -140,3 +145,18 @@ async def kill_proxy_on_port(port: int):
             break
     else:
         raise SSHError(f"No proxy on port {port} found.")
+
+
+if __name__ == '__main__':
+    import trio_asyncio
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
+
+
+    async def main():
+        ssh_str = '178.129.244.144|support|support'
+        print(await verify_ssh(*ssh_str.split('|')))
+
+
+    trio_asyncio.run(trio_asyncio.aio_as_trio(main))
