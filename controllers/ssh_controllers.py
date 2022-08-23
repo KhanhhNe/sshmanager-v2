@@ -1,8 +1,7 @@
 import asyncio
 import logging
-import re
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import List
 
 import asyncssh
 import asyncssh.compression
@@ -11,7 +10,6 @@ import asyncssh.kex
 import asyncssh.mac
 import trio
 
-import config
 import utils
 from utils import get_proxy_ip
 
@@ -50,7 +48,6 @@ class ProxyInfo:
 
 
 proxies: List[ProxyInfo] = []
-ssh_port: Dict[str, List[int]] = {}
 
 
 class SSHError(Exception):
@@ -59,7 +56,7 @@ class SSHError(Exception):
     """
 
 
-async def connect_ssh(host: str, username: str, password: str, port: int = None):
+async def connect_ssh(host: str, username: str, password: str, port: int = None, ssh_port: int = 22):
     """
     Connect to the SSH and returning the Socks5 proxy information.
 
@@ -67,6 +64,7 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
     :param username: SSH username
     :param password: SSH password
     :param port: Local port to forward to
+    :param ssh_port: SSH port (default: 22)
     :return: ProxyInfo object containing the forwarded Socks5 proxy
     """
     if not port:
@@ -85,24 +83,11 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
 
     try:
         try:
-            config_ports = [int(p) for p in re.findall(r'\d+', config.get('ssh_ports'))]
-            ports = (ssh_port.get(f"{host}|{username}|{password}") or  # Get port number from cached result
-                     config_ports or  # Get port numbers from config file
-                     [22]  # Default to port 22
-                     )
-
-            connection: asyncssh.SSHClientConnection = await utils.get_first_success([
-                asyncssh.connect(
-                    host, username=username, password=password, port=port,
-                    preferred_auth='password', known_hosts=None, **get_algs_config(),
-                    connect_timeout='30s', login_timeout='15s'
-                )
-                for port in ports
-            ])
-
-            # Cache the port number for future use
-            # noinspection PyProtectedMember
-            ssh_port[f"{host}|{username}|{password}"] = [connection._port]
+            connection: asyncssh.SSHClientConnection = await asyncssh.connect(
+                host, username=username, password=password, port=ssh_port,
+                preferred_auth='password', known_hosts=None, **get_algs_config(),
+                connect_timeout='30s'
+            )
 
             await connection.forward_socks('', port)
             proxy_info = ProxyInfo(port=port, connection=connection)
@@ -124,17 +109,18 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None)
     return proxy_info
 
 
-async def verify_ssh(host: str, username: str, password: str) -> bool:
+async def verify_ssh(host: str, username: str, password: str, ssh_port: int = 22) -> bool:
     """
     Verify if SSH is usable.
 
-    :param host:
-    :param username:
-    :param password:
+    :param host: SSH host
+    :param username: SSH username
+    :param password: SSH password
+    :param ssh_port: SSH port (default: 22)
     :return: True if SSH is connected successfully, returns False otherwise
     """
     try:
-        proxy_info = await connect_ssh(host, username, password)
+        proxy_info = await connect_ssh(host, username, password, ssh_port=ssh_port)
         await utils.kill_ssh_connection(proxy_info.connection)
         return True
     except SSHError:

@@ -44,9 +44,10 @@ class SSH(Model):
     ip = Required(str)
     username = Optional(str)
     password = Optional(str)
+    ssh_port = Required(int, default=22)
     is_live = Optional(bool)
 
-    composite_key(ip, username, password)
+    composite_key(ip, ssh_port, username, password)
 
     port = Optional('Port')
     used_ports: Set = Set('Port')

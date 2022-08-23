@@ -8,8 +8,8 @@
     >Đã có phiên bản mới {{ newVersion }}!</span>
       <Tabs style="grid-area: all">
         <SSHList
-            :sshList="sortedList"
-            :title="`SSH (${sortedList.length})`"
+            :sshList="sshList"
+            :title="`SSH (${sshList.length})`"
             @add-ssh="sshRequest($event, 'post')"
             @delete-ssh="sshRequest($event, 'delete')"/>
         <SSHList
@@ -83,10 +83,6 @@ export default {
     dieList() {
       return this.sshList.filter(ssh => ssh.is_live === false)
     },
-    sortedList() {
-      return this.sshList
-      // return _.orderBy(this.sshList, ({last_checked}) => last_checked || '', ['desc'])
-    }
   },
   methods: {
     /**

@@ -72,6 +72,7 @@ class SSHIn(BaseModel):
     ip: str
     username: str = None
     password: str = None
+    port: int = None
 
 
 SSHOutBase = generate_pydantic_model(SSH, 'SSHOutBase', {
@@ -81,6 +82,7 @@ SSHOutBase = generate_pydantic_model(SSH, 'SSHOutBase', {
     "ip": "IP của SSH",
     "username": "Username của SSH",
     "password": "Mật khẩu đăng nhập SSH",
+    "ssh_port": "Port kết nối vào SSH (ví dụ: 22)",
     "is_live": "SSH live và sử dụng được",
     "port": "ID của Port mà SSH này gán vào"
 })

@@ -3,6 +3,8 @@ import functools
 import logging
 import multiprocessing
 import os
+import threading
+import time
 import warnings
 import webbrowser
 from multiprocessing import freeze_support
@@ -27,7 +29,7 @@ from controllers import tasks, actions
 from models import init_db
 
 logger = logging.getLogger('Main')
-exited = multiprocessing.Event()
+exited = threading.Event()
 
 
 async def run_tasks():
@@ -48,15 +50,20 @@ def kill_all_processes(parent_pid: int):
         while True:
             if exited.is_set():
                 break
+            time.sleep(0)
     except KeyboardInterrupt:
         pass
     finally:
+        logger.info("Killing all processes")
+
         parent = psutil.Process(pid=parent_pid)
         children = parent.children(recursive=True)
         children = [p for p in children if p.pid != os.getpid()]
 
         for child in children:
             child.terminate()
+
+        logger.info("Killed all processes")
         parent.terminate()
 
 
@@ -81,9 +88,6 @@ def main():
         # Reset config.ini to default values
         if os.path.exists('data/config.ini'):
             os.remove('data/config.ini')
-
-        # Use reloader for convenient development
-        conf.use_reloader = True
     else:
         # Open the web browser pointing to app's URL
         webbrowser.open_new_tab(f"http://{utils.get_ipv4_address()}:{port}")
@@ -92,7 +96,7 @@ def main():
     atexit.register(exited.set)
 
     run_server = functools.partial(run_hypercorn_server, conf)
-    multiprocessing.Process(target=run_server).start()
+    threading.Thread(target=run_server).start()
     multiprocessing.Process(target=kill_all_processes, args=(os.getpid(),)).start()
 
     # Run the app
@@ -101,6 +105,8 @@ def main():
     except Exception:
         logger.exception(format_exc())
         raise
+    except KeyboardInterrupt:
+        pass
     finally:
         exited.set()
         logger.info("Exited")

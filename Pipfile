@@ -20,11 +20,12 @@ trio = "*"
 trio-asyncio = "*"
 hypercorn = {extras = ["trio"], version = "*"}
 pendulum = "*"
-pyinstrument = "*"
-pony-stubs = "*"
+pyparsing = "*"
 
 [dev-packages]
 pyinstaller = "*"
+pyinstrument = "*"
+pony-stubs = "*"
 
 [requires]
 python_version = "3.9"

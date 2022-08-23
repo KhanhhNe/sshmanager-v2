@@ -29,13 +29,13 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTED SUCCESSFULLY")
     except (ssh_controllers.SSHError, trio.TooSlowError) as exc:
         is_connected = False
-        logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTION FAILED - {exc.args[0]}")
+        logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTION FAILED - {exc.args}")
 
     with db_session:
         port = Port[port.id]
         port.is_connected = is_connected
-    if not is_connected:
-        port.disconnect_ssh(remove_from_used=True)
+        if not is_connected:
+            port.disconnect_ssh(remove_from_used=True)
 
 
 async def reconnect_port_using_ssh(port: Port, ssh: SSH):
@@ -96,12 +96,13 @@ def insert_ssh_from_file_content(file_content):
     :param file_content: SSH file content
     :return: List of created SSH
     """
+    logger.debug("Inserting SSH from file content")
     created_ssh = []
     with db_session:
         for ssh_info in utils.parse_ssh_file(file_content):
             if not SSH.exists(**ssh_info):
                 created_ssh.append(SSH(**ssh_info))
         commit()
-    logger.info(f"Inserted {len(created_ssh)} SSH from file content")
+    logger.info(f"Inserted {len(created_ssh)} SSH from {len(file_content.splitlines())} lines")
 
     return [ssh.id for ssh in created_ssh]

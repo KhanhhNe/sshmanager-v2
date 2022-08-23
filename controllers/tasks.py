@@ -113,11 +113,10 @@ class SSHCheckTask(CheckTask):
         return SSH.select()
 
     async def run_on_object(self, ssh: SSH):
-        start_time = trio.current_time()
         ssh_info = f"{ssh.ip:15} |      "
 
-        def run_time():
-            return '{:4.1f}'.format(trio.current_time() - start_time)
+        def run_time(start):
+            return '{:4.1f}'.format(trio.current_time() - start)
 
         async with self.limit:
             start_time = trio.current_time()
@@ -127,7 +126,7 @@ class SSHCheckTask(CheckTask):
                     is_live = await aio_as_trio(ssh_controllers.verify_ssh)(ssh.ip, ssh.username, ssh.password)
             except trio.TooSlowError:
                 # Timeout exceeded
-                logging.getLogger('Ssh').debug(f"{ssh_info} ({run_time()}s) - Test timeout exceeded.")
+                logging.getLogger('Ssh').debug(f"{ssh_info} ({run_time(start_time)}s) - Test timeout exceeded.")
                 is_live = False
 
             await ssh.update_check_result(is_live=is_live)

@@ -23,6 +23,7 @@
         <tr>
           <td>T.Trạng</td>
           <td>IP</td>
+          <td>Port</td>
           <td>Username</td>
           <td>Password</td>
           <td>Check</td>
@@ -37,6 +38,7 @@
           <td>{{ ssh.status_text }}
           </td>
           <td>{{ ssh.ip }}</td>
+          <td>{{ ssh.ssh_port }}</td>
           <td>{{ ssh.username }}</td>
           <td>{{ ssh.password }}</td>
           <td>{{ getTimeDisplay(ssh.last_checked) }}
@@ -71,21 +73,19 @@
 
 <!--suppress JSUnusedGlobalSymbols -->
 <script>
-import ArticleTitle from "@/components/ArticleTitle";
-import {saveAs} from "file-saver";
-import {getSshText, getTimeDisplay, isRecent} from "@/utils";
-import moment from "moment";
-import _ from "lodash";
+import ArticleTitle from "@/components/ArticleTitle"
+import {saveAs} from "file-saver"
+import {getSshText, getTimeDisplay, isRecent} from "@/utils"
 
 export default {
   name: 'SSHList',
   components: {
-    ArticleTitle
+    ArticleTitle,
   },
   data() {
     return {
       displayLimit: 200,
-      checkSpeed: 0
+      checkSpeed: 0,
     }
   },
   props: {
@@ -130,16 +130,10 @@ export default {
     /**
      * Update SSH checking speed
      */
-    updateCheckSpeed() {
-      const totalMinutes = 10
-
-      const sshList = this.sshList
-          .filter(s => moment().diff(moment(s.last_checked || ''), 'seconds') <= totalMinutes * 60)
-      const oldest = _.minBy(sshList, s => s.last_checked)
-      const oldestTime = oldest ? oldest.last_checked : ''
-      const totalTime = moment().diff(moment(oldestTime), 'seconds') / 60
-      this.checkSpeed = _.round(sshList.length / totalTime, 1)
-    }
+    async updateCheckSpeed() {
+      const response = await fetch('/api/ssh/check-speed')
+      this.checkSpeed = await response.text()
+    },
   },
   mounted() {
     if (this.readOnly) {
