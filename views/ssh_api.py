@@ -1,5 +1,7 @@
+from datetime import datetime, timedelta
 from typing import List
 
+import trio
 from fastapi import UploadFile
 from fastapi.routing import APIRouter
 from pony.orm import ObjectNotFound, db_session
@@ -80,6 +82,19 @@ async def upload_ssh(ssh_file: UploadFile):
     with db_session(optimistic=False):
         # Re-query SSHs and format into output model
         return [SSHOut.from_orm(SSH[ssh_id]) for ssh_id in ssh_ids]
+
+
+@router.get('/check-speed')
+def get_ssh_checking_speed():
+    """
+    Lấy thông tin tốc độ kiểm tra SSH.
+    """
+    with db_session(optimistic=False):
+        total_minutes = 5
+        total_ssh_checked = SSH.select(
+            lambda s: s.last_checked >= datetime.now() - timedelta(minutes=total_minutes)
+        ).count()
+        return total_ssh_checked / total_minutes
 
 
 router.add_api_websocket_route('', websocket_auto_update_endpoint(SSH, SSHOut, [Port]))

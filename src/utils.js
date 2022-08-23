@@ -22,7 +22,12 @@ function getTimeDisplay(timeString) {
  * @returns {string} SSH display text
  */
 function getSshText(ssh) {
-    return `${ssh.status_text}|${ssh.ip}|${ssh.username}|${ssh.password}`
+    if (ssh.ssh_port && ssh.ssh_port !== 22) {
+        return `${ssh.ip}|${ssh.port}|${ssh.username}|${ssh.password}`
+    }
+    else {
+        return `${ssh.ip}|${ssh.username}|${ssh.password}`
+    }
 }
 
 
@@ -57,13 +62,10 @@ function setupWebsocket(objectsList, endpoint) {
 
     function updateObjects(data) {
         const indexes = {}
-        for (const item of data.objects) {
-            indexes[item.id] = undefined
-        }
 
         // Build indexes from item ID to list index
-        for (const [index, item] of Object.entries(objectsList)) {
-            indexes[item.id] = index
+        for (let index = 0; index < objectsList.length; index++) {
+            indexes[objectsList[index].id] = index
         }
 
         // Update/insert items
