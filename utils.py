@@ -1,11 +1,11 @@
 import json
 import logging
 import os.path
-import re
 import socket
 
 import aiohttp
 import asyncssh
+import pyparsing as pp
 from aiohttp_socks import ProxyConnector
 
 
@@ -37,15 +37,24 @@ def parse_ssh_file(file_content):
     :return: List of {ip: "...", username: "...", password: "..."}
     """
     results = []
+
+    sep = pp.Char(';,|').suppress()
+    ip = pp.common.ipv4_address
+    port = pp.Word(pp.nums, max=5)
+    user_pass = pp.Word(pp.printables, exclude_chars=';,|')
+
+    ssh_parser = (pp.SkipTo(ip) +
+                  ip('ip') + sep +
+                  pp.Opt(port('ssh_port') + sep) +
+                  user_pass('username') + sep +
+                  user_pass('password'))
+
     for line in file_content.splitlines():
-        match = re.search(r'((?:[0-9]{1,3}\.){3}[0-9]{1,3})[;,|]([^;,|]*)[;,|]([^;,|]*)', line)
-        if match:
-            ip, username, password = match.groups()
-            results.append({
-                'ip': ip,
-                'username': username,
-                'password': password
-            })
+        try:
+            results.append(ssh_parser.parse_string(line).as_dict())
+        except pp.ParseException:
+            continue
+
     return results
 
 

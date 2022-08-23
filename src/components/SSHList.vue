@@ -23,6 +23,7 @@
         <tr>
           <td>T.Trạng</td>
           <td>IP</td>
+          <td>Port</td>
           <td>Username</td>
           <td>Password</td>
           <td>Check</td>
@@ -37,6 +38,7 @@
           <td>{{ ssh.status_text }}
           </td>
           <td>{{ ssh.ip }}</td>
+          <td>{{ ssh.ssh_port }}</td>
           <td>{{ ssh.username }}</td>
           <td>{{ ssh.password }}</td>
           <td>{{ getTimeDisplay(ssh.last_checked) }}
@@ -71,11 +73,9 @@
 
 <!--suppress JSUnusedGlobalSymbols -->
 <script>
-import ArticleTitle from "@/components/ArticleTitle";
-import {saveAs} from "file-saver";
-import {getSshText, getTimeDisplay, isRecent} from "@/utils";
-import moment from "moment";
-import _ from "lodash";
+import ArticleTitle from "@/components/ArticleTitle"
+import {saveAs} from "file-saver"
+import {getSshText, getTimeDisplay, isRecent} from "@/utils"
 
 export default {
   name: 'SSHList',
