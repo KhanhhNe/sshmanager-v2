@@ -1,10 +1,8 @@
-import asyncio
 import json
 import logging
 import os.path
 import re
 import socket
-from typing import Awaitable, List
 
 import aiohttp
 import asyncssh
@@ -126,26 +124,3 @@ def configure_logging():
 
     for logger in ['multipart.multipart', 'charset_normalizer', 'asyncio']:
         logging.getLogger(logger).setLevel(logging.WARNING)
-
-
-async def get_first_success(aws: List[Awaitable]):
-    """
-    Awaitable that returns first successful result.
-
-    :param aws: Awaitable list of awaitables
-    :return: First successful result
-    :raise: Exception if all awaitables failed
-    """
-    exception = None
-    tasks = [asyncio.ensure_future(aw) for aw in aws]
-    for future in asyncio.as_completed(tasks):
-        try:
-            result = await future
-            asyncio.ensure_future(asyncio.gather(*tasks, return_exceptions=True))
-            return result
-        except Exception as exc:
-            exception = exc
-    if not isinstance(exception, asyncio.CancelledError):
-        raise exception
-    else:
-        raise asyncio.TimeoutError()

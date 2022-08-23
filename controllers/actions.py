@@ -29,7 +29,7 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTED SUCCESSFULLY")
     except (ssh_controllers.SSHError, trio.TooSlowError) as exc:
         is_connected = False
-        logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTION FAILED - {exc.args[0]}")
+        logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTION FAILED - {exc.args}")
 
     with db_session:
         port = Port[port.id]
