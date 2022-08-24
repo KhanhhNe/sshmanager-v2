@@ -27,6 +27,9 @@ def get_algs_config():
                        signature_algs=(asyncssh.public_key.get_x509_certificate_algs() +
                                        asyncssh.public_key.get_public_key_algs()))
 
+    # import pprint
+    # pprint.pprint(algs_config, width=1000)
+
     # OpenSSH 7.2 compatibility
     if b'ecdh-sha2-nistp521' in algs_config['kex_algs']:
         algs_config['kex_algs'].remove(b'ecdh-sha2-nistp521')
@@ -34,8 +37,23 @@ def get_algs_config():
     # Reverse order of kex_algs to prefer less secure algorithms
     algs_config['kex_algs'] = algs_config['kex_algs'][::-1]
 
+    # Mimic JSCH config
+    algs_config['kex_algs'] = (b'ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group14-sha1,'
+                               b'diffie-hellman-group-exchange-sha256,diffie-hellman-group-exchange-sha1,'
+                               b'diffie-hellman-group1-sha1'
+                               .split(b','))
+    algs_config['server_host_key_algs'] = (b'ssh-rsa,ssh-dss,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,'
+                                           b'ecdsa-sha2-nistp521'
+                                           .split(b','))
+    algs_config['encryption_algs'] = (b'aes128-ctr,aes128-cbc,3des-ctr,3des-cbc,blowfish-cbc,aes192-ctr,'
+                                      b'aes192-cbc,aes256-ctr,aes256-cbc'
+                                      .replace(b'3des-ctr', b'')
+                                      .split(b','))
+    algs_config['mac_algs'] = b'hmac-md5,hmac-sha1,hmac-sha2-256,hmac-sha1-96,hmac-md5-96'.split(b',')
+    algs_config['compression_algs'] = b'none'.split(b',')
+
     for key, algs in algs_config.items():
-        algs_config[key] = [alg.decode() for alg in algs]
+        algs_config[key] = [alg.decode() for alg in algs if alg]
 
     return algs_config
 

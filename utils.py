@@ -58,7 +58,7 @@ def parse_ssh_file(file_content):
     return results
 
 
-async def get_proxy_ip(proxy_address, tries=0) -> str:
+async def get_proxy_ip(proxy_address, tries=1) -> str:
     """
     Retrieves proxy's real IP address. Returns empty string if failed.
 
@@ -66,21 +66,22 @@ async def get_proxy_ip(proxy_address, tries=0) -> str:
     :param tries: Total request tries
     :return: Proxy real IP address on success connection, empty string otherwise
     """
-    # noinspection PyBroadException
-    try:
-        connector = ProxyConnector.from_url(proxy_address, enable_cleanup_closed=True)
-        async with aiohttp.ClientSession(connector=connector) as client:
+    connector = ProxyConnector.from_url(proxy_address, enable_cleanup_closed=True)
+    async with aiohttp.ClientSession(connector=connector) as client:
+        for retry in range(tries):
             # noinspection PyBroadException
             try:
-                resp = await client.get('https://api.ipify.org?format=text')
-                return await resp.text()
+                # noinspection PyBroadException
+                try:
+                    resp = await client.get('https://api.ipify.org?format=text')
+                    return await resp.text()
+                except Exception:
+                    resp = await client.get('https://ip.seeip.org')
+                    return await resp.text()
             except Exception:
-                resp = await client.get('https://ip.seeip.org')
-                return await resp.text()
-    except Exception:
-        if not tries:
-            return ''
-        return await get_proxy_ip(proxy_address, tries=tries - 1)
+                pass
+
+    return ''
 
 
 async def kill_ssh_connection(connection: asyncssh.SSHClientConnection):
