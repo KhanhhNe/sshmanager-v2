@@ -159,7 +159,7 @@ class PortCheckTask(CheckTask):
 
                 # Update port ip
                 if port.is_connected:
-                    ip = await aio_as_trio(utils.get_proxy_ip)(port.proxy_address)
+                    ip = await aio_as_trio(utils.get_proxy_ip)(port.proxy_address, tries=3)
                     await port.update_check_result(public_ip=ip)
 
                 # Remove SSH if port is not connected anymore

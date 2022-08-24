@@ -90,7 +90,7 @@ def get_ssh_checking_speed():
     Lấy thông tin tốc độ kiểm tra SSH.
     """
     with db_session(optimistic=False):
-        total_minutes = 5
+        total_minutes = 2
         total_ssh_checked = SSH.select(
             lambda s: s.last_checked >= datetime.now() - timedelta(minutes=total_minutes)
         ).count()
