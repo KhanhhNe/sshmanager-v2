@@ -41,11 +41,11 @@
             {{ portInfo.port_number }}
           </td>
           <td class="port-info" v-if="portInfo.ssh">
-            <span v-if="!portInfo.time_connected" data-tooltip="Đang kết nối">
+            <span v-if="!portInfo.time_connected || !portInfo.last_checked" data-tooltip="Đang kết nối">
               <i class="fi fi-spinner fi-spin"
                  style="color: var(--primary)"></i>
             </span>
-            <span v-else-if="portInfo.public_ip === portInfo.ssh.ip" data-tooltip="Đã kết nối">
+            <span v-else-if="portInfo.public_ip" data-tooltip="Đã kết nối">
               <i class="fi fi-slightly-smile"
                  style="color: green"></i>
             </span>

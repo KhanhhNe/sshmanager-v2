@@ -137,6 +137,7 @@ class Port(Model):
     def assign_ssh(self, ssh: typing.Optional[SSH]):
         self.ssh = ssh
         self.is_connected = False
+        self.last_checked = None
 
     @auto_renew_objects
     def disconnect_ssh(self, remove_from_used=False):
