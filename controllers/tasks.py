@@ -164,7 +164,7 @@ class PortCheckTask(CheckTask):
 
                 # Remove SSH if port is not connected anymore
                 if config.get('port_auto_replace_died_ssh'):
-                    if port.ssh and port.public_ip != port.ssh.ip:
+                    if port.is_connected and port.last_checked and not port.public_ip:
                         logger.info(f"Port {port.port_number:<5} -> SSH {port.ssh.ip:<15} - PROXY DIED")
                         port.disconnect_ssh()
 
