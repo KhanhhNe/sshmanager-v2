@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import traceback
@@ -5,7 +6,6 @@ from datetime import datetime
 from typing import List, Optional, Type
 
 import pendulum
-import trio
 from fastapi.websockets import WebSocket
 from fastapi.websockets import WebSocketDisconnect
 from pony import orm
@@ -63,7 +63,7 @@ def websocket_auto_update_endpoint(entity: Type[Model], output_model: Type[BaseM
                     'objects': output_objects,
                     'removed': removed
                 }, default=str))
-                await trio.sleep(0)
+                await asyncio.sleep(0)
         except WebSocketDisconnect:
             pass
         except Exception:

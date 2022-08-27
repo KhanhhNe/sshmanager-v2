@@ -20,7 +20,7 @@ def get_ipv4_address():
 
 def get_free_port():
     """
-    Get a free port in local machine
+    Get _run_with_reset_is_working free port in local machine
     :return: Port number
     """
     sock = socket.socket()
@@ -101,6 +101,7 @@ def configure_logging():
     def logging_filter(record: logging.LogRecord):
         if any([
             record.exc_info and record.exc_info[0] in [BrokenPipeError],
+            record.name == 'asyncio',
             record.name == 'Ssh'
         ]):
             return False
@@ -132,5 +133,5 @@ def configure_logging():
                         handlers=[file_logging, console_logging, ssh_logging],
                         force=True)
 
-    for logger in ['multipart.multipart', 'charset_normalizer', 'asyncio']:
+    for logger in ['multipart.multipart', 'charset_normalizer', 'asyncio', 'asyncssh']:
         logging.getLogger(logger).setLevel(logging.WARNING)

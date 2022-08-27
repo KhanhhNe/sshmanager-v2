@@ -1,3 +1,4 @@
+import asyncio
 import atexit
 import functools
 import logging
@@ -11,12 +12,9 @@ from multiprocessing import freeze_support
 from traceback import format_exc
 
 import cryptography
-import hypercorn.trio
+import hypercorn
 import psutil
-import trio
-import trio_asyncio
 from hypercorn.run import run
-from trio.to_thread import run_sync
 
 with warnings.catch_warnings():
     # Ignore the warnings of using deprecated cryptography libraries in asyncssh
@@ -34,10 +32,9 @@ exited = threading.Event()
 
 async def run_tasks():
     asyncssh.set_log_level(logging.CRITICAL)
-    async with trio.open_nursery() as nursery:
-        await run_sync(init_db)
-        await run_sync(actions.reset_entities_data)
-        nursery.start_soon(tasks.run_all_tasks)
+    await asyncio.to_thread(init_db)
+    await asyncio.to_thread(actions.reset_entities_data)
+    await tasks.run_all_tasks()
 
 
 def run_hypercorn_server(hypercorn_conf: hypercorn.Config):
@@ -80,7 +77,7 @@ def main():
     conf.graceful_timeout = 0
     conf.accesslog = 'data/access.log'
     conf.errorlog = 'data/error.log'
-    conf.worker_class = 'trio'
+    conf.worker_class = 'asyncio'
     conf.workers = 1
     conf.application_path = 'app:app'
 
@@ -96,12 +93,12 @@ def main():
     atexit.register(exited.set)
 
     run_server = functools.partial(run_hypercorn_server, conf)
-    threading.Thread(target=run_server).start()
+    multiprocessing.Process(target=run_server).start()
     multiprocessing.Process(target=kill_all_processes, args=(os.getpid(),)).start()
 
     # Run the app
     try:
-        trio_asyncio.run(run_tasks)
+        asyncio.run(run_tasks())
     except Exception:
         logger.exception(format_exc())
         raise

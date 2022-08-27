@@ -1,8 +1,7 @@
-import functools
+import asyncio
 import typing
 from datetime import datetime
 
-import trio
 from pony.orm import Optional, Required, Set, composite_key
 
 import utils
@@ -22,7 +21,7 @@ class Model(db.Entity):
         self.set(**kwargs, last_checked=datetime.now())
 
     async def update_check_result(self, **kwargs):
-        return await trio.to_thread.run_sync(functools.partial(self._update_check_result, **kwargs))
+        return await asyncio.to_thread(self._update_check_result, **kwargs)
 
     @auto_renew_objects
     def reset_status(self):
@@ -63,7 +62,7 @@ class SSH(Model):
     @auto_renew_objects
     def get_ssh_for_port(cls, port: 'Port', unique=True):
         """
-        Get a usable SSH for provided Port. Will not get one that was used by
+        Get _run_with_reset_is_working usable SSH for provided Port. Will not get one that was used by
         that Port before if unique=True.
 
         :param port: Port
@@ -105,6 +104,7 @@ class Port(Model):
     public_ip = Optional(str)  # Proxy's public IP
 
     time_connected = Optional(datetime)
+    is_working = Required(bool, default=False)
     used_ssh_list: Set = Set(SSH, reverse='used_ports')
     proxy_address = Optional(str)
 
@@ -152,3 +152,4 @@ class Port(Model):
         self.ssh = None
         self.is_connected = False
         self.used_ssh_list.clear()
+        self.is_working = False

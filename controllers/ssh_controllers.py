@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 from dataclasses import dataclass
 from functools import cache
 from typing import List
@@ -9,7 +10,6 @@ import asyncssh.compression
 import asyncssh.encryption
 import asyncssh.kex
 import asyncssh.mac
-import trio
 
 import utils
 from utils import get_proxy_ip
@@ -98,11 +98,11 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None,
     except SSHError:
         pass
 
-    start_time = trio.current_time()
+    start_time = time.time()
     ssh_info = f"{host:15} | {port:5}"
 
     def run_time():
-        return '{:4.1f}'.format(trio.current_time() - start_time)
+        return '{:4.1f}'.format(time.time() - start_time)
 
     try:
         try:
@@ -166,7 +166,6 @@ async def kill_proxy_on_port(port: int):
 
 
 if __name__ == '__main__':
-    import trio_asyncio
     import logging
 
     logging.basicConfig(level=logging.DEBUG)
@@ -177,4 +176,4 @@ if __name__ == '__main__':
         print(await verify_ssh(*ssh_str.split('|')))
 
 
-    trio_asyncio.run(trio_asyncio.aio_as_trio(main))
+    asyncio.run(main())
