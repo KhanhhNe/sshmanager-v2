@@ -16,11 +16,10 @@ websockets = "*"
 python-multipart = "*"
 asyncssh = "*"
 cryptography = "*"
-trio = "*"
-trio-asyncio = "*"
-hypercorn = {extras = ["trio"], version = "*"}
+hypercorn = "*"
 pendulum = "*"
 pyparsing = "*"
+async-timeout = "*"
 
 [dev-packages]
 pyinstaller = "*"

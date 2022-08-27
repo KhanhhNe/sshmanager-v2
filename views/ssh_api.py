@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List
 
-import trio
 from fastapi import UploadFile
 from fastapi.routing import APIRouter
 from pony.orm import ObjectNotFound, db_session
@@ -78,7 +77,7 @@ async def upload_ssh(ssh_file: UploadFile):
     :return: Thông tin SSH sau khi tạo
     """
     file_content = (await ssh_file.read()).decode()
-    ssh_ids = await trio.to_thread.run_sync(actions.insert_ssh_from_file_content, file_content)
+    ssh_ids = await asyncio.to_thread(actions.insert_ssh_from_file_content, file_content)
     with db_session(optimistic=False):
         # Re-query SSHs and format into output model
         return [SSHOut.from_orm(SSH[ssh_id]) for ssh_id in ssh_ids]

@@ -1,9 +1,8 @@
+import asyncio
 import logging
 from typing import List
 
-import trio
 from pony.orm import commit, db_session
-from trio_asyncio import aio_as_trio
 
 import utils
 from controllers import ssh_controllers
@@ -20,19 +19,16 @@ async def connect_ssh_to_port(ssh: SSH, port: Port):
     :param ssh: Connecting SSH
     """
     try:
-        with trio.fail_after(60):
-            await aio_as_trio(ssh_controllers.connect_ssh)(
-                ssh.ip, ssh.username, ssh.password, port=port.port_number
-            )
+        await asyncio.wait_for(ssh_controllers.connect_ssh(ssh.ip, ssh.username, ssh.password, port=port.port_number),
+                               timeout=60)
         is_connected = True
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTED SUCCESSFULLY")
-    except (ssh_controllers.SSHError, trio.TooSlowError) as exc:
+    except (ssh_controllers.SSHError, asyncio.TimeoutError) as exc:
         is_connected = False
         logger.info(f"Port {port.port_number:<5} -> SSH {ssh.ip:<15} - CONNECTION FAILED - {exc.args}")
 
-    with db_session(optimistic=False):
-        port = Port[port.id]
-        port.is_connected = is_connected
+    with db_session():
+        Port[port.id].is_connected = is_connected
         if not is_connected:
             port.disconnect_ssh(remove_from_used=True)
 
@@ -54,25 +50,28 @@ async def reset_ports(ports: List[Port], unique=True, delete_ssh=False):
     Reset ports and reconnect to new SSH.
 
     :param ports: Ports to reset
-    :param unique: Set to True if all SSH used for a Port cannot be used again
+    :param unique: Set to True if all SSH used for _run_with_reset_is_working Port cannot be used again
     for the same Port
     :param delete_ssh: Set to True to delete all used SSHs
     """
-    async with trio.open_nursery() as nursery:
-        with db_session:
-            for port in ports:
-                # Disconnect SSH from port
-                port = Port[port.id]  # Load port.ssh
-                used_ssh = port.ssh
-                port.disconnect_ssh(used_ssh)
-                if delete_ssh:
-                    used_ssh.delete()
+    tasks = []
 
-                # Reconnect new SSH to port
-                ssh = SSH.get_ssh_for_port(port, unique=unique)
-                if ssh:
-                    port.assign_ssh(ssh)
-                    nursery.start_soon(reconnect_port_using_ssh, port, ssh)
+    with db_session:
+        for port in ports:
+            # Disconnect SSH from port
+            port = Port[port.id]  # Load port.ssh
+            used_ssh = port.ssh
+            port.disconnect_ssh(used_ssh)
+            if delete_ssh:
+                used_ssh.delete()
+
+            # Reconnect new SSH to port
+            ssh = SSH.get_ssh_for_port(port, unique=unique)
+            if ssh:
+                port.assign_ssh(ssh)
+                tasks.append(asyncio.create_task(reconnect_port_using_ssh(port, ssh)))
+
+    await asyncio.gather(*tasks)
 
 
 def reset_entities_data():

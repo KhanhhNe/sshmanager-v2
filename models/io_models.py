@@ -116,7 +116,8 @@ PortOut = generate_pydantic_model(Port, 'PortOut', {
     "is_connected": "Port đã được kết nối đến SSH",
     "public_ip": "IP bên ngoài của proxy từ Port",
     "time_connected": "Thời điểm Port kết nối đến SSH",
-    "proxy_address": "Địa chỉ proxy của Port"
+    "proxy_address": "Địa chỉ proxy của Port",
+    "is_working": "Có task đang được thực thi trên Port",
 })
 
 SettingsInOut = create_model('SettingsInOut', **config.PYDANTIC_ARGS)
