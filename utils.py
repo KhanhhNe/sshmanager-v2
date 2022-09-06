@@ -38,10 +38,11 @@ def parse_ssh_file(file_content):
     """
     results = []
 
-    sep = pp.Char(';,|').suppress()
+    sep_chars = ';,|:'
+    sep = pp.Char(sep_chars).suppress()
     ip = pp.common.ipv4_address
     port = pp.Word(pp.nums, max=5)
-    user_pass = pp.Word(pp.printables, exclude_chars=';,|')
+    user_pass = pp.Word(pp.printables, exclude_chars=sep_chars)
 
     ssh_parser = (pp.SkipTo(ip) +
                   ip('ip') + sep +
