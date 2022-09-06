@@ -54,7 +54,7 @@ def delete_ssh(ssh_ids: List[int]):
 
     :return: Số lượng SSH đã xoá
     """
-    return SSH.select().where(SSH.id.in_(ssh_ids)).delete(bulk=True)
+    return SSH.select(lambda ssh: ssh.id in ssh_ids).delete(bulk=True)
 
 
 @router.post('/delete-all', response_model=int)

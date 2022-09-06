@@ -53,7 +53,7 @@ def delete_ports(port_numbers: List[int]):
 
     :return: Số lượng Port đã xoá
     """
-    return Port.select().where(Port.port_number.in_(port_numbers)).delete(bulk=True)
+    return Port.select(lambda port: port.port_number in port_numbers).delete(bulk=True)
 
 
 @router.put('', response_model=int)
