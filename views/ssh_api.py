@@ -1,9 +1,10 @@
+import asyncio
 from datetime import datetime, timedelta
 from typing import List
 
 from fastapi import UploadFile
 from fastapi.routing import APIRouter
-from pony.orm import ObjectNotFound, db_session
+from pony.orm import db_session
 
 from controllers import actions
 from models import Port, SSH
@@ -38,8 +39,7 @@ def add_ssh(ssh_list: List[SSHIn]):
     results = []
     for ssh in ssh_list:
         if not SSH.exists(**ssh.dict()):
-            s = SSH(**ssh.dict())
-            results.append(s)
+            results.append(SSH(**ssh.dict()))
 
     return [SSHOut.from_orm(s) for s in results]
 
@@ -54,17 +54,18 @@ def delete_ssh(ssh_ids: List[int]):
 
     :return: Số lượng SSH đã xoá
     """
-    deleted = 0
+    return SSH.select(lambda ssh: ssh.id in ssh_ids).delete(bulk=True)
 
-    for ssh_id in ssh_ids:
-        try:
-            ssh = SSH[ssh_id]
-            ssh.delete()
-            deleted += 1
-        except ObjectNotFound:
-            continue
 
-    return deleted
+@router.post('/delete-all', response_model=int)
+@db_session
+def delete_all_ssh():
+    """
+    Xoá toàn bộ SSH.
+
+    :return: Số lượng SSH đã xoá
+    """
+    return SSH.select().delete(bulk=True)
 
 
 @router.post('/upload', response_model=List[SSHOut])

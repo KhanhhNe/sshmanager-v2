@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi.responses import PlainTextResponse
 from fastapi.routing import APIRouter
-from pony.orm import commit, db_session
+from pony.orm import db_session
 
 import config
 from controllers.actions import reset_ports
@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.get('', response_model=List[PortOut])
-@db_session
+@db_session(optimistic=False)
 def get_all_ports():
     """
     Lấy thông tin các Port có trong dữ liệu.
@@ -26,23 +26,21 @@ def get_all_ports():
 
 
 @router.post('', response_model=List[PortOut])
-def add_ports(port_list: List[PortIn]):
+@db_session
+def add_ports(ports: List[PortIn]):
     """
     Tạo Port.
 
-    :param port_list: Danh sách thông tin Port muốn tạo
+    :param ports: Danh sách thông tin Port muốn
 
     :return: Thông tin Port sau khi tạo
     """
     results = []
-    with db_session:
-        for port in port_list:
-            if not Port.exists(**port.dict()):
-                results.append(Port(**port.dict()))
-        commit()
+    for port in ports:
+        if not Port.exists(**port.dict()):
+            results.append(Port(**port.dict()))
 
-    with db_session:
-        return [PortOut.from_orm(Port[p.id]) for p in results]
+    return [PortOut.from_orm(p) for p in results]
 
 
 @router.delete('', response_model=int)
@@ -55,14 +53,7 @@ def delete_ports(port_numbers: List[int]):
 
     :return: Số lượng Port đã xoá
     """
-    deleted = 0
-    for port_number in port_numbers:
-        port = Port.get(port_number=port_number)
-        if port:
-            port.delete()
-            deleted += 1
-
-    return deleted
+    return Port.select(lambda port: port.port_number in port_numbers).delete(bulk=True)
 
 
 @router.put('', response_model=int)
@@ -74,18 +65,15 @@ async def reset_ports_ssh(port_numbers: List[int], delete_ssh=False):
 
     :param delete_ssh: Xoá SSH hiện tại của các Port ra khỏi dữ liệu
 
-    :return: Số Port với số port local hợp lệ
+    :return: Thông tin Port sau khi reset
     """
-    ports = []
     with db_session:
-        for port_number in port_numbers:
-            if port := Port.get(port_number=port_number):
-                ports.append(port)
-    unique = config.get('use_unique_ssh')
+        ports = Port.select().where(Port.port_number.in_(port_numbers))
 
-    await reset_ports(ports, unique=unique, delete_ssh=delete_ssh)
+    await reset_ports(ports, unique=config.get('use_unique_ssh'), delete_ssh=delete_ssh)
 
-    return len(ports)
+    with db_session:
+        return [PortOut.from_orm(Port[port.id]) for port in ports]
 
 
 @router.get('/proxies', response_model=str)

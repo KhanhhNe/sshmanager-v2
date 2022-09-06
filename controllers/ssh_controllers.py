@@ -79,7 +79,8 @@ class SSHError(Exception):
     """
 
 
-async def connect_ssh(host: str, username: str, password: str, port: int = None, ssh_port: int = 22):
+async def connect_ssh(host: str, username: str, password: str, port: int = None, ssh_port: int = 22,
+                      retry: int = 3) -> ProxyInfo:
     """
     Connect to the SSH and returning the Socks5 proxy information.
 
@@ -88,6 +89,7 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None,
     :param password: SSH password
     :param port: Local port to forward to
     :param ssh_port: SSH port (default: 22)
+    :param retry: Number of retries (default: 3)
     :return: ProxyInfo object containing the forwarded Socks5 proxy
     """
     if not port:
@@ -118,7 +120,13 @@ async def connect_ssh(host: str, username: str, password: str, port: int = None,
             if not await get_proxy_ip(proxy_info.address):
                 await utils.kill_ssh_connection(connection)
                 raise SSHError("Cannot connect to forwarded proxy.")
-        except (OSError, asyncssh.Error, asyncio.TimeoutError) as exc:
+        except OSError as exc:
+            if retry > 0:
+                logger.info(f"{ssh_info} | Retrying... ({run_time()}s)")
+                return await connect_ssh(host, username, password, port, ssh_port, retry - 1)
+            else:
+                raise SSHError(f"{type(exc).__name__}: {exc}.")
+        except (asyncssh.Error, asyncio.TimeoutError) as exc:
             raise SSHError(f"{type(exc).__name__}: {exc}.")
 
     except SSHError as exc:
@@ -172,7 +180,7 @@ if __name__ == '__main__':
 
 
     async def main():
-        ssh_str = '178.129.244.144|support|support'
+        ssh_str = '123.21.240.17|support|admin'
         print(await verify_ssh(*ssh_str.split('|')))
 
 

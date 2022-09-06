@@ -47,11 +47,11 @@ DEFAULT_CONFIG = [
         "Port chạy web (truy cập web bằng link http://<ip>:<port>)",
         need_restart=True),
     ConfigItem(
-        'SSHSTORE', 'enabled', 'sshstore_enabled', True,
+        'SSHSTORE', 'enabled', 'sshstore_enabled', False,
         "Tự động lấy SSH từ SSHStore (cần tạo account)"
     ),
     ConfigItem(
-        'SSHSTORE', 'api_key', 'sshstore_api_key', 'ecd2ead6fe85f8419b1aa4132aca980b',
+        'SSHSTORE', 'api_key', 'sshstore_api_key', '',
         "API key của SSHStore"
     ),
     ConfigItem(
