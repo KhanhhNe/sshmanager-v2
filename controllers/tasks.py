@@ -96,7 +96,7 @@ class SSHCheckTask(CheckTask):
 
         try:
             with async_timeout.timeout(self.test_timeout):
-                is_live = await ssh_controllers.verify_ssh(ssh.ip, ssh.username, ssh.password)
+                is_live = await ssh_controllers.verify_ssh(ssh.ip, ssh.username, ssh.password, ssh_port=ssh.ssh_port)
         except asyncio.TimeoutError:
             # Timeout exceeded
             logging.getLogger('Ssh').debug(f"{ssh_info} ({run_time(start_time)}s) - Test timeout exceeded.")
