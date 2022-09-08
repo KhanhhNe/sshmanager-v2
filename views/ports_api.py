@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi.responses import PlainTextResponse
 from fastapi.routing import APIRouter
+from pony import orm
 from pony.orm import db_session
 
 import config
@@ -39,6 +40,7 @@ def add_ports(ports: List[PortIn]):
     for port in ports:
         if not Port.exists(**port.dict()):
             results.append(Port(**port.dict()))
+    orm.commit()
 
     return [PortOut.from_orm(p) for p in results]
 

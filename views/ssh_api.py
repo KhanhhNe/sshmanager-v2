@@ -4,6 +4,7 @@ from typing import List
 
 from fastapi import UploadFile
 from fastapi.routing import APIRouter
+from pony import orm
 from pony.orm import db_session
 
 from controllers import actions
@@ -40,6 +41,7 @@ def add_ssh(ssh_list: List[SSHIn]):
     for ssh in ssh_list:
         if not SSH.exists(**ssh.dict()):
             results.append(SSH(**ssh.dict()))
+    orm.commit()
 
     return [SSHOut.from_orm(s) for s in results]
 
