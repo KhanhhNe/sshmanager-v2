@@ -5,7 +5,7 @@
       <div>
         <button
             v-if="!readOnly"
-            v-on:click="$refs.fileInput.click()"
+            @click="$refs.fileInput.click()"
             data-tippy-content="Tải lên"><i class="fi fi-upload"></i></button>
         <button
             @click="downloadSSHList"
@@ -35,8 +35,7 @@
             :key="getSshText(ssh)"
             :class="[ssh.status_text, isRecent(ssh) ? 'recent' : '']"
             class="ssh">
-          <td>{{ ssh.status_text }}
-          </td>
+          <td>{{ ssh.status_text }}</td>
           <td>{{ ssh.ip }}</td>
           <td>{{ ssh.ssh_port }}</td>
           <td>{{ ssh.username }}</td>

@@ -63,7 +63,7 @@ class CheckTask(ABC):
             objects = self._get_objects_list()
 
             if not objects:
-                await asyncio.sleep(0)
+                await asyncio.sleep(1)
                 continue
 
             tasks = [asyncio.create_task(self.run_on_object(obj)) for obj in objects]
@@ -116,7 +116,7 @@ class PortCheckTask(CheckTask):
 
     @property
     def sleep_interval(self):
-        return 0
+        return 1
 
     def get_objects(self):
         return Port.select(lambda port: not port.is_working)

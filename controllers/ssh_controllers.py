@@ -27,9 +27,6 @@ def get_algs_config():
                        signature_algs=(asyncssh.public_key.get_x509_certificate_algs() +
                                        asyncssh.public_key.get_public_key_algs()))
 
-    # import pprint
-    # pprint.pprint(algs_config, width=1000)
-
     # OpenSSH 7.2 compatibility
     if b'ecdh-sha2-nistp521' in algs_config['kex_algs']:
         algs_config['kex_algs'].remove(b'ecdh-sha2-nistp521')
